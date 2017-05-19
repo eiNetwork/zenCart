@@ -1,0 +1,978 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Documentation</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/reset.css" type="text/css" media="all">
+<link rel="stylesheet" href="css/style.css" type="text/css" media="all">
+<link rel="stylesheet" href="css/fonts.css" type="text/css" media="all">
+<!--[if lt IE 7]>
+  	<link rel="stylesheet" href="css/ie/ie6.css" type="text/css" media="screen">
+    <script type="text/javascript" src="js/ie_png.js"></script>
+    <script type="text/javascript">
+        ie_png.fix('.png');
+    </script>
+  <![endif]-->
+<!--[if lt IE 9]>
+  	<script type="text/javascript" src="js/html5.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div id="main">
+  <div class="inside">
+    <!-- header -->
+    <header id="header">
+      <div class="inside">
+        <h1>Zen Cart theme installation manual</h1>
+      </div>
+    </header>
+    <section id="content">
+      <article>
+        <h2>Table of Contents</h2>
+        <div class="inner">       
+          <ol class="table_content">
+            <li><a href="#getting_started">Zen Cart installation from scratch:</a>
+              <ul>
+                <li><a href="#zen_download">Downloading Zen Cart engine</a></li>
+              </ul>
+            </li>
+            <li><a href="#zen_install">How to install a Zen Cart Template</a>
+              <ul>
+                <li><a href="#zen_install-1">How to install a Zen Cart Template.</a></li>
+				<li><a href="#zen_install_sample_data">How to install Zen Cart sample data</a></li>
+                <li><a href="#zen_manual">Zen Cart template manual configuration</a></li>
+			  </ul>
+			  </li>
+			<li><a href="#manage_modules">How to manage modules</a>
+			<li><a href="#theme_customization">Theme customization</a>
+				<ul>
+				<li><a href="#zen_logo">How to change store logo</a></li>              
+				<li><a href="#zen_color">How to change store colors</a></li>
+				<li><a href="#zen_ezpages">How to configure content pages</a></li>
+				</ul>
+				</li>
+
+            </li>
+            <li><a href="#zen_addons">Zen Cart Add-ons</a>
+				<ul>
+					<li><a href="#zen_social">Social Media Icons Module</a></li>
+					<li><a href="#zen_footer_links">Footer Links in Columns Module</a></li>
+					<li><a href="#zen_images">Extra Product Images</a></li>
+				</ul>
+			</li>
+			<li><a href="#end">Conclusion</a></li>
+          </ol>
+        </div>
+      </article>
+      <!-- Getting started begin -->
+     
+	  <h2 id="getting_started">Zen Cart installation from scratch:</h2>
+      <div class="inner">
+	  <article>
+        <h3 id="zen_download">Downloading Zen Cart engine</h3>
+        <p> Make sure to check the template software requirements at the preview page for the required version of Zen Cart. We can't guarantee the correct work of the template if your version of Zen Cart engine doesn't meet these requirements. </p>
+        <ol>
+          <li>Visit Zen Cart official website at <a href="http://www.zen-cart.com/">http://www.zen-cart.com/</a></li>
+          <li>From the right box click <strong>Download</strong>
+		  	  <img class="img-border" alt="" title="" src="images/zencart_official_site.jpg"/>
+		  </li>
+        </ol>
+        <p>If you need earlier version of Zen Cart engine:</p>
+        <ol>
+          <li>From the right box click <strong>Click here to download older versions</strong></li>
+          <li>Locate and download the required version</li>
+        </ol>
+        <p>When you are done with Zen Cart engine download you need to extract the files from the downloaded package and upload them to your hosting server. Feel free to check the tutorials on how to extract the files with <a href="http://info.template-help.com/extract-archived-files-windows-os.html">WinZip (Windows OS)</a> and <a href="http://info.template-help.com/extract-archived-files-mac-os.html">StuffitExpander(MAC OS)</a> and <a href="http://info.template-help.com/how-upload-files-server-2.html">how to upload files to the hosting server</a></p>
+        <p>After uploading Zen Cart engine files to your hosting server you can start engine installation procedure. In your browser address bar type the root to your Zen Cart installation directory and press Enter. You should see the initial Zen Cart installation screen. Follow the instructions on the screen to install Zen Cart engine. </p>
+        <p align="center"><img src="images/zencart-engine-installation-initital.jpg" width="764" height="611" alt="zencart-installation"></p>
+        <p>Please check the detailed video tutorial on <a href="http://info.template-help.com/zencart-engine-installation.html">how to install Zen Cart engine</a>. </p>
+	  </article>
+      
+        <h2 id="zen_install">How to install a Zen Cart Template.</h2>
+		<article>
+        
+		<h3 id="zen_install-1">1. How to install a Zen Cart Template. </h3>
+		<p>First of all you need to download the purchased template to your computer. The download link is available from your order details page. </p>
+		<p>When the template download is complete you need to extract the files from the downloaded package. This can be done using the<a href="http://info.template-help.com/unzipping-your-template.html"> WinZip (Windows OS) </a>or <a href="http://info.template-help.com/how-unzip-template-mac.html">Stuffit Expander (MAC OS) </a>applications. Don't forget to extract the files from the inner sources_XXXX.zip package. The sources archive is password protected and contains the template source files. The password can be obtained from the order details page. </p>
+		<p>The installation process is quite simple. Open the template folder with the extracted Zen Cart template files. You should see the following files structure:</p>
+ 
+		<ul class="files-structure">
+		  <li class="lev-1">documentation <span class="description">* (Product documentation. Information about installing and configuring themes)</span></li>
+		  <li class="lev-1">screenshots <span class="description">* (Screenshots of the theme)</span></li>
+		  <li class="lev-1">theme659 <span class="description">* (Root file folder theme)</span></li>
+		  <li class="lev-2">includes <span class="description">* (File folder theme)</span></li>
+		  <li class="lev-1">sources <span class="description">* (Sources)</span></li>
+		  <li class="lev-2">clipart_library<span class="description">* (Clipart library)</span></li>
+		  <li class="lev-2">psd<span class="description">* (PSD layouts and buttons of the first page)</span></li>
+		  <li class="lev-2">images<span class="description">* (Product images, social services and key lightbox)</span></li>
+		  <li class="lev-2 file">ZENCART_FULL.sql<span class="description">* (Contains sample products and store settings)</span></li>
+		  <li class="lev-2 file">ZENCART_SHORT.sql<span class="description">* (Contacts only store and theme settings)</span></li>
+		  <li class="lev-2 file">ZENCART_SOCIAL.sql<span class="description">* (Set of social icons on the product page)</span></li>
+		  <li class="lev-1 file">info.txt<span class="description">* (Information about archive)</span></li>
+		  <li class="lev-1 file">fonts_info.txt<span class="description">* (Information about the fonts used in the template)</span></li>
+		</ul>
+        
+        
+<p>1. Open the <strong>&quot;theme###&quot;</strong> folder and upload the <strong>&quot;includes&quot;</strong> folder to Zen Cart installation root on your server.</p>
+<p>FILES INCLUDED IN THIS PACKAGE: </p>
+        <ul>
+          <li>includes/languages/english/html_includes/theme659/ define_main_page.php</li>
+          <li>includes/modules/theme659/also_purchased_products.php</li>
+		  <li>includes/modules/theme659/featured_products.php</li>
+		  <li>includes/modules/theme659/new_products.php</li>
+		  <li>includes/modules/theme659/specials_index.php</li>
+		  <li>includes/templates/theme659/buttons/* (buttons to match design) </li>
+		  <li>includes/templates/theme659/common/tpl_box_default_left.php </li>
+		  <li>includes/templates/theme659/common/tpl_box_default_right.php</li>
+		  <li>includes/templates/theme659/common/tpl_footer.php</li>
+		  <li>includes/templates/theme659/common/tpl_header.php</li>
+		  <li>includes/templates/theme659/common/tpl_main_page.php</li>
+		  <li>includes/templates/theme659/css/CSS_read_me.txt</li>
+		  <li>includes/templates/theme659/css/print_stylesheet.css</li>
+		  <li>includes/templates/theme659/css/stylesheet.css</li>
+		  <li>includes/templates/theme659/css/stylesheet_css_buttons.css</li>
+		  <li>includes/templates/theme659/css/stylesheet_boxes.css</li>
+		  <li>includes/templates/theme659/css/stylesheet_main.css</li>
+		  <li>includes/templates/theme659/css/stylesheet_tm.css</li>
+		  <li>includes/templates/theme659/images/* (logo, different color images, shadow images, etc.)</li>
+		  <li>includes/templates/theme659/sideboxes/ ...</li>
+		  <li>includes/templates/theme659/templates/ ...</li>
+        </ul>
+		<div class="info-box">NOTE: Replacement of these files will not damage your store</div>
+		
+  		<p>2. Then open Zen Cart store admin panel and go to <strong>&quot;Tools &gt; Template Selection&quot;</strong>. </p>
+		<p>3. In the right column click <strong>Edit</strong> button and in the appeared select box choose new template (theme###). </p>
+        
+        
+		
+        <h3 id="zen_install_sample_data">2. How to install Zen Cart sample data  </h3>
+        
+		<p>To make your template look like on the live demo you need to install the template sample data. Sample data contains the website settings, sample products, modules, menus, images etc. It is useful when you want to see the template functionality or the examples of the pages design and layout.</p>
+		<p> Zen Cart templates are provided with four SQL files that contains all website sample content(except the images) and sample website settings. The SQL files can be imported into your database using your database management tool (usually phpMyAdmin) or directly through Zen Cart admin panel: <strong>Tools > Install SQL Patches</strong></p>
+		<ul>
+			<li><strong>ZENCART_FULL.sql</strong> – contains sample products and store settings. Use it with clear Zen Cart installation.</li>
+			<li><strong>ZENCART_SHORT.sql</strong> – contacts only store and theme settings. Installing short dump won't replace your store goods.</li>
+			<li><strong>ZENCART_SOCIAL.sql</strong> - set of social icons on the product page
+		</ul>
+
+		<div class="error-box">
+			ATTENTION: Importing the SQL file to your database will overwrite your existing content and website settings. DO NOT import the SQL file if you want to keep the existing content	
+		</div>
+		
+	    <div class="notification-box">
+			NOTE: ALWAYS backup your database before performing any modifications
+		</div>
+        
+        	
+<p>To install sample data provided with the template you should open Zen-Cart <strong>admin panel</strong> > <strong>Tools</strong> > <strong>Install SQL Patches</strong></p>
+			<img class="img-border" alt="" title="" src="images/zen_cart_sample_data_img1.jpg"/>
+            
+		<p>You will get 2 options, either execute SQL query or upload <strong>.sql</strong> file. The result will be the same either option you choose. We’ll stay with the second option as the template includes 4 <strong>.sql</strong> files.</p>
+        	<img class="img-border" alt="" title="" src="images/zen_cart_sample_data_img2.jpg"/>
+            
+		<p>Click on the "<strong>Browse</strong>" button and navigate to "<strong>sources</strong>" folder of the template package, select the <strong>.sql</strong> file and press the "<strong>Upload</strong>" button to execute it.</p>
+        
+		<p>Feel free to check the detailed tutorial on <a href="http://info.template-help.com/files/ZenCart/zen_cart_install_sample_data.htm">how to install Zen Cart template sample data</a></p>
+        
+		<div class="notification-box">
+			IMPORTANT: the .sql files must be imported in a strict order. First you should upload ZENCART_SHORT.SQL and only after that – ZENCART_FULL.SQL
+		</div>
+        
+
+		<h3 id="zen_manual">3. Zen Cart template manual configuration</h3>
+        
+        <p>This step shows how to configure Zen Cart template manually. In case you already imported the template SQL files you can skip this step. </p>
+        <p><strong>1.</strong> First of all you need to configure the store modules. </p>
+        
+        <p>Go to "Tools" then "Layout Boxes Controller" and turn on the side boxes you would like to use. This template is set for both to use: right and left side boxes.</p>
+        <p>To configure the modules like on the template preview please use the following settings:</p>
+      	<table>
+			<tr class="first">
+				<td class="col1">Box File Name</td>
+				<td class="col2">LEFT/RIGHT COLUMN Status</td>
+				<td class="col3">LEFT or RIGHT COLUMN</td>
+				<td class="col4">LEFT/RIGHT COLUMN Sort Order</td>
+			</tr>
+			<tr>
+				<td class="col1">search_header.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">0</td>
+			</tr>
+			<tr>
+				<td class="col1">specials.php</td>
+				<td class="col2"><strong>ON</strong></td>
+				<td class="col3">RIGHT</td>
+				<td class="col4">2</td>
+			</tr>
+			<tr>
+				<td class="col1">categories.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">1</td>
+			</tr>
+			<tr>
+				<td class="col1">banner_box.php</td>
+				<td class="col2"><strong>ON</strong></td>
+				<td class="col3">RIGHT</td>
+				<td class="col4">1</td>
+			</tr>
+			<tr>
+				<td class="col1">information.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">2</td>
+			</tr>
+			<tr>
+				<td class="col1">ezpages.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">2</td>
+			</tr>
+			<tr>
+				<td class="col1">best_sellers.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">2</td>
+			</tr>
+			<tr>
+				<td class="col1">banner_box_all.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">7</td>
+			</tr>
+			<tr>
+				<td class="col1">whats_new.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">8</td>
+			</tr>
+			<tr>
+				<td class="col1">search.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">2</td>
+			</tr>
+			<tr>
+				<td class="col1">shopping_cart.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">RIGHT</td>
+				<td class="col4">1</td>
+			</tr>
+			<tr>
+				<td class="col1">currencies.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">4</td>
+			</tr>
+			<tr>
+				<td class="col1">manufacturers.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">12</td>
+			</tr>
+			<tr>
+				<td class="col1">manufacturer_info.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">13</td>
+			</tr>
+			<tr>
+				<td class="col1">music_genres.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">14</td>
+			</tr>
+			<tr>
+				<td class="col1">order_history.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">15</td>
+			</tr>
+			<tr>
+				<td class="col1">tell_a_friend.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">16</td>
+			</tr>
+			<tr>
+				<td class="col1">languages.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">17</td>
+			</tr>
+			<tr>
+				<td class="col1">whos_online.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">18</td>
+			</tr>
+			<tr>
+				<td class="col1">more_information.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">19</td>
+			</tr>
+			<tr>
+				<td class="col1">reviews.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">20</td>
+			</tr>
+			<tr>
+				<td class="col1">featured.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">21</td>
+			</tr>
+			<tr>
+				<td class="col1">product_notifications.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">22</td>
+			</tr>
+			<tr>
+				<td class="col1">record_companies.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">23</td>
+			</tr>
+			<tr>
+				<td class="col1">document_categories.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">24</td>
+			</tr>
+			<tr>
+				<td class="col1">banner_box2.php</td>
+				<td class="col2">OFF</td>
+				<td class="col3">LEFT</td>
+				<td class="col4">25</td>
+			</tr>
+		</table>
+        <br>
+       		<p><strong>2.</strong> When you are done with the modules you need to update the store configuration settings. </p>
+        
+		<p>a)Manually edit options and features in the admin area. </p>
+		<table>
+		<tr>
+			<td>Column Width - Left Boxes</td>
+			<td class="second">220px</td>
+		</tr>
+		<tr>
+			<td>Column Width - Right Boxes</td>
+			<td class="second">220px</td>
+		</tr>
+		<tr>
+			<td>Bread Crumbs Navigation Separator</td>
+			<td class="second"><span>&</span>nbsp;::<span>&</span>nbsp;</td>
+		</tr>
+		<tr>
+			<td>Define Breadcrumb Status </td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Bestsellers - Number Padding </td>
+			<td class="second"><span>&</span>nbsp;</td>
+		</tr>
+		<tr>
+			<td>Bestsellers - Truncate Product Names </td>
+			<td class="second">35</td>
+		</tr>
+		<tr>
+			<td>Bestsellers - Truncate Product Names followed by ... </td>
+			<td class="second">true</td>
+		</tr>
+		<tr>
+			<td>Categories Box - Show Specials Link </td>
+			<td class="second">false</td>
+		</tr>
+		<tr>
+			<td>Categories Box - Show Products New Link </td>
+			<td class="second">false</td>
+		</tr>
+		<tr>
+			<td>Shopping Cart Box Status </td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Categories Box - Show Featured Products Link </td>
+			<td class="second">false</td>
+		</tr>
+		<tr>
+			<td>Categories Box - Show Products All Link</td>
+			<td class="second">false</td>
+		</tr>
+		<tr>
+			<td>Column Left Status - Global</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Column Right Status - Global</td>
+			<td class="second">1</td>
+		</tr>
+		<tr>
+			<td>Column Width - Left</td>
+			<td class="second">220px</td>
+		</tr>
+		<tr>
+			<td>Column Width - Right</td>
+			<td class="second">220px</td>
+		</tr>
+		<tr>
+			<td>Categories Separator between links Status</td>
+			<td class="second">1</td>
+		</tr>
+		<tr>
+			<td>Categories Separator between the Category Name and Count </td>
+			<td class="second">-<span>&</span>gt;</td>
+		</tr>
+		<tr>
+			<td>Categories Separator between the Category Name and Sub Categories</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Categories Count Prefix</td>
+			<td class="second"><span>&</span>nbsp;(</td>
+		</tr>
+		<tr>
+			<td>Categories Count Suffix</td>
+			<td class="second">)</td>
+		</tr>
+		<tr>
+			<td>Categories SubCategories Indent </td>
+			<td class="second"><span>&</span>nbsp;<span>&</span>nbsp;</td>
+		</tr>
+		<tr>
+			<td>Categories with 0 Products Status</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Split Categories Box</td>
+			<td class="second">true</td>
+		</tr>
+		<tr>
+			<td>Shopping Cart - Show Totals</td>
+			<td class="second">1</td>
+		</tr>
+		<tr>
+			<td>Customer Greeting - Show on Index Page</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Categories - Always Show on Main Page</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Main Page - Opens with Category</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Categories - Always Open to Show SubCategories</td>
+			<td class="second">1</td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Header Position 1</td>
+			<td class="second">banner-1</td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Header Position 2</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Header Position 3</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Footer Position 1</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Footer Position 2</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Footer Position 3</td>
+			<td class="second"></td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Side Box banner_box</td>
+			<td class="second">SideBox-Banners</td>
+		</tr>
+		<tr>
+			<td>Banner Display Groups - Side Box banner_box2</td>
+			<td class="second">SideBox-Banners</td>
+		</tr>
+		<tr>
+			<td>Banner Display Group - Side Box banner_box_all</td>
+			<td class="second">BannersAll</td>
+		</tr>
+		<tr>
+			<td>Footer - Show IP Address status</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Product Discount Quantities - Add how many blank discounts?</td>
+			<td class="second">5</td>
+		</tr>
+		<tr>
+			<td>Product Discount Quantities - Display how many per row?</td>
+			<td class="second">5</td>
+		</tr>
+		<tr>
+			<td>Categories/Products Display Sort Order</td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Option Names and Values Global Add, Copy and Delete Features Status </td>
+			<td class="second">1</td>
+		</tr>
+		<tr>
+			<td>Categories-Tabs Menu ON/OFF </td>
+			<td class="second">0</td>
+		</tr>
+		<tr>
+			<td>Site Map - include My Account Links? </td>
+			<td class="second">No</td>
+		</tr>
+		<tr>
+			<td>Skip 1-prod Categories </td>
+			<td class="second">true</td>
+		</tr>
+		<tr>
+			<td>Use split-login page </td>
+			<td class="second">false</td>
+		</tr>
+		<tr>
+			<td>CSS Buttons</td>
+			<td class="second">No</td>
+		</tr>
+		</table>
+		<br>
+		<p>Go to "Configuration" then " Product"  and set:</p>
+		<table>
+			<tr>
+				<td>Previous Next - Button and Image Status</td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Navigation Includes Category Position </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Navigation Includes Category Name and Image Status </td>
+				<td class="second">2</td>
+			</tr><tr>
+				<td>Previous Next - Navigation Bar Position</td>
+				<td class="second">2</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Button and Image Settings</td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Sort Order </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Image Width? </td>
+				<td class="second">50</td>
+			</tr>
+			<tr>
+				<td>Previous Next - Image Height? </td>
+				<td class="second">40</td>
+			</tr>
+			<tr>
+				<td>Products  - Products Option Name Sort Order</td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Products  - Product Option Value of Attributes Sort Order </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product  - Show Option Values Name Below Attributes Image </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product  - Show Sales Discount Savings Status </td>
+				<td>1</td>
+			</tr>
+			<tr>
+				<td>Product  - Show Sales Discount Savings Dollars or Percentage </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product  - Show Sales Discount Savings Percentage Decimals </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Product  - Price is Free Image or Text Status </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product  - Price is Call for Price Image or Text Status </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product Quantity Box Status - Adding New Products </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Product Reviews Require Approval</td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Meta Tags - Include Product Model in Title </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Meta Tags - Include Product Price in Title </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Meta Tags Generated Description Maximum Length?</td>
+				<td class="second">50</td>
+			</tr>
+			<tr>
+				<td>Also Purchased Products Columns per Row </td>
+				<td class="second">3</td>
+			</tr>
+		</table>
+		<br>
+		<p>Go to "Configuration" then " Index listing"  and set:</p>
+		<table>
+			<tr>
+				<td>Show New Products on Main Page  </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show Featured Products on Main Page </td>
+				<td class="second">2</td>
+			</tr>
+			<tr>
+				<td>Show Special Products on Main Page </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show Upcoming Products on Main Page </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show New Products on Main Page - Category with SubCategories </td>
+				<td class="second">0</td>
+
+			</tr>
+			<tr>
+				<td>Show Featured Products on Main Page - Category with SubCategories </td>
+				<td class="second">2</td>
+			</tr>
+			<tr>
+				<td>Show Special Products on Main Page - Category with SubCategories </td>
+				<td class="second">3</td>
+			</tr>
+			<tr>
+				<td>Show Upcoming Products on Main Page - Category with SubCategories </td>
+				<td class="second">4</td>
+			</tr>
+			<tr>
+				<td>Show New Products on Main Page - Errors and Missing Products Page </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Show Featured Products on Main Page - Errors and Missing Products Page</td>
+				<td class="second">2</td>
+			</tr>
+			<tr>
+				<td>Show Special Products on Main Page - Errors and Missing Products Page</td>
+				<td class="second">3</td>
+			</tr>
+			<tr>
+				<td>Show Upcoming Products on Main Page - Errors and Missing Products Page </td>
+				<td class="second">4</td>
+			</tr>
+			<tr>
+				<td>Show New Products - below Product Listing </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show Featured Products - below Product Listing </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show Special Products - below Product Listing </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>Show Upcoming Products - below Product Listing </td>
+				<td class="second">0</td>
+			</tr>
+			<tr>
+				<td>New Products Columns per Row </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Featured Products Columns per Row </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Special Products Columns per Row </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>Filter Product Listing for Current Top Level Category When Enabled </td>
+				<td class="second">1</td>
+			</tr>
+		</table>
+		<br>
+		<p>Go to "Configuration" then " EZ-Pages Settings  "  and set:</p>
+		<table>
+			<tr>
+				<td>EZ-Pages Display Status - HeaderBar </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>EZ-Pages Display Status - FooterBar </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>EZ-Pages Display Status - Sidebox </td>
+				<td class="second">1</td>
+			</tr>
+			<tr>
+				<td>EZ-Pages Prev/Next Buttons </td>
+				<td class="second">2</td>
+			</tr>
+			<tr>
+				<td>EZ-Pages Table of Contents for Chapters Status </td>
+				<td class="second">1</td>
+			</tr>
+		</table>
+		<br>
+
+		<p>3. The next step is to configure the store content pages and menus (EZ-Pages). Please go to Zen Cart admin panel > Tools > EZ-Pages and set the following configuration options:</p>    
+                
+        
+		<p>Our menu:</p>
+		<ul>
+			<li>
+				home:
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				specials:
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				new products: 
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				all products: 
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				reviews: 
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				contact us: 
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+			<li>
+				faq: 
+				<ul>
+					<li>Open New Window:Off</li>
+					<li>Page is SSL:Off</li>
+					<li>Header:On</li>
+					<li>Sidebox:Off</li>
+					<li>Footer:On</li>
+					<li>Chapter:0</li>
+					<li>TOC:0;</li>
+				</ul>
+			</li>
+		</ul>
+
+        
+        </article>
+        
+        <h2 id="manage_modules">How to manage modules</h2>
+        
+        <article>
+        
+		<p>To manage Left/Right boxes open Zen Cart admin panel > <strong>Tools</strong> > <strong>Layout Boxes Controller</strong>. </p>
+        
+		<p>You will see the list of available modules. Select one, then in the right pane click "<strong>Edit</strong>" button.</p>
+			<img class="img-border" alt="" title="" src="images/zencart_box_settings1.jpg"/>
+            
+		<p>When you use both left and right columns you can change the following properties:</p>
+        
+		<p><strong>Left/Right Column Status:</strong> ON=visible, OFF=hidden<br>
+		   <strong>Location:</strong> LEFT or RIGHT position of the sidebox<br>
+           <strong>Left/Right Column Sort Order:</strong> low number sideboxes comes on the top of the column </p>
+           
+		<p>Note that Single Column settings do not currently affect the page display, and can generally be ignored.</p>
+			<img class="img-border" alt="" title="" src="images/zencart_box_settings2.jpg"/>
+
+		<div class="info-box"><p>If you would not like any side boxes on this site please, simply go to your admin under "Configuration", then "Layout Settings", and set the "Column Left Status - Global" "Column Right Status - Global" to "0". This will turn off both left and right side boxes globally, whether or not any of them are set to "on" under "Layout Boxes Controller".</p></div>
+
+        </article>
+		
+		<h2 id="theme_customization">Theme customization</h2>
+        
+        <article>
+        
+		<h3 id="zen_logo">How to change store logo</h3>
+        
+        <p> To use your own logo, simply overwrite "logo.jpg" that is located in includes/templates/theme###/images/ .</p>
+        
+		<p>You can create an image that is larger than the default one. If it doesn't match the header dimensions you'll need to perform style modifications in the <strong>/includes/templates/theme###/css/stylesheet_tm.css</strong> file. </p>
+				
+		<h3 id="zen_color">How to change store colors</h3>
+        
+        <p> To change the site colors you need to edit the CSS files in the <strong>/includes/templates/theme###/css/</strong>. You can learn more about working with the CSS files <a href="http://info.template-help.com/general-tutorials/work-with-css/">checking the detailed video tutorials</a>. </p>
+
+		<h3 id="zen_ezpages">How to configure content pages</h3>
+        
+        <p> To access the store content pages open Zen Cart admin panel and go to <strong>tools > EZ-Pages</strong>. All content pages are displayed there. Each page has the following configuration options:</p>
+                
+        <ul>
+			<li>Open New Window:Off <span class="description">* (open links in new browser tab)</span></li>
+			<li>Page is SSL:Off <span class="description">* (page is SSL)</span></li>
+			<li>Header:On <span class="description">* (menu links to header)</span></li>
+			<li>Sidebox:Off <span class="description">* (menu links in sidebox)</span></li>
+			<li>Footer:On <span class="description">* (menu links to footer)</span></li>
+			<li>Chapter:0 <span class="description">* (Chapters are used with TOC Sort Order for the display on Previous/Next. Links in the TOC will consist of pages matching this chapter number, and will be displayed in the TOC Sort Order )</span></li>
+			<li>TOC:0; <span class="description">* (Sort Order used while generating pages that are customized as either a single row (header/footer, etc) or vertically, based on individual needs; Sort order should be greater than zero to enable this page in the listing)</span></li>
+        </ul>
+        
+        
+		</article>
+        
+        
+		<h2 id="zen_addons">Zen Cart Add-ons:</h2>
+        
+		<article>
+			<h3 id="zen_social">1. Social Media Icons Module</h3>
+			<p>This module enables the display of social network icons on the product page as well the option of sharing your product info in the social network sites (Goolge Plus, Facebook, Twitter,Delecious, Digg, Stumble Upon, Technorati, Reddit).</p>
+			
+			<p><strong>Module Setup:</strong>
+			For the Social Media Icons Module setup the installation of <strong>ZENCART_SOCIAL.SQL</strong> is required.
+			The SQL patch can be imported using the Zen Cart <strong>admin panel &gt;  Tools &gt; Insall SQL Patches</strong> option.</p>
+			
+			<p><strong>Configuration:</strong>
+			To configure the module please go to <strong>Configuration > Social Media</strong> Icons in Zen Cart admin.
+			All icons are active by default.</p>
+			
+			<p>Deactivate all icons - Social Media Buttons - set value to 0
+			Switch on/off certain icons: choose icon title  - set value to 1 or 0 (1 = on, 0 = off).</p>
+			
+			<img class="img-border" alt="" title="" src="images/zencart_social_icons.jpg"/>
+
+
+			<h3 id="zen_footer_links">2. Footer Links in Columns Module</h3>
+			<p>The module enables the display of footer links in lines as well as in columns. 
+				The number of columns and the position of every item in the column are defined by the order that is set in <strong>Admin > Tools > EZ-Pages</strong>.</p>
+				
+				<p>The first digit in the sort order sets the column number for the link location, the number of columns depends on the quantity of first digits available.
+				The second digit in the sort order defines the link location in the column.</p>
+		  <div class="info-box">
+				<p><strong>For example:</strong><br>
+				in the first column the links with sort order 11, 12, 13, 14, 15 will be displayed<br>
+				in the second column the links with the sort order set to 21, 22, 23, 24, 25 will be displayed<br>
+				in the third one the links with the sort order set to 31, 32, 33, 34, 35 will be displayed etc.</p>	
+				</div>
+				<p>The templates with add-ons 1 and 4 will be available soon. None of them are in stock yet. </p>
+				<p>&nbsp;</p>
+			<h3 id="zen_images">3. Extra Product Images</h3>
+			<p>The new Zen-cart feature allows you to display the additional product images on the product page and open them in the lightbox. To make the extra images display on the product page please put them into the folder with the product images.</p>
+			<ul>
+				<li>Open Zen Cart admin panel</li>
+				<li>Go to <strong>Catalog</strong> > On the product editing screen scroll down and find the image file name and open the product you want to modify.</li>
+				<li>On the product editing screen scroll down and find the image file name</li>
+			</ul>
+				<img class="img-border" alt="" title="" src="images/zencart-mult-product-images-1.jpg"/>
+				<p>Create new product images with the names, that contain the default product image file name.</p>
+			<p>See the example of titles for the files:</p>
+			<p><strong>For example:</strong><br>
+			Default product image name: <strong>01.jpg</strong><br>
+			Additional product image names: <strong>01_1.jpg</strong>, <strong>01-2.jpg</strong> etc<br>
+			Or<br>
+			Default product image name: <strong>my_product.jpg</strong><br>
+			Additional product image names: <strong>my_product _1.jpg</strong>, <strong>my_product -2.jpg</strong> etc</p>
+
+			<p>Upload the additional images to the directory where the default image is located. Usually the product images are stored in the “<strong>images</strong>” directory of your Zen Cart installation.</p>
+			<p>When the upload is complete open the product page in browser and refresh it. You should see additional images at the bottom of the page. </p>
+			<p>The number of additional images is unlimited.<br>
+        		<a href="http://info.template-help.com/zencart-how-to-create-multiple-product-images.html">Template-help: Zen Cart. How to create multiple product images</a>
+			</p>
+			
+			
+		</article>
+		
+		
+		
+      <h2 id="end">Conclusion</h2>
+      <div class="inner">
+        <p>Zen Cart engine is a great solution for your online store. The default engine package contains all modules necessary for successful sales. 
+          Open source allows you to offer really outstanding merchant possibilities for your customers.  Due to the quite complex engine structure advanced usage of Zen Cart will require much time and aspiration. You'll need much more than this manual. </p>
+        <p>The following resources will help you to become a true Zen Cart professional:</p>
+        <ul>
+          <li><a href="http://www.zen-cart.com/">The Official Zen Cart User Guide</a></li>
+          <li><a href="http://www.siteground.com/tutorials/zencart/">Siteground Zen Cart tutorials</a></li>
+          <li><a href="http://info.template-help.com/ecommerce/zencart/">Template-help Zen Cart tutorials</a></li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

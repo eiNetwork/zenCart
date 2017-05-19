@@ -1,0 +1,134 @@
+body {  
+	behavior: url(includes/csshover.htc);
+	}
+
+div#dropMenu li a:hover, div#dropMenu li.submenu li.submenu:hover {}
+
+	
+#dropMenuWrapper {
+	width:100%;
+	margin:0;
+	}
+	
+div#dropMenu {
+	z-index:2;
+	position:relative;
+	}
+
+div#dropMenu ul {
+	margin: 0; 
+	padding: 0;
+	}
+	
+div#dropMenu li {
+	position: relative; 
+	list-style: none; 
+	margin: 0; 
+	float: left; 
+	line-height: 1em;
+	}
+	
+div#dropMenu ul.level1 {}
+	
+div#dropMenu li:hover {}
+div#dropMenu li.submenu {}
+div#dropMenu li.submenu:hover {}
+div#dropMenu li a {display: block;} 
+div#dropMenu>ul a {width: auto;}
+div#dropMenu ul ul {
+	position: absolute; 
+	display: none;
+	min-width:167px;
+	background:#4453af;
+	padding:13px 0 2px 0;
+
+}
+div#dropMenu ul ul li {
+	width:167px;
+	border-top:1px solid #646fb5;
+	padding:3px 0 6px 0;
+}
+div#dropMenu ul ul li:first-child{ border:none;}
+div#dropMenu ul ul li a{
+	color:#abb5f9;
+	font-size:12px;
+	line-height:14px;
+	text-decoration:none;
+	font-weight:normal;
+	padding:0 0 0 19px;  
+	-moz-transition: all 0.4s ease 0s;
+	-webkit-transition: all 0.4s ease 0s;
+	-o-transition: all 0.4s ease 0s;
+}
+div#dropMenu ul ul li a:hover{
+	font-weight:bold;
+	color:#fff;
+}
+div#dropMenu li.submenu li.submenu {}
+div#dropMenu ul.level1 li.submenu:hover ul.level2, 
+div#dropMenu ul.level2 li.submenu:hover ul.level3,
+div#dropMenu ul.level3 li.submenu:hover ul.level4,
+div#dropMenu ul.level4 li.submenu:hover ul.level5 {display:block;z-index:2;}
+div#dropMenu ul.level2 {top:49px; z-index:2;}
+div#dropMenu ul.level3, div#dropMenu ul.level4, div#dropMenu ul.level5 {top: -13px; left:167px;}
+div#dropMenu ul.level2 a { text-transform:none;}  /* this is text color on drop-down submenu */
+div#dropMenu ul.level2 a:hover {}
+
+div#dropMenu ul.level1{}
+div#dropMenu ul.level1>li{
+	border-right:1px solid #e7e8eb;
+}
+div#dropMenu ul.level1>li.one{ width:164px;}
+div#dropMenu ul.level1>li.two{ width:155px;}
+div#dropMenu ul.level1>li.three{ width:90px;}
+div#dropMenu ul.level1>li.four{ width:115px;}
+div#dropMenu ul.level1>li.five{ width:82px;}
+div#dropMenu ul.level1>li.six{ width:100px;}
+div#dropMenu ul.level1>li.seven{ width:121px;}
+div#dropMenu ul.level1>li.eight{ width:91px;}
+div#dropMenu ul.level1>li.nine{ width:112px;}
+div#dropMenu ul.level1>li>a{
+	color:#3b499f;
+	font-size:12px;
+	line-height:14px;
+	text-transform:uppercase;
+	text-decoration:none;
+	display:block;
+	padding:11px 0 10px 10px;
+	min-height:28px;
+}
+div#dropMenu ul.level1>li>a.screenshot{ }
+div#dropMenu ul.level1>li.submenu > a:hover, 
+div#dropMenu ul.level1>li.submenu:hover > a,
+div#dropMenu ul.level1>li>a:hover{
+	color:#fff;
+	background:url(../images/cat-a-active.gif) repeat-x 0 0;
+}
+
+div#dropMenu ul.level2{
+	min-width:167px;
+	background:url(../images/cat-ul2.gif) repeat-x 0 0 #4857b6;
+	padding:13px 0 2px 0;
+}
+div#dropMenu ul.level2>li:first-child{ border:none;}
+div#dropMenu ul.level2>li{
+	width:167px;
+	border-top:1px solid #646fb5;
+	padding:3px 0 6px 0;
+}
+div#dropMenu ul.level2>li>a{
+	color:#abb5f9;
+	font-size:12px;
+	line-height:14px;
+	text-decoration:none;
+	font-weight:normal;
+	padding:0 0 0 19px;  
+	-moz-transition: all 0.4s ease 0s;
+	-webkit-transition: all 0.4s ease 0s;
+	-o-transition: all 0.4s ease 0s;
+
+}
+div#dropMenu ul.level2>li>a:hover{
+	font-weight:bold;
+	color:#fff;
+}

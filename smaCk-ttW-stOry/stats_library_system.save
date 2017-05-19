@@ -1,0 +1,178 @@
+<?php
+/**
+ * @package admin
+ * @copyright Copyright 2003-2012 Zen Cart Development Team
+ * @copyright Portions Copyright 2003 osCommerce
+ * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
+ * @version GIT: $Id: Author: DrByte  Tue Jul 17 22:56:16 2012 -0400 Modified in v1.5.1 $
+ */
+  require('includes/application_top.php');
+
+  require(DIR_WS_CLASSES . 'currencies.php');
+  $currencies = new currencies();
+
+  $_GET['start_date'] = (!isset($_GET['start_date']) ? date("m-d-Y",(time())) : $_GET['start_date']);
+  $_GET['end_date'] = (!isset($_GET['end_date']) ? date("m-d-Y",(time())) : $_GET['end_date']);
+  $_GET['library_system'] = (!isset($_GET['library_system']) ? '0' : $_GET['library_system']);
+  $_GET['order_status'] = (!isset($_GET['order_status']) ? '0' : $_GET['order_status']);
+
+  include(DIR_WS_CLASSES . 'order.php');
+?>
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html <?php echo HTML_PARAMS; ?>>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET; ?>">
+<title><?php echo TITLE; ?></title>
+<link rel="stylesheet" type="text/css" href="includes/stylesheet.css">
+<link rel="stylesheet" type="text/css" href="includes/cssjsmenuhover.css" media="all" id="hoverJS">
+<script language="javascript" src="includes/menu.js"></script>
+<script language="javascript" src="includes/general.js"></script>
+<script type="text/javascript">
+  <!--
+  function init()
+  {
+    cssjsmenu('navbar');
+    if (document.getElementById)
+    {
+      var kill = document.getElementById('hoverJS');
+      kill.disabled = true;
+    }
+  }
+  // -->
+</script>
+</head>
+<body onload="init()">
+<!-- header //-->
+<?php
+  require(DIR_WS_INCLUDES . 'header.php');
+?>
+<!-- header_eof //-->
+<!-- body //-->
+<table border="0" width="100%" cellspacing="2" cellpadding="2">
+  <tr>
+<!-- body_text //-->
+    <td>
+
+      <tr>
+        <td class="pageHeading"><?php echo HEADING_TITLE; ?></td>
+      </tr>
+
+      <tr>
+        <td><table border="0" cellspacing="0" cellpadding="0">
+<?php
+// select all library systems with orders
+  $library_system_query = "select distinct LibrarySystemId, `Library System` from librarySystemOrders";
+  $library_system = $db->Execute($library_system_query);
+
+  $library_systems = array();
+  $library_systems_array = array();
+  $library_systems[] = array('id' => '0',
+                                 'text' => TEXT_REFERRAL_UNKNOWN);
+
+  while (!$library_system->EOF) {
+    $library_systems[] = array('id  => $library_system->fields['LibrarySystemID'],
+                                   'text' => $library_system->fields['Library System']);
+    $library_system->MoveNext();
+  }
+
+?>
+          <tr>
+            <td><table border="0" cellspacing="2" cellpadding="2">
+              <tr>
+                <td class="main"><?php echo TEXT_INFO_SELECT_LIBRARY; ?></td>
+                <td class="main">
+                  <?php
+                    echo zen_draw_form('new_date', FILENAME_STATS_LIBRARY_SYSTEM, '', 'get') . '&nbsp;&nbsp;' . zen_draw_pull_down_menu('library_system', $library_systems, $_GET['library_system'], 'onChange="this.form.submit();"') .
+                     zen_hide_session_id() .
+                     zen_draw_hidden_field('action', 'new_date') .
+                     zen_draw_hidden_field('start_date', $_GET['start_date']) .
+                     zen_draw_hidden_field('end_date', $_GET['end_date']);
+                  ?>
+                 &nbsp;&nbsp;</form>
+                </td>
+              </tr>
+            </td></table>
+          </tr>
+
+          <tr>
+            <td><table border="0" width="100%" cellspacing="2" cellpadding="2">
+              <tr><?php echo zen_draw_form('search', FILENAME_STATS_LIBRARY_SYSTEM, '', 'get'); echo zen_draw_hidden_field('library_system', $_GET['library_system']); ?>
+                <td class="main" align="right"><?php echo TEXT_INFO_START_DATE . ' ' . zen_draw_input_field('start_date', $_GET['start_date']); ?></td>
+                <td class="main" align="right"><?php echo TEXT_INFO_END_DATE . ' ' . zen_draw_input_field('end_date', $_GET['end_date']) . zen_hide_session_id(); ?></td>
+                <td class="main" align="right"><?php echo zen_image_submit('button_display.gif', IMAGE_DISPLAY); ?></td>
+              </tr>
+            </td></table></form>
+          </tr>
+
+<?php
+// reverse date from m-d-y to y-m-d
+    $date1 = explode("-", $_GET['start_date']);
+    $m1 = $date1[0];
+    $d1 = $date1[1];
+    $y1 = $date1[2];
+
+    $date2 = explode("-", $_GET['end_date']);
+    $m2 = $date2[0];
+    $d2 = $date2[1];
+    $y2 = $date2[2];
+
+    $sd = $y1 . '-' . $m1 . '-' . $d1 . ' 00:00:00';
+    $ed = $y2. '-' . $m2 . '-' . $d2 .  ' 23:59:59';
+
+//  $sd = $_GET['start_date'];
+//  $ed = $_GET['end_date'];
+  if ($_GET['library_system'] == '0') {
+    $customers_orders_query = "select * from librarySystemOrders where (`Order Date` >= :sd: and `Order Date` <= :ed:)";
+  } else {
+    $customers_orders_query = "select * from librarySystemOrders where LibrarySystemId = :libid: and (`Order Date` >= :sd: and `Order Date` <= :ed:)";
+  }
+  $customers_orders_query = $db->bindVars($customers_orders_query, ':ed:', $ed, 'date');
+  $customers_orders_query = $db->bindVars($customers_orders_query, ':sd:', $sd, 'date');
+  $customers_orders_query = $db->bindVars($customers_orders_query, ':libid:', $_GET['library_system'], 'integer');
+  $customers_orders = $db->Execute($customers_orders_query);
+?>
+          <tr>
+            <td><table border="0" width="100%" cellspacing="2" cellpadding="2">
+<?php
+  $rows = 0
+  while (!$customers_orders->EOF) {
+  $rows++
+
+?>
+          <tr>
+            <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>
+          </tr>
+          <tr>
+            <td class="main" align="left"><?php echo zen_date_long($customers_orders->fields['Order Date']); ?></td>
+            <td class="main" align="left"><?php echo TEXT_ORDER_NUMBER; ?> <?php echo $customers_orders->fields['Order Nbr']; ?></td>
+            <td class="main" align="left"><?php echo '<a href="' . zen_href_link(FILENAME_ORDERS, zen_get_all_get_params(array('oID', 'action')) . 'oID=' . $customers_orders->fields['orders_id'] . '&action=edit', 'NONSSL') . '">' . zen_image_button('button_edit.gif', IMAGE_EDIT) . '</a>'; ?></td>
+          </tr>
+          <tr>
+            <td><table border="0" cellspacing="0" cellpadding="2">
+<?php
+    for ($i = 0, $n = sizeof($order->totals); $i < $n; $i++) {
+      echo '              <tr>' . "\n" .
+           '                <td align="left" class="'. str_replace('_', '-', $order->totals[$i]['class']) . '-Text">' . $order->totals[$i]['title'] . '</td>' . "\n" .
+           '                <td align="right" class="'. str_replace('_', '-', $order->totals[$i]['class']) . '-Amount">' . $order->totals[$i]['text'] . '</td>' . "\n" .
+           '              </tr>' . "\n";
+    }
+?>
+            </table></td>
+          </tr>
+<?php
+    $customers_orders->MoveNext();
+  }
+?>
+
+<!--
+              </tr>
+            </td></table></form>
+          </tr>
+-->
+
+        </table></td>
+      </tr>
+
+    </td>
+  </tr>
+</table>

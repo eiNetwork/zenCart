@@ -1,0 +1,89 @@
+/**
+ * CSS Buttons Stylesheet
+ *
+ * Thanks to paulm for much of the content of the CSS buttons code
+ *
+ * @package templateSystem
+ * @copyright Copyright 2003-2005 Zen Cart Development Team
+ * @copyright Portions Copyright 2003 osCommerce
+ * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
+ * @version $Id: stylesheet_css_buttons.css 2765 2006-01-01 21:15:45Z birdbrain $
+ */
+
+/* css buttons */
+.cssButton, .cssButtonHover {
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:12px;
+	line-height:18px;
+	text-transform:none;
+	color:#fff;
+	font-weight:bold;
+	text-decoration:none!important;
+	background:url(../images/button.png) repeat-x 0 0;
+	display:inline-block;
+	padding:1px 6px 3px 5px;
+	cursor:pointer!important;
+	margin:0 2px 0 0;
+	border-radius:2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	position:relative;
+}
+a span{
+	width:auto!important;
+}
+.cssButton:hover,
+.cssButtonHover {
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:12px;
+	line-height:18px;
+	text-transform:none;
+	color:#fff;
+	font-weight:bold;
+	text-decoration:none!important;
+	background:#242c62;
+	display:inline-block;
+	padding:1px 6px 3px 5px;
+	cursor:pointer!important;
+	margin:0 2px 0 0;
+	border-radius:2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	position:relative;
+}
+.navNextPrevWrapper a,
+.btn1 a{
+	text-decoration:none;
+}
+/* adding the styles below might be needed if the default button width is changed */
+/* .button_continue_shopping, .button_shipping_estimator {width: 150px;} */
+.small_delete, .button_prev, .button_next, .button_search  {}
+.button_sold_out_sm, .button_sold_out, .button_update_cart, .button_checkout, .button_login {}
+.button_return_to_product_list, .button_add_selected {}
+.button_in_cart{}  
+.button_submit {}
+.button_update_cart {}
+.button_update_cartHover {}
+/*.innerbox#headernavcenter .boxtext .button_search {display:inline;}*/
+
+/*---search-button---*/
+#head-search .cssButton.search{
+	width:27px!important;
+	height:26px!important;
+	border:none;
+	background:url(../images/search.gif) no-repeat 0 0;
+	font-size:0;
+	cursor:pointer;
+	float:left;
+	margin:0;
+}
+#head-search .cssButtonHover.search{
+	width:27px!important;
+	height:26px!important;
+	border:none;
+	background:url(../images/search.gif) no-repeat 0 bottom;
+	font-size:0;
+	cursor:pointer;
+	float:left;
+	margin:0;
+}

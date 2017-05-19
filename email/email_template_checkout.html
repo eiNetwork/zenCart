@@ -1,0 +1,46 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=$CHARSET" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="$BASE_HREF" />
+
+<style type="text/css">
+$EMAIL_COMMON_CSS
+</style>
+</head>
+
+<body id="checkout">
+<div class="holder">
+
+  <!-- Content Section -->
+  <div class="content">
+    <div class="content-line">
+      <div style="font-size:14px;font-weight:700">eiNetwork Equipment Order Confirmation</div><br>
+      <div style="font-size:10px">This is an electronic acknowledgement of your authorization of Library’s recent equipment order.  The <strong>attached document</strong> provides the 
+           <strong>Agreement Terms and Conditions</strong> that you have authorized for this order through the eiNetwork Online Equipment Ordering System.  This 
+           <strong>Agreement Terms and Conditions</strong>, and the <strong>Order Details</strong> below represent the full agreement between eiNetwork and the Library, 
+           and are legally binding.   <strong>Your online authorization of the order represents your Library’s acceptance of the Agreement Terms and Conditions (attached)
+           and Order Details (provided below).</strong>  You can print a copy of the Agreement Terms and Conditions and this email for your files.</div><br>
+      <div style="font-size:10px">Please contact <a href="mailto:Accountspayable@eiNetwork.net?Subject=Order%20$INTRO_ORDER_NUMBER" target="_top">Accountspayable@eiNetwork.net</a> immediately 
+           if you find any error or problems associated with this Order.  The order process closes on 2/24/2017, and any problems must be reported prior to this date.</div><br>  
+      <div style="font-size:14px;font-weight:700">Order Details:   </div><br>
+
+      $INTRO_ORDER_NUM_TITLE $INTRO_ORDER_NUMBER<br />
+      $INTRO_DATE_TITLE $INTRO_DATE_ORDERED<br />
+      <a href="$INTRO_URL_VALUE">$INTRO_URL_TEXT</a>
+  </div>
+  <div class="content-line"><strong>$PRODUCTS_TITLE</strong></div>
+    <div class="order-detail-area">$PRODUCTS_DETAIL</div>
+  <div class="order-detail-area">$ORDER_TOTALS</div>
+
+  <div class="comments">$ORDER_COMMENTS</div>
+
+  <!-- Footer Section -->
+  <div class="footer">
+    <div class="copyright">$EMAIL_FOOTER_COPYRIGHT</div>
+  </div>
+
+</div>
+$EXTRA_INFO
+</body>
+</html>
