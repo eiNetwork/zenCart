@@ -27,7 +27,7 @@ $orders_total = zen_count_customer_orders();
 
 if (true || $orders_total > 0) {
   $history_query_raw = "SELECT o.orders_id, o.date_purchased, o.delivery_name, o.customers_name, ab.address_book_id, ab.entry_company, 
-                               o.billing_name, ot.text as order_total, ot.value as order_value, s.orders_status_name
+                               o.billing_name, ot.title as order_title, ot.text as order_total, ot.value as order_value, s.orders_status_name
                         FROM   " . TABLE_ORDERS . " o 
                         JOIN   " . TABLE_ORDERS_TOTAL . " ot USING (orders_id) 
                         JOIN   " . TABLE_ORDERS_STATUS . " s ON (o.orders_status = s.orders_status_id)

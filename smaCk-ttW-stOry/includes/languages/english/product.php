@@ -91,12 +91,14 @@ define('TEXT_PRODUCTS_DESCRIPTION', 'Products Description:');
 define('TEXT_PRODUCTS_QUANTITY', 'Products Quantity:');
 define('TEXT_PRODUCTS_MODEL', 'Products Model:');
 define('TEXT_PRODUCTS_PART_NUMBER', 'Manufacturer Part Number:');
+define('TEXT_PRODUCTS_QUOTE_NUMBER', 'Quote Number:');
 define('TEXT_PRODUCTS_IMAGE', 'Products Image:');
 define('TEXT_PRODUCTS_IMAGE_DIR', 'Upload to directory:');
 define('TEXT_PRODUCTS_URL', 'Products URL:');
 define('TEXT_PRODUCTS_URL_WITHOUT_HTTP', '<small>(without http://)</small>');
 define('TEXT_PRODUCTS_PRICE_NET', 'Products Price (Net):');
 define('TEXT_PRODUCTS_PRICE_GROSS', 'Products Price (Gross):');
+define('TEXT_PRODUCTS_COST', 'Wholesale Cost:');
 define('TEXT_PRODUCTS_WEIGHT', 'Products Shipping Weight:');
 
 define('EMPTY_CATEGORY', 'Empty Category');

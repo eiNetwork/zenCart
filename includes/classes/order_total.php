@@ -70,6 +70,8 @@ class order_total extends base {
             $order_total_array[] = array('code' => $GLOBALS[$class]->code,
                                          'title' => $GLOBALS[$class]->output[$i]['title'],
                                          'text' => $GLOBALS[$class]->output[$i]['text'],
+                                         'RTItitle' => $GLOBALS[$class]->output[$i]['RTItitle'],
+                                         'RTItext' => $GLOBALS[$class]->output[$i]['RTItext'],
                                          'value' => $GLOBALS[$class]->output[$i]['value'],
                                          'sort_order' => $GLOBALS[$class]->sort_order);
           }

@@ -1,0 +1,79 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=$CHARSET" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="$BASE_HREF" />
+
+<style type="text/css">
+$EMAIL_COMMON_CSS
+</style>
+</head>
+
+<body id="checkout">
+<div class="holder">
+
+  <!-- Content Section -->
+  <div class="content">
+    <div class="content-line">
+      <div style="font-size:14px;font-weight:700">eiNetwork Equipment Order</div><br>
+      <div style="font-size:10px">This is a request to order the following equipment to be ordered from HP, apply eiNetwork image and factory finishing, and ship to the libray at the address listed below<br>
+      <div style="font-size:10px">Please contact <a href="mailto:Accountspayable@eiNetwork.net?Subject=Order%20$INTRO_ORDER_NUMBER" target="_top">Accountspayable@eiNetwork.net</a> immediately 
+           if you find any error or problems associated with this Order.</div><br>  
+      <div style="font-size:14px;font-weight:700">Order Details:   </div><br>
+
+      $INTRO_ORDER_NUM_TITLE $INTRO_ORDER_NUMBER<br />
+      $INTRO_DATE_TITLE $INTRO_DATE_ORDERED<br />
+
+  </div>
+  <div class="content-line"><strong>$PRODUCTS_TITLE</strong></div>
+    <div class="order-detail-area">$PRODUCTS_DETAIL</div>
+  <div class="order-detail-area">$ORDER_TOTALS</div>
+
+  <div class="comments">$ORDER_COMMENTS</div>
+
+ <div class="content-line"><strong>$HEADING_ADDRESS_INFORMATION</strong></div>
+  <div class="address-block">
+  <table border="0" width="100%" cellspacing="0" cellpadding="2">
+    <tr>
+    <td class="delivery-block">
+      <table border="0" width="100%" cellspacing="0" cellpadding="2">
+      <tr>
+        <td class="content-line-title"><strong>$ADDRESS_DELIVERY_TITLE</strong></td>
+      </tr>
+      <tr>
+        <td class="address">$ADDRESS_DELIVERY_DETAIL</td>
+      </tr>
+
+      <tr>
+        <td class="content-line-title"><strong>$SHIPPING_METHOD_TITLE</strong></td>
+      </tr>
+      <tr>
+        <td class="content-line">$SHIPPING_METHOD_DETAIL</td>
+      </tr>
+      </table>
+    </td>
+    <td class="billing-block">
+      <table border="0" width="100%" cellspacing="0" cellpadding="2">
+      <tr>
+        <td class="content-line-title">$ADDRESS_BILLING_TITLE</td>
+      </tr>
+      <tr>
+        <td class="address">eiNetwork</br>Attn: Accounts Payable</br>4400 Forbes Ave</br>Pittsburgh, PA  15213</td>
+      </tr>
+      </table>
+     </td>
+    </tr>
+  </table>
+ </div>
+</div>
+
+
+  <!-- Footer Section -->
+  <div class="footer">
+    <div class="copyright">$EMAIL_FOOTER_COPYRIGHT</div>
+  </div>
+
+</div>
+$EXTRA_INFO
+</body>
+</html>

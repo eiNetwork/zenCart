@@ -43,7 +43,7 @@
 
 <?php
     }
-    if ($addresses_count > 1) {
+    if ($addresses_count > 0) {
 ?>
 <?php echo zen_draw_form('checkout_address_book', zen_href_link(FILENAME_CHECKOUT_SHIPPING_ADDRESS, '', 'SSL'), 'post', 'class="group"'); ?>
 

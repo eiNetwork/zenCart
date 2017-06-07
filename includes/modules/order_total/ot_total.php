@@ -29,10 +29,24 @@
                                           $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
                                           $currencies->format($order->info['total'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
                                           $currencies->format($order->info['total'] * 3, true, $order->info['currency'], $order->info['currency_value']) . "<br />",
+                                'RTItitle' => '',
+                                'RTItext' => '',
+                                'value' => $order->info['total']);
+      } else if( $order->info['shipping_cost'] ) {
+        $this->output[] = array('title' => 'Sub-Total:<br />Shipping & Handling:<br />' . $this->title . ':',
+                                'text' => $currencies->format($order->info['total'] - $order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']) . "<br />",
+                                'RTItitle' => 'Sub-Total:<br />RTI Imaging Services:<br />' . $this->title . ':',
+                                'RTItext' => $currencies->format($order->info['cost'] - $order->info['RTI'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['RTI'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />",
                                 'value' => $order->info['total']);
       } else {
         $this->output[] = array('title' => $this->title . ':',
                                 'text' => $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']),
+                                'RTItitle' => '',
+                                'RTItext' => '',
                                 'value' => $order->info['total']);
       }
     }

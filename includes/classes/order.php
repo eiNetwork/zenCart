@@ -44,6 +44,35 @@ class order extends base {
     $this->notify('NOTIFY_ORDER_BEFORE_QUERY', array(), $order_id);
     if ($this->queryReturnFlag === TRUE) return;
 
+    
+/**    $order_query = "select o.customers_id, o.customers_name, o.customers_company,
+                         o.customers_street_address, o.customers_suburb, o.customers_city,
+                         o.customers_postcode, o.customers_state, o.customers_country,
+                         o.customers_telephone, o.customers_email_address, o.customers_address_format_id,
+                         delivery_name, customers_id, customers_name, customers_company,
+                         delivery_address_id,
+                         ab.entry_street_address as delivery_street_address, 
+                         ab.entry_suburb as delivery_suburb,
+                         ab.entry_city as delivery_city, 
+                         ab.entry_postcode as delivery_postcode, 
+                         ab.entry_state as delivery_state, 
+                         ab.entry_country_id as delivery_country,
+                         delivery_address_format_id, 
+                         ab.entry_company as billing_name, 
+                         ab.entry_company as billing_company,
+                         ab.entry_street_address as billing_street_address, 
+                         ab.entry_suburb as billing_suburb, 
+                         ab.entry_city as billing_city, 
+                         ab.entry_postcode as billing_postcode,
+                         ab.entry_state as billing_state, 
+                         ab.entry_country_id as billing_country, 
+                         o.billing_address_format_id,
+                         o.payment_method, o.payment_module_code, o.shipping_method, o.shipping_module_code,
+                         o.coupon_code, o.cc_type, o.cc_owner, o.cc_number, o.cc_expires, o.currency, o.currency_value,
+                         o.date_purchased, o.orders_status, o.last_modified, o.order_total, o.order_tax, o.ip_address, o.librarycode
+                         from orders o join address_book ab on ab.address_book_id = o.delivery_address_id
+                         where orders_id = '" . (int)$order_id . "'";
+**/
     $order_query = "select customers_id, customers_name, customers_company,
                          customers_street_address, customers_suburb, customers_city,
                          customers_postcode, customers_state, customers_country,
@@ -56,8 +85,8 @@ class order extends base {
                          payment_method, payment_module_code, shipping_method, shipping_module_code,
                          coupon_code, cc_type, cc_owner, cc_number, cc_expires, currency, currency_value,
                          date_purchased, orders_status, last_modified, order_total, order_tax, ip_address, librarycode
-                        from " . TABLE_ORDERS . "
-                        where orders_id = '" . (int)$order_id . "'";
+                         from " . TABLE_ORDERS . "
+                         where orders_id = '" . (int)$order_id . "'";
 
     $order = $db->Execute($order_query);
 
@@ -167,9 +196,9 @@ class order extends base {
                            'format_id' => $order->fields['billing_address_format_id']);
 
     $index = 0;
-    $orders_products_query = "select orders_products_id, products_id, products_name,
+    $orders_products_query = "select orders_products_id, products_id, products_name, mfg_part_number, quote_number,
                                  op.products_model, op.products_price, products_tax,
-                                 op.products_quantity, final_price,
+                                 op.products_quantity, final_price, op.products_cost,
                                  onetime_charges, pt.payment_freq, products_prid, 
                                  op.products_priced_by_attribute, op.product_is_free, op.products_discount_type,
                                  op.products_discount_type_from
@@ -181,6 +210,7 @@ class order extends base {
     $orders_products = $db->Execute($orders_products_query);
 
     while (!$orders_products->EOF) {
+    
       // convert quantity to proper decimals - account history
       if (QUANTITY_DECIMALS != 0) {
         $fix_qty = $orders_products->fields['products_quantity'];
@@ -207,9 +237,12 @@ class order extends base {
                                       'hashedid' => $orders_products->fields['products_prid'],
                                       'name' => $orders_products->fields['products_name'],
                                       'model' => $orders_products->fields['products_model'],
+                                      'part_number' => $orders_products->fields['mfg_part_number'],
+                                      'quote_number' => $orders_products->fields['quote_number'],
                                       'tax' => $orders_products->fields['products_tax'],
                                       'price' => $orders_products->fields['products_price'],
                                       'payment_freq' => $orders_products->fields['payment_freq'],
+                                      'wholesale_cost' => $orders_products->fields['products_cost'],
                                       'final_price' => $orders_products->fields['final_price'],
                                       'onetime_charges' => $orders_products->fields['onetime_charges'],
                                       'products_priced_by_attribute' => $orders_products->fields['products_priced_by_attribute'],
@@ -217,7 +250,13 @@ class order extends base {
                                       'products_discount_type' => $orders_products->fields['products_discount_type'],
                                       'products_discount_type_from' => $orders_products->fields['products_discount_type_from']);
 
+
+//echo "<pre>";
+//print_r($this->products[$index]);
+//echo "</pre>";  
+
       $subindex = 0;
+
       $attributes_query = "select products_options_id, products_options_values_id, products_options, products_options_values,
                               options_values_price, price_prefix from " . TABLE_ORDERS_PRODUCTS_ATTRIBUTES . "
                               join " . TABLE_PRODUCTS_OPTIONS . " using (products_options_id)
@@ -288,7 +327,10 @@ class order extends base {
 
     $customer_address = $db->Execute($customer_address_query);
 
-    $shipping_address_query = "select ab.entry_firstname, ab.entry_lastname, ab.entry_company,
+    $shipping_address_query = "select if(ab.customers_id=cu.customers_id, ab.entry_firstname, cu.customers_firstname) as entry_firstname, 
+                                    if(ab.customers_id=cu.customers_id, ab.entry_lastname, cu.customers_lastname) as entry_lastname,
+                                    cu.customers_email_address, 
+                                    ab.entry_company,
                                     ab.entry_street_address, ab.entry_suburb, ab.entry_postcode,
                                     ab.entry_city, ab.entry_zone_id, z.zone_name, ab.entry_country_id,
                                     c.countries_id, c.countries_name, c.countries_iso_code_2,
@@ -296,10 +338,14 @@ class order extends base {
                                    from " . TABLE_ADDRESS_BOOK . " ab
                                    left join " . TABLE_ZONES . " z on (ab.entry_zone_id = z.zone_id)
                                    left join " . TABLE_COUNTRIES . " c on (ab.entry_country_id = c.countries_id)
-                                   where ab.customers_id = '" . (int)$_SESSION['customer_id'] . "'
+                                   join " . TABLE_CUSTOMERS . " cu
+                                   where cu.customers_id = '" . (int)$_SESSION['customer_id'] . "'
                                    and ab.address_book_id = '" . (int)$_SESSION['sendto'] . "'";
 
     $shipping_address = $db->Execute($shipping_address_query);
+    //echo "<pre>customer id " . (isset($_SESSION['customer_id']) ? $_SESSION['customer_id'] : "") . "</br>";
+    //echo "address book " . (isset($_SESSION['sendto']) ? $_SESSION['sendto'] : "") . "</br></pre>";
+
 
     $billing_address_query = "select ab.entry_firstname, ab.entry_lastname, ab.entry_company,
                                    ab.entry_street_address, ab.entry_suburb, ab.entry_postcode,
@@ -388,9 +434,12 @@ class order extends base {
                         'shipping_module_code' => (isset($_SESSION['shipping']['id']) && strpos($_SESSION['shipping']['id'], '_') > 0 ? $_SESSION['shipping']['id'] : $_SESSION['shipping']),
                         'shipping_cost' => isset($_SESSION['shipping']['cost']) ? $_SESSION['shipping']['cost'] : 0,
                         'subtotal' => 0,
+                        'subcost' => 0,
                         'shipping_tax' => 0,
                         'tax' => 0,
                         'total' => 0,
+                        'RTI' => isset($_SESSION['shipping']['RTI']) ? $_SESSION['shipping']['RTI'] : 0,
+                        'cost' => 0,
                         'tax_groups' => array(),
                         'comments' => (isset($_SESSION['comments']) ? $_SESSION['comments'] : ''),
                         'ip_address' => $_SESSION['customers_ip_address'] . ' - ' . $_SERVER['REMOTE_ADDR']
@@ -490,11 +539,15 @@ class order extends base {
       $this->products[$index] = array('qty' => $products[$i]['quantity'],
                                       'name' => $products[$i]['name'],
                                       'model' => $products[$i]['model'],
+                                      'part_number' => $products[$i]['part_number'],
+                                      'quote_number' => $products[$i]['quote_number'],
                                       'tax_groups'=>$taxRates,
                                       'tax_description' => zen_get_tax_description($products[$i]['tax_class_id'], $taxCountryId, $taxZoneId),
                                       'price' => $products[$i]['price'],
+                                      'wholesale_cost' => zen_round($products[$i]['wholesale_cost'], $decimals),
                                       'final_price' => zen_round($products[$i]['price'] + $_SESSION['cart']->attributes_price($products[$i]['id']), $decimals),
                                       'onetime_charges' => $_SESSION['cart']->attributes_price_onetime_charges($products[$i]['id'], $products[$i]['quantity']),
+                                      'onetime_costs' => $_SESSION['cart']->attributes_cost_onetime_charges($products[$i]['id'], $products[$i]['quantity']),
                                       'weight' => $products[$i]['weight'],
                                       'products_priced_by_attribute' => $products[$i]['products_priced_by_attribute'],
                                       'product_is_free' => $products[$i]['product_is_free'],
@@ -503,6 +556,7 @@ class order extends base {
                                       'products_type' => $products[$i]['products_type'],
                                       'type_name' => $products[$i]['type_name'],
                                       'terms_link' => $products[$i]['terms_link'],
+                                      'vendor_email' => $products[$i]['vendor_email'],
                                       'payment_freq' => $products[$i]['payment_freq'],
                                       'num_payments' => $products[$i]['num_payments'],
                                       'id' => $products[$i]['id'],
@@ -582,6 +636,9 @@ class order extends base {
         $shown_price = (zen_add_tax($this->products[$index]['final_price'] * $this->products[$index]['qty'], $this->products[$index]['tax']))
         + zen_add_tax($this->products[$index]['onetime_charges'], $this->products[$index]['tax']);
         $this->info['subtotal'] += $shown_price;
+        $shown_cost = (zen_add_tax($this->products[$index]['wholesale_cost'] * $this->products[$index]['qty'], $this->products[$index]['tax']))
+        + zen_add_tax($this->products[$index]['onetime_costs'], $this->products[$index]['tax']);
+        $this->info['subcost'] += $shown_cost;
         $this->notify('NOTIFIY_ORDER_CART_SUBTOTAL_CALCULATE', array('shown_price'=>$shown_price));
         // find product's tax rate and description
         $products_tax = $this->products[$index]['tax'];
@@ -617,10 +674,11 @@ class order extends base {
 
     // Update the final total to include tax if not already tax-inc
     if (DISPLAY_PRICE_WITH_TAX == 'true') {
-      $this->info['total'] = $this->info['subtotal'];// + $this->info['shipping_cost'];
+      $this->info['total'] = $this->info['subtotal'] + $this->info['shipping_cost'];
     } else {
-      $this->info['total'] = $this->info['subtotal'];// + $this->info['tax'] + $this->info['shipping_cost'];
+      $this->info['total'] = $this->info['subtotal'] + $this->info['shipping_cost'];// + $this->info['tax'];
     }
+    $this->info['cost'] = $this->info['subcost'] + $this->info['RTI'];
 
 /*
 // moved to function create
@@ -726,6 +784,8 @@ class order extends base {
       $sql_data_array = array('orders_id' => $insert_id,
                               'title' => $zf_ot_modules[$i]['title'],
                               'text' => $zf_ot_modules[$i]['text'],
+                              'RTItitle' => $zf_ot_modules[$i]['RTItitle'],
+                              'RTItext' => $zf_ot_modules[$i]['RTItext'],
                               'value' => (is_numeric($zf_ot_modules[$i]['value'])) ? $zf_ot_modules[$i]['value'] : '0',
                               'class' => $zf_ot_modules[$i]['code'],
                               'sort_order' => $zf_ot_modules[$i]['sort_order']);
@@ -759,6 +819,9 @@ class order extends base {
     $this->products_ordered_html = '';
     $this->subtotal = 0;
     $this->total_tax = 0;
+
+    $this->costTotal = '';
+    $totalCost = 0;
 
     $orderYear = 2017;
 
@@ -842,6 +905,7 @@ class order extends base {
                               'products_name' => $this->products[$i]['name'],
                               'products_price' => $this->products[$i]['price'],
                               'final_price' => $this->products[$i]['final_price'],
+                              'products_cost' => $this->products[$i]['wholesale_cost'],
                               'onetime_charges' => $this->products[$i]['onetime_charges'],
                               'products_tax' => $this->products[$i]['tax'],
                               'products_quantity' => $this->products[$i]['qty'],
@@ -868,8 +932,8 @@ class order extends base {
         $attributes_exist = '1';
         for ($j=0, $n2=sizeof($this->products[$i]['attributes']); $j<$n2; $j++) {
           if (DOWNLOAD_ENABLED == 'true') {
-            $attributes_query = "select popt.products_options_name, poval.products_options_values_name,
-                                 pa.options_values_price, pa.price_prefix,
+            $attributes_query = "select popt.products_options_name, poval.products_options_values_name, poval.mfg_part_number,
+                                 pa.options_values_price, pa.price_prefix, pa.options_values_cost, pa.cost_prefix,
                                  pa.product_attribute_is_free, pa.products_attributes_weight, pa.products_attributes_weight_prefix,
                                  pa.attributes_discounted, pa.attributes_price_base_included, pa.attributes_price_onetime,
                                  pa.attributes_price_factor, pa.attributes_price_factor_offset,
@@ -892,8 +956,8 @@ class order extends base {
 
             $attributes_values = $db->Execute($attributes_query);
           } else {
-            $attributes_values = $db->Execute("select popt.products_options_name, poval.products_options_values_name,
-                                 pa.options_values_price, pa.price_prefix,
+            $attributes_values = $db->Execute("select popt.products_options_name, poval.products_options_values_name, poval.mfg_part_number,
+                                 pa.options_values_price, pa.price_prefix, pa.options_values_cost, pa.cost_prefix,
                                  pa.product_attribute_is_free, pa.products_attributes_weight, pa.products_attributes_weight_prefix,
                                  pa.attributes_discounted, pa.attributes_price_base_included, pa.attributes_price_onetime,
                                  pa.attributes_price_factor, pa.attributes_price_factor_offset,
@@ -914,6 +978,8 @@ class order extends base {
                                   'products_options_values' => $this->products[$i]['attributes'][$j]['value'],
                                   'options_values_price' => $attributes_values->fields['options_values_price'],
                                   'price_prefix' => $attributes_values->fields['price_prefix'],
+                                  'options_values_cost' => $attributes_values->fields['options_values_cost'],
+                                  'cost_prefix' => $attributes_values->fields['cost_prefix'],
                                   'product_attribute_is_free' => $attributes_values->fields['product_attribute_is_free'],
                                   'products_attributes_weight' => $attributes_values->fields['products_attributes_weight'],
                                   'products_attributes_weight_prefix' => $attributes_values->fields['products_attributes_weight_prefix'],
@@ -952,7 +1018,7 @@ class order extends base {
             $opd_insert_id = $db->insert_ID();
             $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_ATTRIBUTE_DOWNLOAD_LINE_ITEM', $sql_data_array, $opd_insert_id);
           }
-          $this->products_ordered_attributes .= "\n\t" . $attributes_values->fields['products_options_name'] . ' ' . zen_decode_specialchars($this->products[$i]['attributes'][$j]['value']);
+          $this->products_ordered_attributes .= "\n\t" . $attributes_values->fields['products_options_name'] . ' ' . zen_decode_specialchars($this->products[$i]['attributes'][$j]['value']) . (($attributes_values->fields['mfg_part_number'] != '') ? ("<RTIONLY> [" . $attributes_values->fields['mfg_part_number'] . "]</RTIONLY>") : "");
         }
       }
       //------eof: insert customer-chosen options ----
@@ -990,16 +1056,18 @@ class order extends base {
       $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) .
       ($this->products[$i]['onetime_charges'] !=0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($this->products[$i]['onetime_charges'], $this->products[$i]['tax'], 1) : '') .
       $this->products_ordered_attributes . "\n";
+      // product text for email confirmation - jlr
       $this->products_ordered_html .=
       '<tr>' . "\n" .
       '<td class="product-details" align="right" valign="top" width="30">' . $this->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
-      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . "\n" .
+      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['mfg_part_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['mfg_part_number'] . "]</RTIONLY>") : ""). (($this->products[$i]['quote_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['quote_number'] . "]</RTIONLY>") : "") . "\n" .
       '<nobr>' .
       '<small><em> '. nl2br($this->products_ordered_attributes) .'</em></small>' .
       '</nobr>' .
       '</td>' . "\n" .
       '<td class="product-details-num" valign="top" align="right">' .
-      $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], 1) .
+      '<EINONLY>' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], 1) . '</EINONLY>' .
+      '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], 1) . '</RTIONLY>' .
       '</td><td class="product-details-num" valign="top" align="right">' . 
       ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver"))
         ? ($orderYear . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
@@ -1007,7 +1075,8 @@ class order extends base {
            ($orderYear + 2) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . "<br>" .
            ($orderYear + 3) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
            "Total: " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 3)) 
-        : $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'])) .
+        : ('<EINONLY>' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . '</EINONLY>' .
+           '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], $this->products[$i]['qty']) . '</RTIONLY>')) .
       ($this->products[$i]['onetime_charges'] !=0 ?
       '</td></tr>' . "\n" . '<tr><td class="product-details">' . nl2br(TEXT_ONETIME_CHARGES_EMAIL) . '</td>' . "\n" .
       '<td>' . $currencies->display_price($this->products[$i]['onetime_charges'], $this->products[$i]['tax'], 1) : '') .
@@ -1040,6 +1109,8 @@ class order extends base {
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
+    $email_vendor = EMAIL_TEXT_VENDOR_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
+
     $this->customer['firstname'] . ' ' . $this->customer['lastname'] . "\n\n" .
     EMAIL_THANKS_FOR_SHOPPING . "\n" . EMAIL_DETAILS_FOLLOW . "\n" .
     EMAIL_SEPARATOR . "\n" .
@@ -1064,6 +1135,7 @@ class order extends base {
       $invoiceInfo=EMAIL_TEXT_INVOICE_URL . ' ' . zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, 'order_id=' . $zf_insert_id, 'SSL', false) . "\n\n";
       $htmlInvoiceURL=EMAIL_TEXT_INVOICE_URL_CLICK;
       $htmlInvoiceValue=zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, 'order_id=' . $zf_insert_id, 'SSL', false);
+      
       $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
       $this->customer['firstname'] . ' ' . $this->customer['lastname'] . "\n\n" .
       EMAIL_THANKS_FOR_SHOPPING . "\n" . EMAIL_DETAILS_FOLLOW . "\n" .
@@ -1071,6 +1143,15 @@ class order extends base {
       EMAIL_TEXT_ORDER_NUMBER . ' ' . $zf_insert_id . "\n" .
       EMAIL_TEXT_DATE_ORDERED . ' ' . strftime(DATE_FORMAT_LONG) . "\n" .
       EMAIL_TEXT_INVOICE_URL . ' ' . zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, 'order_id=' . $zf_insert_id, 'SSL', false) . "\n\n";
+
+      $email_vendor = EMAIL_TEXT_INVOICE_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
+      $this->customer['firstname'] . ' ' . $this->customer['lastname'] . "\n\n" .
+      EMAIL_THANKS_FOR_SHOPPING . "\n" . EMAIL_DETAILS_FOLLOW . "\n" .
+      EMAIL_SEPARATOR . "\n" .
+      EMAIL_TEXT_ORDER_NUMBER . ' ' . $zf_insert_id . "\n" .
+      EMAIL_TEXT_DATE_ORDERED . ' ' . strftime(DATE_FORMAT_LONG) . "\n" .
+      EMAIL_TEXT_INVOICE_URL . ' ' . zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, 'order_id=' . $zf_insert_id, 'SSL', false) . "\n\n";
+
 
     //comments area
     if ($this->info['comments']) {
@@ -1087,18 +1168,24 @@ class order extends base {
     EMAIL_SEPARATOR . "\n" .
     $this->products_ordered .
     EMAIL_SEPARATOR . "\n";
+
+    $email_vendor .= EMAIL_TEXT_PRODUCTS . "\n" .
+    EMAIL_SEPARATOR . "\n" .
+    $this->products_ordered .
+    EMAIL_SEPARATOR . "\n";
     $html_msg['PRODUCTS_TITLE'] = EMAIL_TEXT_PRODUCTS;
     $html_msg['PRODUCTS_DETAIL']='<table class="product-details" border="0" width="100%" cellspacing="0" cellpadding="2">' . $this->products_ordered_html . '</table>';
+
 
     //order totals area
     $html_ot = '<tr><td class="order-totals-text" align="right" width="100%">' . '&nbsp;' . '</td> ' . "\n" . '<td class="order-totals-num" align="right" nowrap="nowrap">' . '---------' .'</td> </tr>' . "\n";
     for ($i=0, $n=sizeof($order_totals); $i<$n; $i++) {
       $email_order .= strip_tags($order_totals[$i]['title']) . ' ' . strip_tags($order_totals[$i]['text']) . "\n";
-      $html_ot .= '<tr><td class="order-totals-text" align="right" width="100%">' . $order_totals[$i]['title'] . '</td> ' . "\n" . '<td class="order-totals-num" align="right" nowrap="nowrap">' .($order_totals[$i]['text']) .'</td> </tr>' . "\n";
+      $html_ot .= '<tr><td class="order-totals-text" align="right" width="100%"><EINONLY>' . $order_totals[$i]['title'] . '</EINONLY><RTIONLY>' . $order_totals[$i]['RTItitle'] . '</RTIONLY></td> ' . "\n" . '<td class="order-totals-num" align="right" nowrap="nowrap"><EINONLY>' . $order_totals[$i]['text']  . '</EINONLY><RTIONLY>' . $order_totals[$i]['RTItext'] . '</RTIONLY></td> </tr>' . "\n";
     }
     $html_msg['ORDER_TOTALS'] = '<table border="0" width="100%" cellspacing="0" cellpadding="2"> ' . $html_ot . ' </table>';
 
-    //addresses area: Delivery
+    //addresses area: aDelivery
     $html_msg['HEADING_ADDRESS_INFORMATION']= HEADING_ADDRESS_INFORMATION;
     $html_msg['ADDRESS_DELIVERY_TITLE']     = EMAIL_TEXT_DELIVERY_ADDRESS;
     $html_msg['ADDRESS_DELIVERY_DETAIL']    = ($this->content_type != 'virtual') ? zen_address_label($_SESSION['customer_id'], $_SESSION['sendto'], true, '', "<br />") : 'n/a';
@@ -1109,6 +1196,11 @@ class order extends base {
       $email_order .= "\n" . EMAIL_TEXT_DELIVERY_ADDRESS . "\n" .
       EMAIL_SEPARATOR . "\n" .
       zen_address_label($_SESSION['customer_id'], $_SESSION['sendto'], 0, '', "\n") . "\n";
+
+      $email_vendor .= "\n" . EMAIL_TEXT_DELIVERY_ADDRESS . "\n" .
+      EMAIL_SEPARATOR . "\n" .
+      zen_address_label($_SESSION['customer_id'], $_SESSION['sendto'], 0, '', "\n") . "\n";
+
     }
 
     //addresses area: Billing
@@ -1156,8 +1248,50 @@ class order extends base {
     $extra_info = email_collect_extra_info('', '', $this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address'], $libraryName);
     $html_msg['EXTRA_INFO'] = $extra_info['HTML'];
 
+    //echo "<pre> Email ";
+    //print_r($this->products);
+    //echo "</pre>";
+
     $this->notify('NOTIFY_ORDER_INVOICE_CONTENT_READY_TO_SEND', array('zf_insert_id' => $zf_insert_id, 'text_email' => $email_order, 'html_email' => $html_msg), $email_order, $html_msg);
-    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], "pattonb@einetwork.net"/*$this->customer['email_address']*/, EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
+
+    //order confirmation email
+    // clean out the RTI-only bits
+    $originalProductsText = $html_msg['PRODUCTS_DETAIL'];
+    $originalOrdersText = $html_msg['ORDER_TOTALS'];
+    $emailText = $originalProductsText;
+    while( ($start = strpos($emailText, "<RTIONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</RTIONLY>") + 10);
+    }
+    $emailText = str_replace("<EINONLY>", "", $emailText);
+    $emailText = str_replace("</EINONLY>", "", $emailText);
+    $html_msg['PRODUCTS_DETAIL'] = $emailText;
+    $emailText = $originalOrdersText;
+    while( ($start = strpos($emailText, "<RTIONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</RTIONLY>") + 10);
+    }
+    $emailText = str_replace("<EINONLY>", "", $emailText);
+    $emailText = str_replace("</EINONLY>", "", $emailText);
+    $html_msg['ORDER_TOTALS'] = $emailText;
+    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : "raynerj@einetwork.net")/*$this->customer['email_address']*/, EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
+
+    //place holder for order to RTI email
+    // clean out the customer-only bits
+    $emailText = $originalProductsText;
+    while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
+    }
+    $emailText = str_replace("<RTIONLY>", "", $emailText);
+    $emailText = str_replace("</RTIONLY>", "", $emailText);
+    $html_msg['PRODUCTS_DETAIL'] = $emailText;
+    $emailText = $originalOrdersText;
+    while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
+    }
+    $emailText = str_replace("<RTIONLY>", "", $emailText);
+    $emailText = str_replace("</RTIONLY>", "", $emailText);
+    $html_msg['ORDER_TOTALS'] = $emailText;
+    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
+
 
     // send additional emails
     if (false && SEND_EXTRA_ORDER_EMAILS_TO != '') {
@@ -1201,8 +1335,12 @@ class order extends base {
     // make an array to store the html version
     $html_msg=array();
 
-    // add the attachment
-    $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    // add the attachment - production
+    //$this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    // add the attachment - development 
+    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
+    // add the attachment - development 
+    $this->attachArray = array( array('file' => DIR_FS_CATALOG . $this->products[0]['terms_link']) );
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
@@ -1375,6 +1513,8 @@ require(DIR_WS_CLASSES . 'order_total.php');
                               'products_id' => zen_get_prid($this->products[$i]['id']),
                               'products_model' => $this->products[$i]['model'],
                               'products_name' => $this->products[$i]['name'],
+                              'mfg_part_number' => $this->products[$i]['part_number'],
+                              'quote_number' => $this->products[$i]['quote_number'],
                               'products_price' => $this->products[$i]['price'],
                               'final_price' => $this->products[$i]['final_price'],
                               'onetime_charges' => $this->products[$i]['onetime_charges'],
@@ -1532,7 +1672,7 @@ require(DIR_WS_CLASSES . 'order_total.php');
       $this->products_ordered_html .=
       '<tr>' . "\n" .
       '<td class="product-details" align="right" valign="top" width="30">' . $this->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
-      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . "\n" .
+      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['mfg_part_number'] != '')? ("<RTIONLY> [" . $this->products[$i]['mfg_part_number']. "]</RTIONLY>") : "") . "\n" .
       '<nobr>' .
       '<small><em> '. nl2br($this->products_ordered_attributes) .'</em></small>' .
       '</nobr>' .

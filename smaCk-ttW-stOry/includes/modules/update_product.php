@@ -20,6 +20,8 @@
     $products_quantity = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_price']);
     $products_price = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
+    $tmp_value = zen_db_prepare_input($_POST['products_cost']);
+    $products_cost = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_weight']);
     $products_weight = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['manufacturers_id']);
@@ -29,7 +31,9 @@
                             'products_type' => zen_db_prepare_input($_GET['product_type']),
                             'products_model' => zen_db_prepare_input($_POST['products_model']),
                             'mfg_part_number' => zen_db_prepare_input($_POST['mfg_part_number']),
+                            'quote_number' => zen_db_prepare_input($_POST['quote_number']),
                             'products_price' => $products_price,
+                            'products_cost' => $products_cost,
                             'products_date_available' => $products_date_available,
                             'products_weight' => $products_weight,
                             'products_status' => zen_db_prepare_input((int)$_POST['products_status']),

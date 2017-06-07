@@ -160,7 +160,6 @@ define('FILENAME_STATS_PRODUCTS_LOWSTOCK', 'stats_products_lowstock');
 define('FILENAME_STATS_VENDOR_ORDER', 'stats_vendor_order');
 define('FILENAME_STATS_INSTALL_PLANNING', 'stats_install_planning');
 define('FILENAME_STATS_LIBRARY_SYSTEM', 'stats_library_system');
-define('FILENAME_STATS_INVOICE', 'stats_invoice');
 define('FILENAME_STATS_TEST', 'stats_test');
 define('FILENAME_STORE_MANAGER', 'store_manager');
 define('FILENAME_TAX_CLASSES', 'tax_classes');

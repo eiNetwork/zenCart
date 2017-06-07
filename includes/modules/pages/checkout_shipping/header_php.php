@@ -52,7 +52,9 @@
 
 // if no shipping destination address was selected, use the customers own address as default
   if (!$_SESSION['sendto']) {
-    $_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
+    $_SESSION['sendto'] = $_SESSION["selected_address_id"];
+    //$_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
+/*
   } else {
 // verify the selected shipping address
     $check_address_query = "SELECT count(*) AS total
@@ -68,6 +70,7 @@
       $_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
       unset($_SESSION['shipping']);
     }
+*/
   }
 
   require(DIR_WS_CLASSES . 'order.php');
@@ -167,9 +170,10 @@ if (isset($_SESSION['cart']->cartID)) {
             if ( (isset($quote[0]['methods'][0]['title'])) && (isset($quote[0]['methods'][0]['cost'])) ) {
               $_SESSION['shipping'] = array('id' => $_POST['shipping'],
                                 'title' => (($free_shipping == true) ?  $quote[0]['methods'][0]['title'] : $quote[0]['module'] . ' (' . $quote[0]['methods'][0]['title'] . ')'),
+                                'RTI' => $quote[0]['methods'][0]['RTI'],
                                 'cost' => $quote[0]['methods'][0]['cost']);
-
-              zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
+              zen_redirect( zen_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL') . '&conditions=1&payment_freq=' . $_POST["payment_freq"] . (($_SESSION['selectedCartID'] == MASTER_CART) ? ('&cart_id=' . $_POST["cart_id"]) : ''));
+              //zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
             }
           }
         } else {

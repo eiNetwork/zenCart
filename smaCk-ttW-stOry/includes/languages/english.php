@@ -167,7 +167,6 @@ define('BOX_REPORTS_CUSTOMERS_REFERRALS', 'Customers Referral');
 define('BOX_REPORTS_VENDOR_ORDER', 'Vendor Order');
 define('BOX_REPORTS_INSTALL_PLANNING', 'Install Planning');
 define('BOX_REPORTS_LIBRARY_SYSTEM', 'Library System');
-define('BOX_REPORTS_INVOICE', 'Invoices');
 define('BOX_REPORTS_TEST', 'Test');
 
 // tools text

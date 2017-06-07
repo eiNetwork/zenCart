@@ -57,18 +57,21 @@
         break;
       case 'add_product_option_values':
         $value_name_array = $_POST['value_name'];
+        $part_number_array = $_POST['mfg_part_number'];
         $value_id = zen_db_prepare_input($_POST['value_id']);
         $option_id = zen_db_prepare_input($_POST['option_id']);
         $products_options_values_sort_order = zen_db_prepare_input($_POST['products_options_values_sort_order']);
 
         for ($i=0, $n=sizeof($languages); $i<$n; $i ++) {
           $value_name = zen_db_prepare_input($value_name_array[$languages[$i]['id']]);
+          $part_number = zen_db_prepare_input($part_number_array[$languages[$i]['id']]);
 
           $db->Execute("insert into " . TABLE_PRODUCTS_OPTIONS_VALUES . "
-                      (products_options_values_id, language_id, products_options_values_name, products_options_values_sort_order)
+                      (products_options_values_id, language_id, products_options_values_name, mfg_part_number, products_options_values_sort_order)
                       values ('" . (int)$value_id . "',
                               '" . (int)$languages[$i]['id'] . "',
                               '" . zen_db_input($value_name) . "',
+                              '" . zen_db_input($part_number) . "',
                               '" . (int)$products_options_values_sort_order . "')");
         }
 
@@ -106,15 +109,17 @@
         break;
       case 'update_value':
         $value_name_array = $_POST['value_name'];
+        $part_number_array = $_POST['mfg_part_number'];
         $value_id = zen_db_prepare_input($_POST['value_id']);
         $option_id = zen_db_prepare_input($_POST['option_id']);
         $products_options_values_sort_order = zen_db_prepare_input($_POST['products_options_values_sort_order']);
 
         for ($i=0, $n=sizeof($languages); $i<$n; $i ++) {
           $value_name = zen_db_prepare_input($value_name_array[$languages[$i]['id']]);
+          $part_number = zen_db_prepare_input($part_number_array[$languages[$i]['id']]);
 
           $db->Execute("update " . TABLE_PRODUCTS_OPTIONS_VALUES . "
-                        set products_options_values_name = '" . zen_db_input($value_name) . "', products_options_values_sort_order = '" . (int)$products_options_values_sort_order . "'
+                        set products_options_values_name = '" . zen_db_input($value_name) . "', products_options_values_sort_order = '" . (int)$products_options_values_sort_order . "', mfg_part_number = '" . zen_db_input($part_number) . "'
                         where products_options_values_id = '" . zen_db_input($value_id) . "'
                         and language_id = '" . (int)$languages[$i]['id'] . "'");
 
@@ -576,7 +581,7 @@ function go_option() {
                 <td colspan="4"><?php echo zen_black_line(); ?></td>
               </tr>
 <?php
-    $products_values = $db->Execute("select p.products_id, pd.products_name, po.products_options_name, pa.options_id
+    $products_values = $db->Execute("select p.products_id, pd.products_name, po.products_options_name, pa.options_id, po.mfg_part_number
                               from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_ATTRIBUTES . " pa, "
                                      . TABLE_PRODUCTS_OPTIONS . " po, " . TABLE_PRODUCTS_DESCRIPTION . " pd
                               where pd.products_id = p.products_id
@@ -655,7 +660,7 @@ function go_option() {
                 <td colspan="5" class="smallText">
 <?php
 //    $values = "select pov.products_options_values_id, pov.products_options_values_name, pov2po.products_options_id, pov.products_options_values_sort_order from " . TABLE_PRODUCTS_OPTIONS_VALUES . " pov left join " . TABLE_PRODUCTS_OPTIONS_VALUES_TO_PRODUCTS_OPTIONS . " pov2po on pov.products_options_values_id = pov2po.products_options_values_id where pov.language_id = '" . (int)$_SESSION['languages_id'] . "' and pov2po.products_options_values_id !='" . PRODUCTS_OPTIONS_VALUES_TEXT_ID . "' order by LPAD(pov2po.products_options_id,11,'0'), LPAD(pov.products_options_values_sort_order,11,'0'), pov.products_options_values_name";
-    $values = "select pov.products_options_values_id, pov.products_options_values_name, pov2po.products_options_id, pov.products_options_values_sort_order from " . TABLE_PRODUCTS_OPTIONS_VALUES . " pov left join " . TABLE_PRODUCTS_OPTIONS_VALUES_TO_PRODUCTS_OPTIONS . " pov2po on pov.products_options_values_id = pov2po.products_options_values_id     left join " . TABLE_PRODUCTS_OPTIONS . " po on pov2po.products_options_id = po.products_options_id where pov.language_id = '" . (int)$_SESSION['languages_id'] . "' and po.language_id = '" . (int)$_SESSION['languages_id'] . "' and po.language_id = pov.language_id and pov2po.products_options_values_id !='" . PRODUCTS_OPTIONS_VALUES_TEXT_ID . "' order by  po.products_options_name, LPAD(pov.products_options_values_sort_order,11,'0'), pov.products_options_values_name";
+    $values = "select pov.products_options_values_id, pov.products_options_values_name, pov.mfg_part_number, pov2po.products_options_id, pov.products_options_values_sort_order from " . TABLE_PRODUCTS_OPTIONS_VALUES . " pov left join " . TABLE_PRODUCTS_OPTIONS_VALUES_TO_PRODUCTS_OPTIONS . " pov2po on pov.products_options_values_id = pov2po.products_options_values_id     left join " . TABLE_PRODUCTS_OPTIONS . " po on pov2po.products_options_id = po.products_options_id where pov.language_id = '" . (int)$_SESSION['languages_id'] . "' and po.language_id = '" . (int)$_SESSION['languages_id'] . "' and po.language_id = pov.language_id and pov2po.products_options_values_id !='" . PRODUCTS_OPTIONS_VALUES_TEXT_ID . "' order by  po.products_options_name, LPAD(pov.products_options_values_sort_order,11,'0'), pov.products_options_values_name";
     if (!isset($_GET['value_page'])) {
       $_GET['value_page'] = 1;
     }
@@ -709,6 +714,7 @@ function go_option() {
                 <td class="dataTableHeadingContent">&nbsp;<?php echo TABLE_HEADING_ID; ?>&nbsp;</td>
                 <td class="dataTableHeadingContent">&nbsp;<?php echo TABLE_HEADING_OPT_NAME; ?>&nbsp;</td>
                 <td class="dataTableHeadingContent">&nbsp;<?php echo TABLE_HEADING_OPT_VALUE; ?>&nbsp;</td>
+                <td class="dataTableHeadingContent">&nbsp;<?php echo TABLE_HEADING_OPT_PART_NUMBER; ?>&nbsp;</td>
                 <td class="dataTableHeadingContent" align="right">&nbsp;<?php echo TABLE_HEADING_OPTION_VALUE_SORT_ORDER; ?></td>
                 <td class="dataTableHeadingContent" align="center">&nbsp;<?php echo TABLE_HEADING_ACTION; ?>&nbsp;</td>
               </tr>
@@ -728,6 +734,7 @@ function go_option() {
       $option_id = $values_values->fields['products_options_id'];
 
       $values_name = $values_values->fields['products_options_values_name'];
+      $part_number = $values_values->fields['mfg_part_number'];
       $products_options_values_sort_order = $values_values->fields['products_options_values_sort_order'];
       $rows++;
 ?>
@@ -744,6 +751,13 @@ function go_option() {
                                       from " . TABLE_PRODUCTS_OPTIONS_VALUES . "
                                       where products_options_values_id = '" . (int)$values_values->fields['products_options_values_id'] . "' and language_id = '" . (int)$languages[$i]['id'] . "'");
           $inputs .= $languages[$i]['code'] . ':&nbsp;<input type="text" name="value_name[' . $languages[$i]['id'] . ']" ' . zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'products_options_values_name', 50) . ' value="' . zen_output_string($value_name->fields['products_options_values_name']) . '">&nbsp;<br />';
+        }
+        $inputs3 = '';
+        for ($i = 0, $n = sizeof($languages); $i < $n; $i ++) {
+          $value_name = $db->Execute("select mfg_part_number
+                                      from " . TABLE_PRODUCTS_OPTIONS_VALUES . "
+                                      where products_options_values_id = '" . (int)$values_values->fields['products_options_values_id'] . "' and language_id = '" . (int)$languages[$i]['id'] . "'");
+          $inputs3 .= $languages[$i]['code'] . ':&nbsp;<input type="text" name="mfg_part_number[' . $languages[$i]['id'] . ']" ' . zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'mfg_part_number', 50) . ' value="' . zen_output_string($value_name->fields['mfg_part_number']) . '">&nbsp;<br />';
         }
           $products_options_values_sort_order = $db->Execute("select distinct products_options_values_sort_order from " . TABLE_PRODUCTS_OPTIONS_VALUES . " where products_options_values_id = '" . (int)$values_values->fields['products_options_values_id'] . "'");
           $inputs2 .= '&nbsp;<input type="text" name="products_options_values_sort_order" size="4" value="' . $products_options_values_sort_order->fields['products_options_values_sort_order'] . '">&nbsp;';
@@ -767,6 +781,7 @@ function go_option() {
 ?>
                 </select>&nbsp;</td>
                 <td height="50" class="attributeBoxContent"><?php echo $inputs; ?></td>
+                <td height="50" class="attributeBoxContent"><?php echo $inputs3; ?></td>
                 <td class="attributeBoxContent" align="right"><?php echo $inputs2; ?></td>
                 <td align="center" class="attributeBoxContent">&nbsp;<?php echo zen_image_submit('button_update.gif', IMAGE_UPDATE); ?>&nbsp;<?php echo '<a href="' . zen_href_link(FILENAME_OPTIONS_VALUES_MANAGER, (isset($_GET['option_page']) ? '&option_page=' . $_GET['option_page'] . '&' : '') . (isset($_GET['value_page']) ? '&value_page=' . $_GET['value_page'] . '&' : '') . (isset($_GET['attribute_page']) ? '&attribute_page=' . $_GET['attribute_page'] : '') ) . '">'; ?><?php echo zen_image_button('button_cancel.gif', IMAGE_CANCEL); ?></a>&nbsp;</td>
 <?php
@@ -779,6 +794,7 @@ function go_option() {
                 <td align="center" class="smallText">&nbsp;<?php echo $values_values->fields["products_options_values_id"]; ?>&nbsp;</td>
                 <td align="center" class="smallText">&nbsp;<?php echo $options_name; ?>&nbsp;</td>
                 <td class="smallText">&nbsp;<?php echo $values_name; ?>&nbsp;</td>
+                <td class="smallText">&nbsp;<?php echo $part_number; ?>&nbsp;</td>
                 <td class="smallText" align="right"><?php echo $values_values->fields['products_options_values_sort_order']; ?></td>
 <?php
 // hide buttons when editing
@@ -829,14 +845,19 @@ function go_option() {
       }
 
       $inputs = '';
+      $inputs3 = '';
       $inputs2 = '';
       for ($i = 0, $n = sizeof($languages); $i < $n; $i ++) {
         $inputs .= $languages[$i]['code'] . ':&nbsp;<input type="text" name="value_name[' . $languages[$i]['id'] . ']" ' . zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'products_options_values_name', 50) . '>&nbsp;<br />';
+      }
+      for ($i = 0, $n = sizeof($languages); $i < $n; $i ++) {
+        $inputs3 .= $languages[$i]['code'] . ':&nbsp;<input type="text" name="mfg_part_number[' . $languages[$i]['id'] . ']" ' . zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'mfg_part_number', 50) . '>&nbsp;<br />';
       }
         $inputs2 .= TEXT_SORT . '<input type="text" name="products_options_values_sort_order" size="4">&nbsp;';
 ?>
                 </select>&nbsp;</td>
                 <td class="smallText"><input type="hidden" name="value_id" value="<?php echo $next_id; ?>"><?php echo $inputs; ?></td>
+                <td class="smallText"><input type="hidden" name="value_id" value="<?php echo $next_id; ?>"><?php echo $inputs3; ?></td>
                 <td colspan="1" class="smallText"><input type="hidden" name="value_id" value="<?php echo $next_id; ?>"><?php echo $inputs2; ?></td>
                 <td align="center" class="smallText">&nbsp;<?php echo zen_image_submit('button_insert.gif', IMAGE_INSERT); ?>&nbsp;</td>
 <?php

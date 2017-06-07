@@ -39,14 +39,18 @@
     <div class="content">
 <?php
       echo '<strong>' . TEXT_ORDER_PRODUCTS . '</strong> ' . $history['product_count'] . '<br />';
-      echo ((strpos($history['order_total'], "<br />") !== false) 
-        ? ("<table style='display:inline-table'><tr><td><strong>" . $orderYear . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 0.5) . "</td></tr>" . 
-           "<tr><td><strong>" . ($orderYear + 1) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 1) . "</td></tr>" . 
-           "<tr><td><strong>" . ($orderYear + 2) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 1) . "</td></tr>" . 
-           "<tr><td><strong>" . ($orderYear + 3) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 0.5) . "</td></tr>" . 
-           "<tr><td><strong>Total:</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 3) . "</td></tr>" . 
-           "</table>")
-        : ('<strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags($history['order_total']))); 
+      if( strpos($history['order_title'], "Shipping") !== false ) {
+        echo '<strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags(substr($history['order_total'], strrpos($history['order_total'], "<br />", -7))); 
+      } else {
+        echo ((strpos($history['order_total'], "<br />") !== false)
+          ? ("<table style='display:inline-table'><tr><td><strong>" . $orderYear . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 0.5) . "</td></tr>" . 
+             "<tr><td><strong>" . ($orderYear + 1) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 1) . "</td></tr>" . 
+             "<tr><td><strong>" . ($orderYear + 2) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 1) . "</td></tr>" . 
+             "<tr><td><strong>" . ($orderYear + 3) . ":</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 0.5) . "</td></tr>" . 
+             "<tr><td><strong>Total:</strong></td><td>" . $currencies->display_price($history['order_value'], 0, 3) . "</td></tr>" . 
+             "</table>")
+          : ('<strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags($history['order_total']))); 
+      }
 ?></div>
     <div class="content forward"><?php echo '<a href="' . zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, (isset($_GET['page']) ? 'page=' . $_GET['page'] . '&' : '') . 'order_id=' . $history['orders_id'], 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_VIEW_SMALL, BUTTON_VIEW_SMALL_ALT) . '</a>'; ?></div>
 <br class="clearBoth" />

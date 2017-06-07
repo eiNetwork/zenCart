@@ -258,7 +258,10 @@
     and acknowledge that submitting this order will result in a binding contract subject to the Terms and Conditions.
   </span><br><br>
   <div class="btn1">
+<!--
     <a href="<?php echo zen_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL') . '&conditions=1&payment_freq=onetime' . (($_SESSION['selectedCartID'] == MASTER_CART) ? ('&cart_id=' . $key) : ''); ?>" onclick="alert('You must accept the terms and conditions.'); return false;">
+-->
+    <a href="<?php echo zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL') . '&payment_freq=onetime'; ?>" onclick="alert('You must accept the terms and conditions.'); return false;">
     <?php echo zen_image_button(BUTTON_IMAGE_CHECKOUT, BUTTON_CHECKOUT_ALT); ?>
     </a>
   </div>

@@ -16,8 +16,10 @@ if (!defined('IS_ADMIN_FLAG')) {
                        'products_quantity' => '',
                        'products_model' => '',
                        'mfg_part_number' => '',
+                       'quote_number' => '',
                        'products_image' => '',
                        'products_price' => '',
+                       'products_cost' => '',
                        'products_virtual' => DEFAULT_PRODUCT_PRODUCTS_VIRTUAL,
                        'products_weight' => '',
                        'products_date_added' => '',
@@ -46,8 +48,8 @@ if (!defined('IS_ADMIN_FLAG')) {
 
     if (isset($_GET['pID']) && empty($_POST)) {
       $product = $db->Execute("select pd.products_name, pd.products_description, pd.products_url,
-                                      p.products_id, p.products_quantity, p.products_model, p.mfg_part_number, 
-                                      p.products_image, p.products_price, p.products_virtual, p.products_weight,
+                                      p.products_id, p.products_quantity, p.products_model, p.mfg_part_number, p.quote_number, 
+                                      p.products_image, p.products_price, p.products_cost, p.products_virtual, p.products_weight,
                                       p.products_date_added, p.products_last_modified,
                                       date_format(p.products_date_available, '%Y-%m-%d') as
                                       products_date_available, p.products_status, p.products_tax_class_id,
@@ -348,6 +350,11 @@ echo zen_draw_hidden_field('products_price_sorter', $pInfo->products_price_sorte
             <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_price_gross', $pInfo->products_price, 'OnKeyUp="updateNet()"'); ?></td>
           </tr>
           <tr>
+          <tr bgcolor="#ebebff">
+            <td class="main"><?php echo TEXT_PRODUCTS_COST; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_cost', $pInfo->products_cost); ?></td>
+          </tr>
+          <tr>
             <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>
           </tr>
           <tr>
@@ -434,6 +441,10 @@ updateGross();
           <tr>
             <td class="main"><?php echo TEXT_PRODUCTS_PART_NUMBER; ?></td>
             <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('mfg_part_number', htmlspecialchars(stripslashes($pInfo->mfg_part_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'mfg_part_number')); ?></td>
+          </tr>
+          <tr>
+            <td class="main"><?php echo TEXT_PRODUCTS_QUOTE_NUMBER; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('quote_number', htmlspecialchars(stripslashes($pInfo->quote_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'quote_number')); ?></td>
           </tr>
           <tr>
             <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>

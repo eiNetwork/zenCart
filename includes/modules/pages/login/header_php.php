@@ -77,8 +77,6 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
       ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
       ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
       $loginAuthorized = @ldap_bind($ldap, $email_address, $password);      
-        //echo "login authorized $loginAuthorized";
-
       /*** REPLACED DATABASE CHECK WITH LDAP ***/
 
       $zco_notifier->notify('NOTIFY_PROCESS_3RD_PARTY_LOGINS', $email_address, $password, $loginAuthorized);
@@ -91,7 +89,6 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
         $ldap_dn = "DC=einetwork,DC=net";
         $results = ldap_search($ldap, $ldap_dn,"(|(mail=$email_address)(mail=$CLP_email_address))",array("givenName","sn","memberOf"));
 	$entries = ldap_get_entries($ldap, $results);
-//echo "<!--" . count($entries) . "-->";
 
         // if they don't exist, create them
         if (!$check_customer->RecordCount()) {

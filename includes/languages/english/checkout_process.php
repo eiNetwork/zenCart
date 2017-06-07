@@ -21,7 +21,9 @@
 //
 
 define('EMAIL_TEXT_SUBJECT', 'Order Confirmation');
+define('EMAIL_TEXT_VENDOR_SUBJECT', 'eiNetwork PC Order');
 define('EMAIL_TEXT_HEADER', 'Order Confirmation');
+define('EMAIL_TEXT_VENDOR_HEADER', 'eiNetwork PC Order');
 define('EMAIL_TEXT_FROM',' from ');  //added to the EMAIL_TEXT_HEADER, above on text-only emails
 define('EMAIL_THANKS_FOR_SHOPPING','');
 define('EMAIL_DETAILS_FOLLOW','The following are the details of your order.');
