@@ -136,6 +136,10 @@ function check_form(form_name) {
 <?php if ((int)ENTRY_LAST_NAME_MIN_LENGTH > 0) { ?>
   check_input("lastname", <?php echo (int)ENTRY_LAST_NAME_MIN_LENGTH; ?>, "<?php echo ENTRY_LAST_NAME_ERROR; ?>");
 <?php } ?>
+<?php if ((int)ENTRY_EMAIL_MIN_LENGTH > 0) { ?>
+  check_input("email", <?php echo (int)ENTRY_EMAIL_MIN_LENGTH; ?>, "<?php echo ENTRY_EMAIL_ERROR; ?>");
+<?php } ?>
+
 
 <?php if (ACCOUNT_DOB == 'true' && (int)ENTRY_DOB_MIN_LENGTH != 0) echo '  check_input("dob", ' . (int)ENTRY_DOB_MIN_LENGTH . ', "' . ENTRY_DATE_OF_BIRTH_ERROR . '");' . "\n"; ?>
 <?php if (ACCOUNT_COMPANY == 'true' && (int)ENTRY_COMPANY_MIN_LENGTH != 0) echo '  check_input("company", ' . (int)ENTRY_COMPANY_MIN_LENGTH . ', "' . ENTRY_COMPANY_ERROR . '");' . "\n"; ?>

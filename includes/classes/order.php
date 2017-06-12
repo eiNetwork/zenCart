@@ -488,6 +488,7 @@ class order extends base {
 
     $this->delivery = array('firstname' => $shipping_address->fields['entry_firstname'],
                             'lastname' => $shipping_address->fields['entry_lastname'],
+                            'email' => $shipping_address->fields['customers_email_address'],
                             'company' => $shipping_address->fields['entry_company'],
                             'address_book_id' => $cart_info->fields['address_book_id'],
                             'librarycode' => $cart_info->fields['librarycode'],

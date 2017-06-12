@@ -48,6 +48,7 @@
       $firstname = '';
       $lastname = '';
     }
+    $email = zen_output_string_protected($address['email']);
     $street = zen_output_string_protected($address['street_address']);
     $suburb = zen_output_string_protected($address['suburb']);
     $city = zen_output_string_protected($address['city']);
@@ -118,7 +119,8 @@
   function zen_address_label($customers_id, $address_id = 1, $html = false, $boln = '', $eoln = "\n") {
     global $db;
     $address_query = "select if(ab.customers_id=c.customers_id, ab.entry_firstname, c.customers_firstname) as firstname, 
-                             if(ab.customers_id=c.customers_id, ab.entry_lastname, c.customers_lastname) as lastname,
+                             if(ab.customers_id=c.customers_id, ab.entry_lastname, c.customers_lastname) as lastname, 
+                             if(ab.customers_id=c.customers_id, '', c.customers_email_address) as email,
                              entry_company as company, entry_street_address as street_address,
                              entry_suburb as suburb, entry_city as city, entry_postcode as postcode,
                              entry_state as state, entry_zone_id as zone_id,
