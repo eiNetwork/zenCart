@@ -1295,7 +1295,7 @@ class order extends base {
 
 
     // send additional emails
-    if (false && SEND_EXTRA_ORDER_EMAILS_TO != '') {
+    if (SEND_EXTRA_ORDER_EMAILS_TO != '') {
       // include authcode and transaction id in admin-copy of email
       if ($GLOBALS[$_SESSION['payment']]->auth_code || $GLOBALS[$_SESSION['payment']]->transaction_id) {
         $pmt_details = ($GLOBALS[$_SESSION['payment']]->auth_code != '' ? 'AuthCode: ' . $GLOBALS[$_SESSION['payment']]->auth_code . '  ' : '') . ($GLOBALS[$_SESSION['payment']]->transaction_id != '' ?  'TransID: ' . $GLOBALS[$_SESSION['payment']]->transaction_id : '') . "\n\n";
