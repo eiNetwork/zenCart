@@ -34,10 +34,6 @@
 <?php echo zen_draw_input_field('lastname', '', zen_set_field_length(TABLE_CUSTOMERS, 'customers_lastname', '40') . ' id="lastname" placeholder="' . ENTRY_LAST_NAME_TEXT . '"' . ((int)ENTRY_LAST_NAME_MIN_LENGTH > 0 ? ' required' : '')); ?>
 <br class="clearBoth" />
 
-<label class="inputLabel" for="email"><?php echo ENTRY_EMAIL; ?></label>
-<?php echo zen_draw_input_field('email', '', zen_set_field_length(TABLE_CUSTOMERS, 'customers_email_address', '40') . ' id="email" placeholder="' .ENTRY_EMAIL_TEXT . '"' . ((int)ENTRY_EMAIL_MIN_LENGTH > 0 ? ' required' : '')); ?>
-<br class="clearBoth" />
-
 
 <?php
   if (ACCOUNT_COMPANY == 'true') {

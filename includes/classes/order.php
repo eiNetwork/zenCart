@@ -488,7 +488,6 @@ class order extends base {
 
     $this->delivery = array('firstname' => $shipping_address->fields['entry_firstname'],
                             'lastname' => $shipping_address->fields['entry_lastname'],
-                            'email' => $shipping_address->fields['customers_email_address'],
                             'company' => $shipping_address->fields['entry_company'],
                             'address_book_id' => $cart_info->fields['address_book_id'],
                             'librarycode' => $cart_info->fields['librarycode'],
@@ -1273,7 +1272,8 @@ class order extends base {
     $emailText = str_replace("<EINONLY>", "", $emailText);
     $emailText = str_replace("</EINONLY>", "", $emailText);
     $html_msg['ORDER_TOTALS'] = $emailText;
-    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : "raynerj@einetwork.net")/*$this->customer['email_address']*/, EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
+    //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : "raynerj@einetwork.net")/*$this->customer['email_address']*/, EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
+    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address'], EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
 
     //place holder for order to RTI email
     // clean out the customer-only bits

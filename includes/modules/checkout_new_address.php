@@ -64,11 +64,6 @@ if (isset($_POST['action']) && ($_POST['action'] == 'submit')) {
       $messageStack->add('checkout_address', ENTRY_LAST_NAME_ERROR);
     }
 
-    if (strlen($email) < ENTRY_EMAIL_MIN_LENGTH) {
-      $error = true;
-      $messageStack->add('checkout_address', ENTRY_EMAIL_ERROR);
-    }
-
     if (strlen($street_address) < ENTRY_STREET_ADDRESS_MIN_LENGTH) {
       $error = true;
       $messageStack->add('checkout_address', ENTRY_STREET_ADDRESS_ERROR);
