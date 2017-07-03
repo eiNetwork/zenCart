@@ -1104,8 +1104,10 @@ class order extends base {
     // make an array to store the html version
     $html_msg=array();
 
-    // add the attachment
-    $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    // add the attachment -- production CHANGEME
+    //$this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    // add the attachment -- development
+    $this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
@@ -1275,7 +1277,27 @@ class order extends base {
     //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : "raynerj@einetwork.net")/*$this->customer['email_address']*/, EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
     zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address'], EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray);
 
-    //place holder for order to RTI email
+    // send additional emails
+    if (SEND_EXTRA_ORDER_EMAILS_TO != '') {
+      // include authcode and transaction id in admin-copy of email
+      if ($GLOBALS[$_SESSION['payment']]->auth_code || $GLOBALS[$_SESSION['payment']]->transaction_id) {
+        $pmt_details = ($GLOBALS[$_SESSION['payment']]->auth_code != '' ? 'AuthCode: ' . $GLOBALS[$_SESSION['payment']]->auth_code . '  ' : '') . ($GLOBALS[$_SESSION['payment']]->transaction_id != '' ?  'TransID: ' . $GLOBALS[$_SESSION['payment']]->transaction_id : '') . "\n\n";
+        $emailText = $pmt_details . $emailText;
+        $html_msg['EMAIL_TEXT_HEADER'] = nl2br($pmt_details) . $html_msg['EMAIL_TEXT_HEADER'];
+      }
+
+      // Add extra heading stuff via observer class
+      $this->extra_header_text = '';
+      $this->notify('NOTIFY_ORDER_INVOICE_CONTENT_FOR_ADDITIONAL_EMAILS', $zf_insert_id, $email_order, $html_msg);
+      $emailText = $this->extra_header_text . $email_order;
+      $html_msg['EMAIL_TEXT_HEADER'] = nl2br($this->extra_header_text) . $html_msg['EMAIL_TEXT_HEADER'];
+      $test_html_msg = 'This is a test';
+
+      zen_mail('', SEND_EXTRA_ORDER_EMAILS_TO, SEND_EXTRA_NEW_ORDERS_EMAILS_TO_SUBJECT . ' ' . EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id,
+      $emailText . $extra_info['TEXT'], STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray, $this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address']);
+    }
+
+    //RTI email order - fixthis
     // clean out the customer-only bits
     $emailText = $originalProductsText;
     while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
@@ -1291,28 +1313,11 @@ class order extends base {
     $emailText = str_replace("<RTIONLY>", "", $emailText);
     $emailText = str_replace("</RTIONLY>", "", $emailText);
     $html_msg['ORDER_TOTALS'] = $emailText;
-    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "pattonb@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
+    //Don't inclulde an attachment for the RTI email
+    //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
+    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor');
 
-
-    // send additional emails
-    if (SEND_EXTRA_ORDER_EMAILS_TO != '') {
-      // include authcode and transaction id in admin-copy of email
-      if ($GLOBALS[$_SESSION['payment']]->auth_code || $GLOBALS[$_SESSION['payment']]->transaction_id) {
-        $pmt_details = ($GLOBALS[$_SESSION['payment']]->auth_code != '' ? 'AuthCode: ' . $GLOBALS[$_SESSION['payment']]->auth_code . '  ' : '') . ($GLOBALS[$_SESSION['payment']]->transaction_id != '' ?  'TransID: ' . $GLOBALS[$_SESSION['payment']]->transaction_id : '') . "\n\n";
-        $email_order = $pmt_details . $email_order;
-        $html_msg['EMAIL_TEXT_HEADER'] = nl2br($pmt_details) . $html_msg['EMAIL_TEXT_HEADER'];
-      }
-
-      // Add extra heading stuff via observer class
-      $this->extra_header_text = '';
-      $this->notify('NOTIFY_ORDER_INVOICE_CONTENT_FOR_ADDITIONAL_EMAILS', $zf_insert_id, $email_order, $html_msg);
-      $email_order = $this->extra_header_text . $email_order;
-      $html_msg['EMAIL_TEXT_HEADER'] = nl2br($this->extra_header_text) . $html_msg['EMAIL_TEXT_HEADER'];
-
-      zen_mail('', SEND_EXTRA_ORDER_EMAILS_TO, SEND_EXTRA_NEW_ORDERS_EMAILS_TO_SUBJECT . ' ' . EMAIL_TEXT_SUBJECT . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id,
-      $email_order . $extra_info['TEXT'], STORE_NAME, EMAIL_FROM, $html_msg, 'checkout_extra', $this->attachArray, $this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address']);
-    }
-    $this->notify('NOTIFY_ORDER_AFTER_SEND_ORDER_EMAIL', $zf_insert_id, $email_order, $extra_info, $html_msg);
+    $this->notify('NOTIFY_ORDER_AFTER_SEND_ORDER_EMAIL', $zf_insert_id, $emailText, $extra_info, $html_msg);
   }
 
 
@@ -1336,11 +1341,11 @@ class order extends base {
     // make an array to store the html version
     $html_msg=array();
 
-    // add the attachment - production
+    // CHANGEME add the attachment - production
     //$this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
     // add the attachment - development 
-    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
-    // add the attachment - development 
+    $this->attachArray = array( array('file' => "/home/devintra/public_html/zenCartt/" . $this->products[0]['terms_link']) );
+    // add the attachment 
     $this->attachArray = array( array('file' => DIR_FS_CATALOG . $this->products[0]['terms_link']) );
 
     //intro area
