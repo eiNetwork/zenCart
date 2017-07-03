@@ -177,7 +177,7 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
 /**
  * Used to loop thru and display order status information
  */
-if (false && sizeof($statusArray)) {
+if (sizeof($statusArray)) {
 ?>
 
 <h2 id="orderHistoryStatus"><?php echo HEADING_ORDER_HISTORY; ?></h2>

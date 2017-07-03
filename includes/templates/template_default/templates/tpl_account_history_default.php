@@ -36,6 +36,7 @@
 <div class="notice forward"><?php echo "Confirmed by: " . $history['customers_name']; ?></div>
 <br class="clearBoth" />
     <div class="content back" style="margin-right:50px"><?php echo '<strong>' . TEXT_ORDER_DATE . '</strong> ' . zen_date_long($history['date_purchased']) . '<br />'; ?></div>
+    <div class="content back" style="margin-right:50px"><?php echo '<strong>' . TEXT_ORDER_STATUS . '</strong> ' . $history['orders_status_name'] . '<br />'; ?></div>
     <div class="content">
 <?php
       echo '<strong>' . TEXT_ORDER_PRODUCTS . '</strong> ' . $history['product_count'] . '<br />';
