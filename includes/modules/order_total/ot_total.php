@@ -32,7 +32,7 @@
                                 'RTItitle' => '',
                                 'RTItext' => '',
                                 'value' => $order->info['total']);
-      } else if( $order->info['shipping_cost'] ) {
+      } else if( $order->info['shipping_cost'] || $order->info['RTI'] ) {
         $this->output[] = array('title' => 'Sub-Total:<br />Shipping & Handling:<br />' . $this->title . ':',
                                 'text' => $currencies->format($order->info['total'] - $order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
                                           $currencies->format($order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
