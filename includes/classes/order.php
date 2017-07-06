@@ -1060,7 +1060,7 @@ class order extends base {
       $this->products_ordered_html .=
       '<tr>' . "\n" .
       '<td class="product-details" align="right" valign="top" width="30">' . $this->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
-      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['mfg_part_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['mfg_part_number'] . "]</RTIONLY>") : ""). (($this->products[$i]['quote_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['quote_number'] . "]</RTIONLY>") : "") . "\n" .
+      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['part_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['part_number'] . "]</RTIONLY>") : ""). (($this->products[$i]['quote_number'] != '') ? ("<RTIONLY> [" . $this->products[$i]['quote_number'] . "]</RTIONLY>") : "") . "\n" .
       '<nobr>' .
       '<small><em> '. nl2br($this->products_ordered_attributes) .'</em></small>' .
       '</nobr>' .
@@ -1678,7 +1678,7 @@ require(DIR_WS_CLASSES . 'order_total.php');
       $this->products_ordered_html .=
       '<tr>' . "\n" .
       '<td class="product-details" align="right" valign="top" width="30">' . $this->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
-      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['mfg_part_number'] != '')? ("<RTIONLY> [" . $this->products[$i]['mfg_part_number']. "]</RTIONLY>") : "") . "\n" .
+      '<td class="product-details" valign="top">' . nl2br($this->products[$i]['name']) . ($this->products[$i]['model'] != '' ? ' (' . nl2br($this->products[$i]['model']) . ') ' : '') . (($this->products[$i]['part_number'] != '')? ("<RTIONLY> [" . $this->products[$i]['part_number']. "]</RTIONLY>") : "") . "\n" .
       '<nobr>' .
       '<small><em> '. nl2br($this->products_ordered_attributes) .'</em></small>' .
       '</nobr>' .
