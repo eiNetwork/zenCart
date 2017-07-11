@@ -89,7 +89,7 @@ if( isset($_GET["regenerateCSV"]) ) {
   //$csvFile = fopen("/home/einet/public_html/intranet/orderHistory.csv", "w");
   $csvFile = fopen("/home/devintra/public_html/orderHistory.csv", "w");
 
-  fwrite($csvFile, "\"Location\",\"Order Number\",\"Order Status\",\"Confirmed By\",\"Order Date\",\"Quantity\",\"Item Name\",\"Additional Attributes (expand row height to see all)\",\"Unit Cost\",\"Annual Unit Cost\",\"Total Year 1 Cost\",\"Total Year 2 Cost\",\"Total Year 3 Cost\",\"Total Year 4 Cost\",\"Total Cost\"\n");
+  fwrite($csvFile, "\"Location\",\"Order Number\",\"Order Status\",\"Confirmed By\",\"Order Date\",\"Quantity\",\"Item Name\",\"Config Id\",\"Additional Attributes (expand row height to see all)\",\"Unit Cost\",\"Annual Unit Cost\",\"Total Year 1 Cost\",\"Total Year 2 Cost\",\"Total Year 3 Cost\",\"Total Year 4 Cost\",\"Total Cost\"\n");
 
   // get the full history
   $fullHistory = $db->Execute($history_query_raw);
@@ -105,8 +105,13 @@ if( isset($_GET["regenerateCSV"]) ) {
     for ($i=0, $n=sizeof($order->products); $i<$n; $i++) {
       fwrite($csvFile, "\"" . $fullHistory->fields['entry_company']/*libraryName*/ . "\"," 
                      . $fullHistory->fields['orders_id']
-                     . "," . $fullHistory->fields['orders_status_name'] . ",\"" . $fullHistory->fields['customers_name'] . "\",\"" . substr($fullHistory->fields['date_purchased'], 0, 10) . "\"," .
-                       $order->products[$i]['qty'] . ",\"" . $order->products[$i]['name'] . "\",\"");
+                     . "," . $fullHistory->fields['orders_status_name'] 
+                     . ",\"" . $fullHistory->fields['customers_name'] 
+                     . "\",\"" . substr($fullHistory->fields['date_purchased'], 0, 10) 
+                     . "\"," . $order->products[$i]['qty'] 
+                     . ",\"" . $order->products[$i]['name']
+                     . "\",\"" . $order->products[$i]['config_id']
+                     . "\",\"");
       if ( (isset($order->products[$i]['attributes'])) && (sizeof($order->products[$i]['attributes']) > 0) ) {
         for ($j=0, $n2=sizeof($order->products[$i]['attributes']); $j<$n2; $j++) {
           fwrite($csvFile, ($j ? "\n" : "") . $order->products[$i]['attributes'][$j]['option'] . " - " . nl2br(zen_output_string_protected($order->products[$i]['attributes'][$j]['value'])));

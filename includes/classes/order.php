@@ -196,14 +196,16 @@ class order extends base {
                            'format_id' => $order->fields['billing_address_format_id']);
 
     $index = 0;
-    $orders_products_query = "select orders_products_id, products_id, products_name, mfg_part_number, quote_number,
+    $orders_products_query = "select orders_products_id, p.products_id, products_name, p.mfg_part_number, p.quote_number,
+                                 ifnull(pc.vendor_config_id,p.mfg_part_number) as config_id,
                                  op.products_model, op.products_price, products_tax,
                                  op.products_quantity, final_price, op.products_cost,
-                                 onetime_charges, pt.payment_freq, products_prid, 
+                                 onetime_charges, pt.payment_freq, op.products_prid, 
                                  op.products_priced_by_attribute, op.product_is_free, op.products_discount_type,
                                  op.products_discount_type_from
-                                  from " . TABLE_ORDERS_PRODUCTS . " op join " . TABLE_PRODUCTS  . " p using (products_id)
-                                  join " . TABLE_PRODUCT_TYPES . " pt on pt.type_id = p.products_type
+                                  from orders_products op join products p on p.products_id = op.products_id
+                                  join product_types pt on pt.type_id = p.products_type
+                                  left outer join products_config pc on op.products_prid = pc.products_prid
                                   where orders_id = '" . (int)$order_id . "'
                                   order by orders_products_id";
 
@@ -239,6 +241,7 @@ class order extends base {
                                       'model' => $orders_products->fields['products_model'],
                                       'part_number' => $orders_products->fields['mfg_part_number'],
                                       'quote_number' => $orders_products->fields['quote_number'],
+                                      'config_id' => $orders_products->fields['config_id'],
                                       'tax' => $orders_products->fields['products_tax'],
                                       'price' => $orders_products->fields['products_price'],
                                       'payment_freq' => $orders_products->fields['payment_freq'],

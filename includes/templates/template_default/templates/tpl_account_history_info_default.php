@@ -59,7 +59,7 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
   ?>
     <tr>
         <td class="accountQuantityDisplay"><?php echo  $order->products[$i]['qty'] . QUANTITY_SUFFIX; ?></td>
-        <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'];
+        <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'] . ' (Config ' . $order->products[$i]['config_id'] . ')';
 
     if ( (isset($order->products[$i]['attributes'])) && (sizeof($order->products[$i]['attributes']) > 0) ) {
       echo '<ul class="orderAttribsList">';
