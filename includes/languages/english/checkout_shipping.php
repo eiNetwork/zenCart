@@ -13,7 +13,7 @@ define('NAVBAR_TITLE_2', 'Shipping Method');
 define('HEADING_TITLE', 'Step 1 of 3 - Delivery Information');
 
 define('TABLE_HEADING_SHIPPING_ADDRESS', 'Shipping Address');
-define('TEXT_CHOOSE_SHIPPING_DESTINATION', 'Your order will be shipped to the address above.');
+define('TEXT_CHOOSE_SHIPPING_DESTINATION', 'Please confirm that this is the correct shipping address.  If shipping address is incorrect, please contact accountspayable@einetwork.net to have your shipping information updated prior to submitting your order');
 define('TITLE_SHIPPING_ADDRESS', 'Shipping Information:');
 
 define('TABLE_HEADING_SHIPPING_METHOD', 'Shipping Method:');

@@ -27,7 +27,7 @@
 <?php } ?>
 <address class=""><?php echo zen_address_label($_SESSION['customer_id'], $_SESSION['sendto'], true, ' ', '<br />'); ?></address>
 </div>
-<div class="floatingBox important"><?php echo TEXT_CHOOSE_SHIPPING_DESTINATION; ?></div>
+<div class="floatingBox realimportant"><?php echo TEXT_CHOOSE_SHIPPING_DESTINATION; ?></div>
 <br class="clearBoth" />
 
 <?php

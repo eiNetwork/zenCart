@@ -291,7 +291,12 @@ HR {
 .advisory {}
 .important {
         font-weight: bold;
-		margin:5px;
+	       margin:5px;
+        }
+.realimportant {
+        font-weight: bold;
+               color: red;
+	       margin:5px;
         }
 .notice {}
 .rating{}
