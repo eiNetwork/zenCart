@@ -205,10 +205,12 @@
       }
       // ** END PAYPAL EXPRESS CHECKOUT ** ?>
 
+<!--
 <fieldset class="three" style="display:none">
 <legend><?php echo TABLE_HEADING_COMMENTS; ?></legend>
 <?php echo zen_draw_textarea_field('comments', '45', '3'); ?>
 </fieldset>
+-->
 
 <div class="buttonRow forward"><?php echo zen_image_submit(BUTTON_IMAGE_CONTINUE_CHECKOUT, BUTTON_CONTINUE_ALT, 'onclick="submitFunction('.zen_user_has_gv_account($_SESSION['customer_id']).','.$order->info['total'].')"'); ?></div>
 <div class="buttonRow back"><?php echo TITLE_CONTINUE_CHECKOUT_PROCEDURE . '<br />' . TEXT_CONTINUE_CHECKOUT_PROCEDURE; ?></div>

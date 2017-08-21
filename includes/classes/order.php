@@ -448,6 +448,8 @@ class order extends base {
                         'ip_address' => $_SESSION['customers_ip_address'] . ' - ' . $_SERVER['REMOTE_ADDR']
                         );
 
+    //echo($_SESSION['comments'] . "\n1 => ");
+    //print_r($this->info);
     //print_r($GLOBALS[$class]);
     //echo $class;
     //print_r($GLOBALS);
@@ -798,6 +800,8 @@ class order extends base {
       $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_ORDERTOTAL_LINE_ITEM', $sql_data_array, $ot_insert_id);
     }
 
+    //echo "2 => ";
+    //print_r($this->info);
     $customer_notification = (SEND_EMAILS == 'true') ? '1' : '0';
     $sql_data_array = array('orders_id' => $insert_id,
                             'orders_status_id' => $this->info['order_status'],
@@ -1159,9 +1163,10 @@ class order extends base {
 
 
     //comments area
+    //print_r($this->info);
     if ($this->info['comments']) {
-      $email_order .= zen_db_output($this->info['comments']) . "\n\n";
-      $html_msg['ORDER_COMMENTS'] = nl2br(zen_db_output($this->info['comments']));
+      $email_order .= "Installation Contact and Info: " . zen_db_output($this->info['comments']) . "\n\n";
+      $html_msg['ORDER_COMMENTS'] = "Installation Contact and Info: " . nl2br(zen_db_output($this->info['comments']));
     } else {
       $html_msg['ORDER_COMMENTS'] = '';
     }
