@@ -23,7 +23,7 @@ define('TEXT_ENTER_SHIPPING_INFORMATION', 'This is currently the only shipping m
 define('TITLE_NO_SHIPPING_AVAILABLE', 'Not Available At This Time');
 define('TEXT_NO_SHIPPING_AVAILABLE','<span class="alert">Sorry, we are not shipping to your region at this time.</span><br />Please contact us for alternate arrangements.');
 
-define('TABLE_HEADING_COMMENTS', 'Installation contact if other than the staff person placing the order');
+define('TABLE_HEADING_COMMENTS', 'Installation Contact: If a different staff member will be the installation contact, please enter their name and email address.');
 
 define('TITLE_CONTINUE_CHECKOUT_PROCEDURE', 'Continue to Step 2');
 define('TEXT_CONTINUE_CHECKOUT_PROCEDURE', '- choose your payment method.');

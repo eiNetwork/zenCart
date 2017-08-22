@@ -20,7 +20,7 @@ define('TABLE_HEADING_PAYMENT_METHOD', 'Payment Method');
 define('TEXT_SELECT_PAYMENT_METHOD', 'Please select a payment method for this order.');
 define('TITLE_PLEASE_SELECT', 'Please Select');
 define('TEXT_ENTER_PAYMENT_INFORMATION', '');
-define('TABLE_HEADING_COMMENTS', 'Site Contact if other than the staff person placing order');
+define('TABLE_HEADING_COMMENTS', 'If a different staff member will be the installation contact, please enter their name and email address.');
 
 define('TITLE_NO_PAYMENT_OPTIONS_AVAILABLE', 'Not Available At This Time');
 define('TEXT_NO_PAYMENT_OPTIONS_AVAILABLE','<span class="alert">Sorry, we are not accepting payments from your region at this time.</span><br />Please contact us for alternate arrangements.');

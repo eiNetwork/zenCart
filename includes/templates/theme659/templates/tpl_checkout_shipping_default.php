@@ -122,7 +122,7 @@
 <?php
   }
 ?>
-<h3><?php echo TABLE_HEADING_COMMENTS; ?></h3>
+<h3 class=realimportant><?php echo TABLE_HEADING_COMMENTS; ?></h3>
 <fieldset class="shipping" id="comments">
 <?php echo zen_draw_textarea_field('comments', '45', '3'); ?>
 </fieldset>
