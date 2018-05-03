@@ -339,6 +339,7 @@ define('IMAGE_NEW_FOLDER', 'New Folder');
 define('IMAGE_NEW_LANGUAGE', 'New Language');
 define('IMAGE_NEW_NEWSLETTER', 'New Newsletter');
 define('IMAGE_NEW_PRODUCT', 'New Product');
+define('IMAGE_NEW_PRODUCT_TYPE', 'New Product Type');
 define('IMAGE_NEW_SALE', 'New Sale');
 define('IMAGE_NEW_TAX_CLASS', 'New Tax Class');
 define('IMAGE_NEW_TAX_RATE', 'New Tax Rate');

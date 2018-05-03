@@ -47,6 +47,9 @@ define('TEXT_NEW_INTRO', 'Please fill out the following information for the new 
 define('TEXT_EDIT_INTRO', 'Please make any necessary changes');
 
 define('TEXT_PRODUCT_TYPES_NAME', 'Product Type Name:');
+define('TEXT_PRODUCT_TYPES_TERMS_LINK', 'Link to Terms and Conditions:');
+define('TEXT_PRODUCT_TYPES_CONFIRMATION_FORMAT_LINK', 'Link to Confirmation Email Format:');
+define('TEXT_PRODUCT_TYPES_PAYMENT_PLAN', 'Payment Plan:');
 define('TEXT_PRODUCT_TYPES_IMAGE', 'Product Type Default Image:');
 define('TEXT_PRODUCT_TYPES_URL', 'Manufacturers URL:');
 
