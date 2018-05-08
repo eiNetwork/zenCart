@@ -27,6 +27,7 @@ define('TEXT_PRODUCTS_PRICE_INFO', 'Price:');
 define('TEXT_PRODUCTS_TAX_CLASS', 'Tax Class:');
 define('TEXT_PRODUCTS_AVERAGE_RATING', 'Average Rating:');
 define('TEXT_PRODUCTS_QUANTITY_INFO', 'Quantity:');
+define('TEXT_PRODUCT_TYPE_NAME', 'Product Type:');
 define('TEXT_DATE_ADDED', 'Date Added:');
 define('TEXT_DATE_AVAILABLE', 'Date Available:');
 define('TEXT_LAST_MODIFIED', 'Last Modified:');

@@ -68,6 +68,14 @@
 
           zen_db_perform(TABLE_PRODUCT_TYPES, $sql_data_array);
           $type_id = $db->Insert_ID();
+
+          // add the new layout
+          $db->Execute("INSERT INTO " . TABLE_PRODUCT_TYPE_LAYOUT . " (configuration_title, configuration_key, configuration_value, " . 
+                          "configuration_description, product_type_id, sort_order, use_function, set_function) " . 
+                       "SELECT configuration_title, concat(left(configuration_key, if(left(configuration_key, 4)='SHOW',13,16)), 'TYPE_', " . 
+                          $type_id . ", substr(configuration_key,if(left(configuration_key,4)='SHOW',13,16))), configuration_value, configuration_description, " . 
+                          $type_id . ", sort_order, use_function, set_function " . 
+                       "FROM " . TABLE_PRODUCT_TYPE_LAYOUT . " WHERE product_type_id = 1");
         } elseif ($action == 'save') {
           $master_type = zen_db_prepare_input($_POST['master_type']);
 

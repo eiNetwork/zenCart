@@ -28,7 +28,7 @@
     $manufacturers_id = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
 
     $sql_data_array = array('products_quantity' => $products_quantity,
-                            'products_type' => zen_db_prepare_input($_GET['product_type']),
+                            'products_type' => zen_db_prepare_input(isset($_POST['products_type']) ? $_POST['products_type'] : $_GET['product_type']),
                             'products_model' => zen_db_prepare_input($_POST['products_model']),
                             'mfg_part_number' => zen_db_prepare_input($_POST['mfg_part_number']),
                             'quote_number' => zen_db_prepare_input($_POST['quote_number']),
