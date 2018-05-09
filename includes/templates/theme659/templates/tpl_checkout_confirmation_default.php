@@ -117,8 +117,8 @@
         <th scope="col" id="ccTypeHeading" width="10" class="showBorder"><?php echo TABLE_HEADING_TERMS; ?></th>
         <th scope="col" id="ccProductsHeading" class="showBorder"><?php echo TABLE_HEADING_PRODUCTS; ?></th>
         <th scope="col" id="ccQuantityHeading" width="10" class="showBorder"><?php echo TABLE_HEADING_QUANTITY; ?></th>
-        <th scope="col" id="ccProductsHeading" width="5" class="showBorder"><?php echo (($order->products[0]['payment_freq'] == "annually") || ($order->products[0]['payment_freq'] == "siteserver")) ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_ITEM_COST;  ?></th>
-        <th scope="col" id="ccTotalHeading" class="showBorder"><?php echo (($order->products[0]['payment_freq'] == "annually") || ($order->products[0]['payment_freq'] == "siteserver")) ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL; ?></th>
+        <th scope="col" id="ccProductsHeading" width="5" class="showBorder"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_ITEM_COST;  ?></th>
+        <th scope="col" id="ccTotalHeading" class="showBorder"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL; ?></th>
         </tr>
 <?php // now loop thru all products to display quantity and price ?>
 <?php for ($i=0, $n=sizeof($order->products); $i<$n; $i++) { ?>
@@ -143,20 +143,14 @@
         <td class="cartProductDisplay showBorder"><?php echo $currencies->display_price($order->products[$i]['final_price'], $order->products[$i]['tax'], 1); ?>
         <td class="cartTotalDisplay showBorder">
 <?php 
-  // show the 4 payments
-  if($order->products[$i]['payment_freq'] == 'annually' || $order->products[$i]['payment_freq'] == 'siteserver' ) {  
-    // show 2017 payment (1/2 annual cost)
-    echo "2017: " . $currencies->display_price($order->products[$i]['final_price'] * 0.5, $order->products[$i]['tax'], $order->products[$i]['qty']);
-    // show 2018 payment (annual cost)
-    echo "<br />2018: " . $currencies->display_price($order->products[$i]['final_price'], $order->products[$i]['tax'], $order->products[$i]['qty']);
-    // show 2019 payment (annual cost)
-    echo "<br />2019: " . $currencies->display_price($order->products[$i]['final_price'], $order->products[$i]['tax'], $order->products[$i]['qty']);
-    // show 2020 payment (1/2 annual cost)
-    echo "<br />2020: " . $currencies->display_price($order->products[$i]['final_price'] * 0.5, $order->products[$i]['tax'], $order->products[$i]['qty']);
-    if ($order->products[$i]['onetime_charges'] != 0 )
-      echo '<br /> ' . $currencies->display_price($order->products[$i]['onetime_charges'], $order->products[$i]['tax'], 1);
-    // show 3 year payment (3x annual cost)
-    echo "<br />Total: " . $currencies->display_price($order->products[$i]['final_price'] * 3, $order->products[$i]['tax'], $order->products[$i]['qty']);
+  // show the payment plan
+  if( $order->products[$i]['payment_plan'] ) {  
+    $tokens = explode("[[[", $order->products[$i]['payment_plan']);
+    echo $tokens[0];
+    for( $j=1; $j<count($tokens); $j++ ) {
+      $tokenSplit = explode("]]]", $tokens[$j]);
+      echo $currencies->display_price($order->products[$i]['final_price'] * $tokenSplit[0], $order->products[$i]['tax'], $order->products[$i]['qty']) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+    }
   // show the single payment
   } else {
     echo $currencies->display_price($order->products[$i]['final_price'], $order->products[$i]['tax'], $order->products[$i]['qty']);
@@ -180,7 +174,7 @@
 ?>
 
 <?php
-  echo zen_draw_form('checkout_confirmation', $form_action_url . "&payment_freq=" . $_REQUEST["payment_freq"], 'post', 'id="checkout_confirmation" onsubmit="submitonce();"');
+  echo zen_draw_form('checkout_confirmation', $form_action_url . "&products_type=" . $_REQUEST["products_type"], 'post', 'id="checkout_confirmation" onsubmit="submitonce();"');
 
   if (is_array($payment_modules->modules)) {
     echo $payment_modules->process_button();

@@ -95,13 +95,22 @@
         continue;
       }
 
+      // grab the override template if one exists
+      $overrideTemplate = "";
+      if( $module == "checkout_extra" ) {
+        $sql = "select confirmation_format_link from " . TABLE_ORDERS_PRODUCTS . " join " . TABLE_PRODUCTS . " using (products_id) join " . TABLE_PRODUCT_TYPES . " on (products_type=product_types.type_id) where orders_id= :ordersId:";
+        $sql = $db->bindVars($sql, ':ordersId:', $block['INTRO_ORDER_NUMBER'], 'string');
+        $result = $db->Execute($sql);
+        $overrideTemplate = ($result->RecordCount() > 0) ? $result->fields['confirmation_format_link'] : '';
+      }
+
       //define some additional html message blocks available to templates, then build the html portion.
       if (!isset($block['EMAIL_TO_NAME']) || $block['EMAIL_TO_NAME'] == '')       $block['EMAIL_TO_NAME'] = $to_name;
       if (!isset($block['EMAIL_TO_ADDRESS']) || $block['EMAIL_TO_ADDRESS'] == '') $block['EMAIL_TO_ADDRESS'] = $to_email_address;
       if (!isset($block['EMAIL_SUBJECT']) || $block['EMAIL_SUBJECT'] == '')       $block['EMAIL_SUBJECT'] = $email_subject;
       if (!isset($block['EMAIL_FROM_NAME']) || $block['EMAIL_FROM_NAME'] == '')   $block['EMAIL_FROM_NAME'] = $from_email_name;
       if (!isset($block['EMAIL_FROM_ADDRESS']) || $block['EMAIL_FROM_ADDRESS'] == '') $block['EMAIL_FROM_ADDRESS'] = $from_email_address;
-      $email_html = (!is_array($block) && substr($block, 0, 6) == '<html>') ? $block : zen_build_html_email_from_template($module, $block);
+      $email_html = (!is_array($block) && substr($block, 0, 6) == '<html>') ? $block : zen_build_html_email_from_template($module, $block, $overrideTemplate);
       if (!is_array($block) && $block == '' || $block == 'none') $email_html = '';
 
       // Build the email based on whether customer has selected HTML or TEXT, and whether we have supplied HTML or TEXT-only components
@@ -461,7 +470,7 @@
  * selectively go thru each template tag and substitute appropriate text
  * finally, build full html content as "return" output from class
 **/
-  function zen_build_html_email_from_template($module='default', $content='') {
+  function zen_build_html_email_from_template($module='default', $content='', $overrideTemplate='') {
     global $messageStack, $current_page_base;
     if (NULL == $current_page_base) $current_page_base = $module;
     $block = array();
@@ -508,7 +517,8 @@
     $template_filename_base_en = DIR_FS_EMAIL_TEMPLATES . "email_template_";
     $template_filename = DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html";
 
-    $filesToTest = array(DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html",
+    $filesToTest = array($overrideTemplate,
+                         DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html",
                          DIR_FS_EMAIL_TEMPLATES . "email_template_" . $current_page_base . ".html",
                          (isset($block['EMAIL_TEMPLATE_FILENAME']) && $block['EMAIL_TEMPLATE_FILENAME'] != '' ? $block['EMAIL_TEMPLATE_FILENAME'] . '.html' : NULL),
                          $template_filename_base . str_replace(array('_extra','_admin'),'',$module) . '.html',

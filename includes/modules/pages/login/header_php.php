@@ -138,8 +138,15 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
         $groupNames = '"Dummy Security Group Name"';
         foreach( $entries[0]["memberof"] as $group ) {
           $startIndex = strpos($group, "CN=") + 3;
-          $endIndex = strpos($group, ",OU=", $startIndex);
-          $groupNames .= ',"' . substr($group, $startIndex, $endIndex - $startIndex) . '"';
+          if( strlen($group) > $startIndex ) {
+            $endIndex = strpos($group, ",OU=", $startIndex);
+            if( !$endIndex ) {
+              $endIndex = strpos($group, ",DC=", $startIndex);
+            }
+            if( $endIndex ) {
+              $groupNames .= ',"' . substr($group, $startIndex, $endIndex - $startIndex) . '"';
+            }
+          }
         }
 
         // I'm not using bindVars below because I couldn't find a way to use it to insert an array of strings.  This is less secure than doing it the bindVars way, but

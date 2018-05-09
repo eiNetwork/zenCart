@@ -196,11 +196,12 @@ class order extends base {
                            'format_id' => $order->fields['billing_address_format_id']);
 
     $index = 0;
+
     $orders_products_query = "select orders_products_id, p.products_id, products_name, p.mfg_part_number, p.quote_number,
                                  ifnull(pc.vendor_config_id,p.mfg_part_number) as config_id,
                                  op.products_model, op.products_price, products_tax,
                                  op.products_quantity, final_price, op.products_cost,
-                                 onetime_charges, pt.payment_freq, op.products_prid, 
+                                 onetime_charges, p.products_type, pt.payment_plan, op.products_prid, 
                                  op.products_priced_by_attribute, op.product_is_free, op.products_discount_type,
                                  op.products_discount_type_from
                                   from orders_products op join products p on p.products_id = op.products_id
@@ -244,7 +245,8 @@ class order extends base {
                                       'config_id' => $orders_products->fields['config_id'],
                                       'tax' => $orders_products->fields['products_tax'],
                                       'price' => $orders_products->fields['products_price'],
-                                      'payment_freq' => $orders_products->fields['payment_freq'],
+                                      'products_type' => $orders_products->fields['products_type'],
+                                      'payment_plan' => htmlspecialchars_decode($orders_products->fields['payment_plan']),
                                       'wholesale_cost' => $orders_products->fields['products_cost'],
                                       'final_price' => $orders_products->fields['final_price'],
                                       'onetime_charges' => $orders_products->fields['onetime_charges'],
@@ -526,11 +528,7 @@ class order extends base {
     }
     $products = array();
     foreach( $allProducts as $thisProduct ) {
-/*
-      if( (($thisProduct['payment_freq'] == $_REQUEST["payment_freq"]) && ($thisProduct["type_name"] != "2017 Site Server Replacement")) || 
-          (($_REQUEST["payment_freq"] == "siteserver") && ($thisProduct["type_name"] == "2017 Site Server Replacement")) ) {
-*/
-      if( $thisProduct['payment_freq'] == $_REQUEST["payment_freq"] ) {
+      if( $thisProduct['products_type'] == $_REQUEST["products_type"] ) {
         $products[] = $thisProduct;
       }
     }
@@ -562,8 +560,8 @@ class order extends base {
                                       'type_name' => $products[$i]['type_name'],
                                       'terms_link' => $products[$i]['terms_link'],
                                       'vendor_email' => $products[$i]['vendor_email'],
-                                      'payment_freq' => $products[$i]['payment_freq'],
-                                      'num_payments' => $products[$i]['num_payments'],
+                                      'payment_plan' => $products[$i]['payment_plan'],
+                                      'products_type' => $products[$i]['products_type'],
                                       'id' => $products[$i]['id'],
                                       'rowClass' => $rowClass);
 
@@ -830,15 +828,13 @@ class order extends base {
     $this->costTotal = '';
     $totalCost = 0;
 
-    $orderYear = 2017;
-
     // lowstock email report
     $this->email_low_stock='';
 
     $this->products_ordered_html .= '<tr><td class="products-details" style="font-weight:700">Quantity</td>
                                          <td class="products-details" style="font-weight:700">Description</td>
-                                         <td class="products-details" style="font-weight:700">' . ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver")) ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
-                                         <td class="products-details" style="font-weight:700">' . ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver"))? "Total Program Cost" : "Total") . '</td></tr>';
+                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
+                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Total Program Cost" : "Total") . '</td></tr>';
 
     for ($i=0, $n=sizeof($this->products); $i<$n; $i++) {
       $custom_insertable_text = '';
@@ -1076,14 +1072,7 @@ class order extends base {
       '<EINONLY>' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], 1) . '</EINONLY>' .
       '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], 1) . '</RTIONLY>' .
       '</td><td class="product-details-num" valign="top" align="right">' . 
-      ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver"))
-        ? ($orderYear . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
-           ($orderYear + 1) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . "<br>" .
-           ($orderYear + 2) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . "<br>" .
-           ($orderYear + 3) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
-           "Total: " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 3)) 
-        : ('<EINONLY>' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . '</EINONLY>' .
-           '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], $this->products[$i]['qty']) . '</RTIONLY>')) .
+      $this->formatTotalForEmail($this->products[0]['payment_plan'], $this->products[$i]) . 
       ($this->products[$i]['onetime_charges'] !=0 ?
       '</td></tr>' . "\n" . '<tr><td class="product-details">' . nl2br(TEXT_ONETIME_CHARGES_EMAIL) . '</td>' . "\n" .
       '<td>' . $currencies->display_price($this->products[$i]['onetime_charges'], $this->products[$i]['tax'], 1) : '') .
@@ -1094,6 +1083,21 @@ class order extends base {
     $this->notify('NOTIFY_ORDER_AFTER_ORDER_CREATE_ADD_PRODUCTS');
   }
 
+  function formatTotalForEmail($payment_plan, $product_details) {
+    global $currencies;
+    if( !$payment_plan ) {
+      return '<EINONLY>' . $currencies->display_price($product_details['final_price'], $product_details['tax'], $product_details['qty']) . '</EINONLY>' .
+             '<RTIONLY>' . $currencies->display_price($product_details['wholesale_cost'], $product_details['tax'], $product_details['qty']) . '</RTIONLY>';
+    } else {
+      $tokens = explode("[[[", $payment_plan);
+      $returnStr = $tokens[0];
+      for( $i=1; $i<count($tokens); $i++ ) {
+        $tokenSplit = explode("]]]", $tokens[$i]);
+        $returnStr .= $currencies->display_price($product_details['final_price'], $product_details['tax'], $product_details['qty'] * $tokenSplit[0]) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+      }
+      return $returnStr; 
+    }
+  }
 
   function send_order_email($zf_insert_id, $zf_mode = FALSE) {
     global $currencies, $order_totals;
@@ -1512,45 +1516,13 @@ require(DIR_WS_CLASSES . 'order_total.php');
     $this->subtotal = 0;
     $this->total_tax = 0;
 
-    $orderYear = 2017;
-
     $this->products_ordered_html .= '<tr><td class="products-details" style="font-weight:700">Quantity</td>
                                          <td class="products-details" style="font-weight:700">Description</td>
-                                         <td class="products-details" style="font-weight:700">' . ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver")) ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
-                                         <td class="products-details" style="font-weight:700">' . ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver"))? "Total Program Cost" : "Total") . '</td></tr>';
+                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
+                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Total Program Cost" : "Total") . '</td></tr>';
 
     for ($i=0, $n=sizeof($this->products); $i<$n; $i++) {
       $custom_insertable_text = '';
-
-/*
-      $sql_data_array = array('orders_id' => $zf_insert_id,
-                              'products_id' => zen_get_prid($this->products[$i]['id']),
-                              'products_model' => $this->products[$i]['model'],
-                              'products_name' => $this->products[$i]['name'],
-                              'mfg_part_number' => $this->products[$i]['part_number'],
-                              'quote_number' => $this->products[$i]['quote_number'],
-                              'products_price' => $this->products[$i]['price'],
-                              'final_price' => $this->products[$i]['final_price'],
-                              'onetime_charges' => $this->products[$i]['onetime_charges'],
-                              'products_tax' => $this->products[$i]['tax'],
-                              'products_quantity' => $this->products[$i]['qty'],
-                              'products_priced_by_attribute' => $this->products[$i]['products_priced_by_attribute'],
-                              'product_is_free' => $this->products[$i]['product_is_free'],
-                              'products_discount_type' => $this->products[$i]['products_discount_type'],
-                              'products_discount_type_from' => $this->products[$i]['products_discount_type_from'],
-                              'products_prid' => $this->products[$i]['id']);
-      zen_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
-
-      $order_products_id = $db->Insert_ID();
-
-/*
-      $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_PRODUCT_LINE_ITEM', array_merge(array('orders_products_id' => $order_products_id, 'i' => $i), $sql_data_array), $order_products_id);
-
-      $this->notify('NOTIFY_ORDER_PROCESSING_CREDIT_ACCOUNT_UPDATE_BEGIN');
-      $order_total_modules->update_credit_account($i);//ICW ADDED FOR CREDIT CLASS SYSTEM
-
-      $this->notify('NOTIFY_ORDER_PROCESSING_ATTRIBUTES_BEGIN');
-*/
 
       //------ bof: insert customer-chosen options to order--------
       $attributes_exist = '0';
@@ -1718,13 +1690,7 @@ require(DIR_WS_CLASSES . 'order_total.php');
       }
       $this->products_ordered_html .=
       '</td><td class="product-details-num" valign="top" align="right">' . 
-      ((($this->products[0]['payment_freq'] == "annually") || ($this->products[0]['payment_freq'] == "siteserver"))
-        ? ($orderYear . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
-           ($orderYear + 1) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . "<br>" .
-           ($orderYear + 2) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . "<br>" .
-           ($orderYear + 3) . ": " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 0.5) . "<br>" .
-           "Total: " . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'] * 3)) 
-        : $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty'])) .
+        $this->formatTotalForEmail($this->products[0]['payment_plan'], $this->products[$i]) . 
       ($this->products[$i]['onetime_charges'] !=0 ?
       '</td></tr>' . "\n" . '<tr><td class="product-details">' . nl2br(TEXT_ONETIME_CHARGES_EMAIL) . '</td>' . "\n" .
       '<td>' . $currencies->display_price($this->products[$i]['onetime_charges'], $this->products[$i]['tax'], 1) : '') .

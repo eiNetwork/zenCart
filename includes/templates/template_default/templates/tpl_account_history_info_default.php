@@ -12,7 +12,6 @@
  * @version $Id: Author: DrByte  May 3 2016  Modified in v1.5.5a $
  */
 
-$orderYear = (substr($order->info['date_purchased'], 0, 7) > "2016-11") ? 2017 : 2014;
 if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_name"] == "Coyle") ) {
   echo "<a style='float:right' href='index.php?main_page=account_history_info&order_id=" . $order->info["order_id"] . "&resendEmail=true'>Resend email</a><br>";
   if( $_REQUEST["resendEmail"] ) {
@@ -40,23 +39,12 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
 <?php
   }
 ?>
-<?php
-  if( $order->products[0]['payment_freq'] == "annually" || $order->products[0]['payment_freq'] == "siteserver" ) {
-?>
-        <th scope="col"><?php echo TABLE_HEADING_ANNUAL_COST; ?></th>
-        <th scope="col" id="myAccountTotal"><?php echo TABLE_HEADING_TOTAL_COST; ?></th>
-<?php
-  } else {
-?>
-        <th scope="col" id="myAccountTotal"><?php echo TABLE_HEADING_PRICE; ?></th>
-        <th scope="col" id="myAccountTotal"><?php echo HEADING_TOTAL; ?></th>
-<?php
-  }
-?>
+        <th scope="col"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_PRICE; ?></th>
+        <th scope="col" id="myAccountTotal"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_TOTAL_COST : HEADING_TOTAL; ?></th>
     </tr>
 <?php
   for ($i=0, $n=sizeof($order->products); $i<$n; $i++) {
-  ?>
+?>
     <tr>
         <td class="accountQuantityDisplay"><?php echo  $order->products[$i]['qty'] . QUANTITY_SUFFIX; ?></td>
         <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'] . ' (Config ' . $order->products[$i]['config_id'] . ')';
@@ -76,7 +64,6 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
         <td class="accountTaxDisplay"><?php echo zen_display_tax_value($order->products[$i]['tax']) . '%' ?></td>
 <?php
     }
-    if( $order->products[$i]['payment_freq'] == "annually" || $order->products[$i]['payment_freq'] == "siteserver" ) {
 ?>
         <td class="accountTotalDisplay">
         <?php
@@ -108,29 +95,22 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
         ?></td>
         <td class="accountTotalDisplay">
         <?php
-          echo "<strong>" . $orderYear . "</strong>: " .  $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . "<br>";
-          echo "<strong>" . ($orderYear + 1) . "</strong>: " .  $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . "<br>";
-          echo "<strong>" . ($orderYear + 2) . "</strong>: " .  $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . "<br>";
-          echo "<strong>" . ($orderYear + 3) . "</strong>: " .  $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . "<br>";
-          echo "<strong>Total:</strong> " .  $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 3, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
+          if( $order->products[$i]['payment_plan'] ) {
+            $lines = explode("<br />", $order->products[$i]['payment_plan']);
+            foreach( $lines as $lineIndex => $thisLine ) {
+              $tokens = explode("[[[", $thisLine);
+              $totalStr = "<strong>" . $tokens[0] . "</strong>";
+              for( $j=1; $j<count($tokens); $j++ ) {
+                $tokenSplit = explode("]]]", $tokens[$j]);
+                $totalStr .= $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+              }
+              echo $totalStr . (($lineIndex < (count($lines) - 1)) ? "<br />" : "");
+            }
+          } else {
+              $ppt = $ppe * $order->products[$i]['qty'];
+              echo $currencies->format($ppt, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
+          }
         ?></td>
-<?php
-    } else {
-?>
-        <td class="accountTotalDisplay">
-        <?php
-          $ppe = zen_round(zen_add_tax($order->products[$i]['final_price'], $order->products[$i]['tax']), $currencies->get_decimal_places($order->info['currency']));
-          echo $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
-        ?></td>
-        <td class="accountTotalDisplay">
-        <?php
-         $ppt = $ppe * $order->products[$i]['qty'];
-        //        echo $currencies->format(zen_add_tax($order->products[$i]['final_price'], $order->products[$i]['tax']) * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '')
-        echo $currencies->format($ppt, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
-        ?></td>
-<?php
-    }
-?>
     </tr>
 <?php
   }
@@ -140,16 +120,31 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
 <div id="orderTotals">
 <?php
   for ($i=0, $n=sizeof($order->totals); $i<$n; $i++) {
-    if( ($order->products[0]['payment_freq'] == "annually") || ($order->products[0]['payment_freq'] == "siteserver") ) {
+    if( $order->products[0]['payment_plan'] ) {
+      $title = "";
+      $text = "";
+      $lines = explode("<br />", $order->products[0]['payment_plan']);
+      foreach( $lines as $thisLine ) {
+          $tokens = explode("[[[", $thisLine);
+          foreach( $tokens as $thisToken ) {
+              $tokenSplit = explode("]]]", $thisToken);
+              if( count($tokenSplit) > 1 ) {
+                $text .= $currencies->display_price($order->totals[$i]['value'], 0, $tokenSplit[0]);
+                $title .= "<strong>" . $tokenSplit[1] . "</strong>";
+              } else {
+                $title .= "<strong>" . $tokenSplit[0] . "</strong>";
+              }
+          }
+          $title .= "<br />";
+          $text .= "<br />";
+      }
+      if( count($lines) > 1 ) {
+          $title = substr($title, 0, -6);
+          $text = substr($text, 0, -6);
+      }
 ?>
-     <div class="amount larger forward"><?php 
-       echo $currencies->display_price($order->totals[$i]['value'], 0, 0.5) . "<br />"; 
-       echo $currencies->display_price($order->totals[$i]['value'], 0, 1) . "<br />"; 
-       echo $currencies->display_price($order->totals[$i]['value'], 0, 1) . "<br />"; 
-       echo $currencies->display_price($order->totals[$i]['value'], 0, 0.5) . "<br />"; 
-       echo $currencies->display_price($order->totals[$i]['value'], 0, 3); 
-     ?></div>
-     <div class="lineTitle larger forward"><?php echo "<strong>" . $orderYear . ":<br />" . ($orderYear + 1) . ":<br />" . ($orderYear + 2) . ":<br />" . ($orderYear + 3) . ":<br />Total</strong>:"; ?></div>
+     <div class="amount larger forward"><?php echo $text; ?></div>
+     <div class="lineTitle larger forward"><?php echo $title; ?></div>
 <?php
     } else { 
 ?>

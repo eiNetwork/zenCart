@@ -22,13 +22,31 @@
 
     function process() {
       global $order, $currencies;
-      if( ($order->products[0]['payment_freq'] == "annually") || ($order->products[0]['payment_freq'] == "siteserver") ) {
-        $this->output[] = array('title' => '2017:<br />2018:<br />2019:<br />2020:<br />' . $this->title . ':',
-                                'text' => $currencies->format($order->info['total'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
-                                          $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" .
-                                          $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
-                                          $currencies->format($order->info['total'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
-                                          $currencies->format($order->info['total'] * 3, true, $order->info['currency'], $order->info['currency_value']) . "<br />",
+      if( $order->products[0]['payment_plan'] ) {
+        $title = "";
+        $text = "";
+        $lines = explode("<br />", $order->products[0]['payment_plan']);
+        foreach( $lines as $thisLine ) {
+            $tokens = explode("[[[", $thisLine);
+            foreach( $tokens as $thisToken ) {
+                $tokenSplit = explode("]]]", $thisToken);
+                if( count($tokenSplit) > 1 ) {
+                  $text .= $currencies->format($order->info['total'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']);
+                  $title .= $tokenSplit[1];
+                } else {
+                  $title .= $tokenSplit[0];
+                }
+            }
+            $title .= "<br />";
+            $text .= "<br />";
+        }
+        if( count($lines) > 1 ) {
+            $title = substr($title, 0, -6);
+            $text = substr($text, 0, -6);
+        }
+
+        $this->output[] = array('title' => $title,
+                                'text' => $text,
                                 'RTItitle' => '',
                                 'RTItext' => '',
                                 'value' => $order->info['total']);

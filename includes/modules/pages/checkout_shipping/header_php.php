@@ -172,7 +172,7 @@ if (isset($_SESSION['cart']->cartID)) {
                                 'title' => (($free_shipping == true) ?  $quote[0]['methods'][0]['title'] : $quote[0]['module'] . ' (' . $quote[0]['methods'][0]['title'] . ')'),
                                 'RTI' => $quote[0]['methods'][0]['RTI'],
                                 'cost' => $quote[0]['methods'][0]['cost']);
-              zen_redirect( zen_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL') . '&conditions=1&payment_freq=' . $_POST["payment_freq"] . (($_SESSION['selectedCartID'] == MASTER_CART) ? ('&cart_id=' . $_POST["cart_id"]) : ''));
+              zen_redirect( zen_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL') . '&conditions=1&products_type=' . $_POST["products_type"] . (($_SESSION['selectedCartID'] == MASTER_CART) ? ('&cart_id=' . $_POST["cart_id"]) : ''));
               //zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
             }
           }

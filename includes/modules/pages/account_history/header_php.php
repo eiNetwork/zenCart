@@ -118,13 +118,19 @@ if( isset($_GET["regenerateCSV"]) ) {
         }
       }
       $ppe = zen_round(zen_add_tax($order->products[$i]['final_price'], $order->products[$i]['tax']), $currencies->get_decimal_places($order->info['currency']));
-      if( $order->products[$i]['payment_freq'] == "annually" || $order->products[$i]['payment_freq'] == "siteserver" ) {
-        fwrite($csvFile, "\",,\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\",\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . "\",\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . "\",\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . "\",\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 0.5, true, $order->info['currency'], $order->info['currency_value']) . "\",\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * 3, true, $order->info['currency'], $order->info['currency_value']) . "\"\n");
+      if( $order->products[$i]['payment_plan'] ) {
+        fwrite($csvFile, "\",,\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\"");
+        $lines = explode("<br />", $order->products[$i]['payment_plan']);
+        foreach( $lines as $thisLine ) {
+            $tokens = explode("[[[", $thisLine);
+            foreach( $tokens as $thisToken ) {
+                $tokenSplit = explode("]]]", $thisToken);
+                if( count($tokenSplit) > 1 ) {
+                  fwrite($csvFile, ",\"" . $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * $tokenSplit[1], true, $order->info['currency'], $order->info['currency_value']) . "\"");
+                }
+            }
+        }
+        fwrite($csvFile, "\n");
       } else {
         fwrite($csvFile, "\",\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\",,,,,,\"" . 
                          $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . "\"\n");

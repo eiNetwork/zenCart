@@ -194,7 +194,7 @@
     }
 
     // $new_fields = ', product_is_free, product_is_call, product_is_showroom_only';
-    $product_check = $db->Execute("select products_tax_class_id, products_price, products_priced_by_attribute, product_is_free, product_is_call, products_type, payment_freq from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . " on (products_type=type_id) where products_id = '" . (int)$products_id . "'" . " limit 1");
+    $product_check = $db->Execute("select products_tax_class_id, products_price, products_priced_by_attribute, product_is_free, product_is_call, products_type, payment_plan from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . " on (products_type=type_id) where products_id = '" . (int)$products_id . "'" . " limit 1");
 
     // no prices on Document General
     if ($product_check->fields['products_type'] == 3) {
@@ -255,7 +255,7 @@
         if ($product_check->fields['product_is_free'] == '1') {
           $show_normal_price = '<span class="productFreePrice"><s>' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</s></span>';
         } else {
-          $show_normal_price = '<span class="productBasePrice">' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . ((($product_check->fields['payment_freq'] == "annually") || ($product_check->fields['payment_freq'] == "siteserver")) ? '/year' : '') . '</span>';
+          $show_normal_price = '<span class="productBasePrice">' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . ($product_check->fields['payment_plan'] ? '/year' : '') . '</span>';
         }
         $show_special_price = '';
         $show_sale_price = '';

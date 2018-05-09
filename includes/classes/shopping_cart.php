@@ -256,18 +256,16 @@ class shoppingCart extends base {
     if (isset($_SESSION['selectedCartID']) && ($reset_database == true)) {
       $sql = "delete from " . TABLE_CUSTOMERS_BASKET . "
                 where customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'";
-      if( isset($_REQUEST["payment_freq"]) ) {
-        $sql .= " and products_id in (select products_id from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . 
-                " on (products_type = type_id) where payment_freq = '" . $_REQUEST["payment_freq"] . "')";
+      if( isset($_REQUEST["products_type"]) ) {
+        $sql .= " and products_id in (select products_id from " . TABLE_PRODUCTS . " where products_type = '" . $_REQUEST["products_type"] . "')";
       }
 
       $db->Execute($sql);
 
       $sql = "delete from " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
                 where customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'";
-      if( isset($_REQUEST["payment_freq"]) ) {
-        $sql .= " and products_id in (select products_id from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . 
-                " on (products_type = type_id) where payment_freq = '" . $_REQUEST["payment_freq"] . "')";
+      if( isset($_REQUEST["products_type"]) ) {
+        $sql .= " and products_id in (select products_id from " . TABLE_PRODUCTS . " where products_type = '" . $_REQUEST["products_type"] . "')";
       }
 
       $db->Execute($sql);
@@ -534,7 +532,7 @@ class shoppingCart extends base {
     global $db;
     $this->notify('NOTIFIER_CART_CLEANUP_START');
     reset($this->contents);
-    while (list($key,) = each($this->contents[$_SESSION['selectedCartID']])) {
+    while (isset($this->contents[$_SESSION['selectedCartID']]) && list($key,) = each($this->contents[$_SESSION['selectedCartID']])) {
       if (!isset($this->contents[$_SESSION['selectedCartID']][$key]['qty']) || $this->contents[$_SESSION['selectedCartID']][$key]['qty'] <= 0) {
         unset($this->contents[$_SESSION['selectedCartID']][$key]);
         // remove from database
@@ -1458,7 +1456,7 @@ class shoppingCart extends base {
                                   p.products_quantity_order_min, p.products_quantity_order_units, p.products_quantity_order_max,
                                   p.product_is_free, p.products_priced_by_attribute,
                                   p.products_discount_type, p.products_discount_type_from, p.products_virtual, p.product_is_always_free_shipping,
-                                  pt.type_id, pt.type_name, pt.terms_link, pt.vendor_email, pt.payment_freq, pt.num_payments
+                                  pt.type_id, pt.type_name, pt.terms_link, pt.vendor_email, pt.payment_plan
                                      from  " . TABLE_PRODUCTS . " p join " . TABLE_PRODUCTS_DESCRIPTION . " pd
                                      on pd.products_id = p.products_id
                                      join " . TABLE_PRODUCT_TYPES . " pt on pt.type_id = p.products_type
@@ -1640,8 +1638,8 @@ class shoppingCart extends base {
                                   'type_name' => $products->fields['type_name'],
                                   'terms_link' => $products->fields['terms_link'],
                                   'vendor_email' => $products->fields['vendor_email'],
-                                  'payment_freq' => $products->fields['payment_freq'],
-                                  'num_payments' => $products->fields['num_payments']
+                                  'payment_plan' => htmlspecialchars_decode($products->fields['payment_plan']),
+                                  'products_type' => $products->fields['products_type']
                                   );
       }
     }
@@ -1703,8 +1701,8 @@ class shoppingCart extends base {
 
     //      if ( (DOWNLOAD_ENABLED == 'true') && ($this->count_contents() > 0) ) {
     if ( $this->count_contents() > 0 ) {
-      reset($thisCart);
-      while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+      reset($this->contents[$_SESSION['selectedCartID']]);
+      while (isset($this->contents[$_SESSION['selectedCartID']]) && is_array($this->contents[$_SESSION['selectedCartID']]) && list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
         $free_ship_check = $db->Execute("select products_virtual, products_model, products_price, product_is_always_free_shipping from " . TABLE_PRODUCTS . " where products_id = '" . zen_get_prid($products_id) . "'");
         $virtual_check = false;
         if (preg_match('/^GIFT/', addslashes($free_ship_check->fields['products_model']))) {

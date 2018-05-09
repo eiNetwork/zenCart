@@ -14,7 +14,7 @@
 ?>
 <div class="centerColumn" id="checkoutShipping">
 
-<?php echo zen_draw_form('checkout_address', zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL')) . zen_draw_hidden_field('action', 'process') . zen_draw_hidden_field('payment_freq', $_GET["payment_freq"]) . (($_SESSION['selectedCartID'] == MASTER_CART) ? zen_draw_hidden_field('cart_id', $_SESSION['selectedCartID']) : ''); ?>
+<?php echo zen_draw_form('checkout_address', zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL')) . zen_draw_hidden_field('action', 'process') . zen_draw_hidden_field('products_type', $_GET["products_type"]) . (($_SESSION['selectedCartID'] == MASTER_CART) ? zen_draw_hidden_field('cart_id', $_SESSION['selectedCartID']) : ''); ?>
 
 <h1 id="checkoutShippingHeading"><?php echo HEADING_TITLE; ?></h1>
 <?php if ($messageStack->size('checkout_shipping') > 0) echo $messageStack->output('checkout_shipping'); ?>
