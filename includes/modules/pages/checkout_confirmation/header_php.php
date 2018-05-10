@@ -37,14 +37,14 @@ if (isset($_SESSION['cart']->cartID) && $_SESSION['cartID']) {
 }
 
 // if no shipping method has been selected, redirect the customer to the shipping method selection page
-if( false ) {
-if (!isset($_SESSION['shipping'])) {
-  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
+//if( false ) {
+if ($_SESSION['cart']->get_content_type() != 'virtual' && !isset($_SESSION['shipping'])) {
+  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL') . '&products_type=' . $_GET['products_type']);
 }
 if (isset($_SESSION['shipping']['id']) && $_SESSION['shipping']['id'] == 'free_free' && $_SESSION['cart']->get_content_type() != 'virtual' && defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') && MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING == 'true' && defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER') && $_SESSION['cart']->show_total() < MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER) {
-  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
+  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL') . '&products_type=' . $_GET['products_type']);
 }
-}
+//}
 
 if (isset($_POST['payment'])) $_SESSION['payment'] = $_POST['payment'];
 

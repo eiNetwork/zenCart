@@ -306,10 +306,39 @@ if( $products['multiCart'] ) {
 
 // dump the cart to a csv
 if( isset($_GET["regenerateCSV"]) ) {
+  //CHANGEME
   $csvFile = fopen("/home/einet/public_html/intranet/shoppingCart.csv", "w");
+  //$csvFile = fopen("/home/devintra/public_html/shoppingCart.csv", "w");
 
   if( $products['multiCart'] ) {
-    fwrite($csvFile, "\"Location\",\"Quantity\",\"Item Name\",\"Additional Attributes\",\"Unit Cost\",\"Annual Unit Cost\",\"Total 2017 Cost\",\"Total 2018 Cost\",\"Total 2019 Cost\",\"Total 2020 Cost\",\"Total Cost\"\n");
+    fwrite($csvFile, "\"Location\",\"Quantity\",\"Item Name\",\"Additional Attributes\",\"Unit Cost\",\"Incremental Unit Cost\",");
+
+    // get the payment plans headings
+    $headingIndices = [];
+    foreach($productArray as $key => $thisCart) {
+      if($key == "multiCart") {
+        continue;
+      }
+      foreach($thisCart as $thisProduct) {
+        if( $thisProduct['payment_plan'] ) {
+          $headingChunks = explode("<br />", $thisProduct['payment_plan']);
+          foreach( $headingChunks as $index => $thisHeading ) {
+            $thisSplit = explode("[[[", $thisHeading);
+            $cleanHeading = trim($thisSplit[0]);
+            if( substr($cleanHeading, -1) == ":" ) {
+              $cleanHeading = substr($cleanHeading, 0, -1);
+            }
+            if( $cleanHeading != "Total" && !isset($headingIndices[$cleanHeading]) ) {
+              $headingIndices[$cleanHeading] = count($headingIndices);
+              fwrite($csvFile, "\"Total " . $cleanHeading . " Cost\",");
+            }
+          }
+        }
+      }
+    }
+    $headingIndices["Total"] = count($headingIndices);
+    fwrite($csvFile, "\"Total Cost\"\n");
+
     foreach( $productArray as $key => $thisCart ) {
       if($key == "multiCart") {
         continue;
@@ -330,16 +359,30 @@ if( isset($_GET["regenerateCSV"]) ) {
           $addComma = true;
         }
         $ppe = floatval(substr($thisProduct['productsPriceEach'], 1));
-        if( $thisProduct["purchased"] ) {
-          fwrite($csvFile, "\",\"" . $thisProduct['productsPriceEach'] . "\",,,,,,\"" . $currencies->display_price($ppe * $thisProduct['quantity']));
+
+        $theseChunks = [];
+        if( !$thisProduct['payment_plan'] ) {
+          $theseChunks["Total"] = $currencies->display_price($ppe * $thisProduct['quantity']);
         } else {
-          fwrite($csvFile, "\",,\"" . $thisProduct['productsPriceEach'] . "\",\"" . $currencies->display_price($ppe * $thisProduct['quantity'] * 0.5) . "\",\"" . 
-                                                                                    $currencies->display_price($ppe * $thisProduct['quantity']) . "\",\"" . 
-                                                                                    $currencies->display_price($ppe * $thisProduct['quantity']) . "\",\"" . 
-                                                                                    $currencies->display_price($ppe * $thisProduct['quantity'] * 0.5) . "\",\"" .
-                                                                                    $currencies->display_price($ppe * $thisProduct['quantity'] * 3));
+          $headingChunks = explode("<br />", $thisProduct['payment_plan']);
+          foreach( $headingChunks as $index => $thisHeading ) {
+            $thisSplit = explode("[[[", $thisHeading);
+            $cleanHeading = trim($thisSplit[0]);
+            if( substr($cleanHeading, -1) == ":" ) {
+              $cleanHeading = substr($cleanHeading, 0, -1);
+            }
+            $thisSplit = explode("]]]", $thisSplit[1]);
+            $theseChunks[$cleanHeading] = $currencies->display_price($ppe * $thisProduct['quantity'] * $thisSplit[0]);
+          }
         }
-        fwrite($csvFile, "\"\n");
+
+        fwrite($csvFile, "\"," . ($thisProduct['payment_plan'] ? "," : "") . 
+                                 ("\"" . $currencies->display_price($ppe) . "\"") . 
+                                 ($thisProduct['payment_plan'] ? "" : ","));
+        foreach( $headingIndices as $thisHeading => $index ) {
+          fwrite($csvFile, "," . (isset($theseChunks[$thisHeading]) ? ("\"" . $theseChunks[$thisHeading] . "\"") : ""));
+        }
+        fwrite($csvFile, "\n");
       }
     }
   } else {
@@ -350,7 +393,29 @@ if( isset($_GET["regenerateCSV"]) ) {
     $name_query = $db->bindVars($name_query, ':cart_id', $_SESSION['selectedCartID'], 'integer');
     $name = $db->Execute($name_query);
 
-    fwrite($csvFile, "\"Location\",\"Quantity\",\"Item Name\",\"Additional Attributes\",\"Unit Cost\",\"Annual Unit Cost\",\"Total 2017 Cost\",\"Total 2018 Cost\",\"Total 2019 Cost\",\"Total 2020 Cost\",\"Total Cost\"\n");
+    fwrite($csvFile, "\"Location\",\"Quantity\",\"Item Name\",\"Additional Attributes\",\"Unit Cost\",\"Incremental Unit Cost\",");
+
+    // get the payment plans headings
+    $headingIndices = [];
+    foreach($productArray as $thisProduct) {
+      if( $thisProduct['payment_plan'] ) {
+        $headingChunks = explode("<br />", $thisProduct['payment_plan']);
+        foreach( $headingChunks as $index => $thisHeading ) {
+          $thisSplit = explode("[[[", $thisHeading);
+          $cleanHeading = trim($thisSplit[0]);
+          if( substr($cleanHeading, -1) == ":" ) {
+            $cleanHeading = substr($cleanHeading, 0, -1);
+          }
+          if( $cleanHeading != "Total" && !isset($headingIndices[$cleanHeading]) ) {
+            $headingIndices[$cleanHeading] = count($headingIndices);
+            fwrite($csvFile, "\"Total " . $cleanHeading . " Cost\",");
+          }
+        }
+      }
+    }
+    $headingIndices["Total"] = count($headingIndices);
+    fwrite($csvFile, "\"Total Cost\"\n");
+
     foreach($productArray as $thisProduct) {
       fwrite($csvFile, "\"" . $name->fields['name'] . "\"," . $thisProduct['quantity'] . ",\"" . $thisProduct['productsName'] . "\",\"");
       $addComma = false;
@@ -359,16 +424,30 @@ if( isset($_GET["regenerateCSV"]) ) {
         $addComma = true;
       }
       $ppe = floatval(substr($thisProduct['productsPriceEach'], 1));
-      if( $thisProduct["purchased"] ) {
-        fwrite($csvFile, "\",\"" . $thisProduct['productsPriceEach'] . "\",,,,,,\"" . $currencies->display_price($ppe * $thisProduct['quantity']));
+
+      $theseChunks = [];
+      if( !$thisProduct['payment_plan'] ) {
+        $theseChunks["Total"] = $currencies->display_price($ppe * $thisProduct['quantity']);
       } else {
-        fwrite($csvFile, "\",,\"" . $thisProduct['productsPriceEach'] . "\",\"" . $currencies->display_price($ppe * $thisProduct['quantity'] * 0.5) . "\",\"" . 
-                                                                                  $currencies->display_price($ppe * $thisProduct['quantity']) . "\",\"" . 
-                                                                                  $currencies->display_price($ppe * $thisProduct['quantity']) . "\",\"" . 
-                                                                                  $currencies->display_price($ppe * $thisProduct['quantity'] * 0.5) . "\",\"" .
-                                                                                  $currencies->display_price($ppe * $thisProduct['quantity'] * 3));
+        $headingChunks = explode("<br />", $thisProduct['payment_plan']);
+        foreach( $headingChunks as $index => $thisHeading ) {
+          $thisSplit = explode("[[[", $thisHeading);
+          $cleanHeading = trim($thisSplit[0]);
+          if( substr($cleanHeading, -1) == ":" ) {
+            $cleanHeading = substr($cleanHeading, 0, -1);
+          }
+          $thisSplit = explode("]]]", $thisSplit[1]);
+          $theseChunks[$cleanHeading] = $currencies->display_price($ppe * $thisProduct['quantity'] * $thisSplit[0]);
+        }
       }
-      fwrite($csvFile, "\"\n");
+
+      fwrite($csvFile, "\"," . ($thisProduct['payment_plan'] ? "," : "") . 
+                               ("\"" . $currencies->display_price($ppe) . "\"") . 
+                               ($thisProduct['payment_plan'] ? "" : ","));
+      foreach( $headingIndices as $thisHeading => $index ) {
+        fwrite($csvFile, "," . (isset($theseChunks[$thisHeading]) ? ("\"" . $theseChunks[$thisHeading] . "\"") : ""));
+      }
+      fwrite($csvFile, "\n");
     }
   }
 

@@ -1703,7 +1703,10 @@ class shoppingCart extends base {
     if ( $this->count_contents() > 0 ) {
       reset($this->contents[$_SESSION['selectedCartID']]);
       while (isset($this->contents[$_SESSION['selectedCartID']]) && is_array($this->contents[$_SESSION['selectedCartID']]) && list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
-        $free_ship_check = $db->Execute("select products_virtual, products_model, products_price, product_is_always_free_shipping from " . TABLE_PRODUCTS . " where products_id = '" . zen_get_prid($products_id) . "'");
+        $free_ship_check = $db->Execute("select products_virtual, products_model, products_price, product_is_always_free_shipping, products_type from " . TABLE_PRODUCTS . " where products_id = '" . zen_get_prid($products_id) . "'");
+        if( $free_ship_check->fields['products_type'] != $_GET["products_type"] ) {
+          continue;
+        }
         $virtual_check = false;
         if (preg_match('/^GIFT/', addslashes($free_ship_check->fields['products_model']))) {
 // @TODO - fix GIFT price in cart special/attribute

@@ -60,17 +60,18 @@
   //Set defaults for input variables
   $_GET['start_date'] = (!isset($_GET['start_date']) ? date("m-d-Y",(time())) : $_GET['start_date']);
   $_GET['end_date'] = (!isset($_GET['end_date']) ? date("m-d-Y",(time())) : $_GET['end_date']);
-  $_GET['library_system_name'] = (!isset($_GET['library_system_name']) ? $library_dropdown[0] : $_GET['library_system_name']);
-  $_GET['order_status'] = (!isset($_GET['order_status']) ? $order_status_dropdown[0] : $_GET['order_status']);
+  $_GET['library_system_name'] = (!isset($_GET['library_system_name']) ? $library_dropdown[0]['id'] : $_GET['library_system_name']);
+  $_GET['order_status'] = (!isset($_GET['order_status']) ? $order_status_dropdown[0]['id'] : $_GET['order_status']);
 ?>
 
 <?php
   // export to CSV
-
   if(isset($_GET["regenerateCSV"])) {
 
    //open the csv file
+   // CHANGEME
    $csvFile = fopen("/home/einet/public_html/intranet/librarySystemOrders.csv", "w");
+   //$csvFile = fopen("/home/devintra/public_html/librarySystemOrders.csv", "w");
    
    // reverse date from m-d-y to y-m-d
     $date1 = explode("-", $_GET['start_date']);

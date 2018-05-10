@@ -86,10 +86,30 @@ if (true || $orders_total > 0) {
 // dump the cart to a csv
 if( isset($_GET["regenerateCSV"]) ) {
   //CHANGEME
-  //$csvFile = fopen("/home/einet/public_html/intranet/orderHistory.csv", "w");
-  $csvFile = fopen("/home/devintra/public_html/orderHistory.csv", "w");
+  $csvFile = fopen("/home/einet/public_html/intranet/orderHistory.csv", "w");
+  //$csvFile = fopen("/home/devintra/public_html/orderHistory.csv", "w");
 
-  fwrite($csvFile, "\"Location\",\"Order Number\",\"Order Status\",\"Confirmed By\",\"Order Date\",\"Quantity\",\"Item Name\",\"Config Id\",\"Additional Attributes (expand row height to see all)\",\"Unit Cost\",\"Annual Unit Cost\",\"Total Year 1 Cost\",\"Total Year 2 Cost\",\"Total Year 3 Cost\",\"Total Year 4 Cost\",\"Total Cost\"\n");
+  fwrite($csvFile, "\"Location\",\"Order Number\",\"Order Status\",\"Confirmed By\",\"Order Date\",\"Quantity\",\"Item Name\",\"Config Id\",\"Additional Attributes (expand row height to see all)\",\"Unit Cost\",\"Incremental Unit Cost\",");
+
+  // get the payment plans headings
+  $headingIndices = [];
+  $fullHistory = $db->Execute($history_query_raw);
+  while( !$fullHistory->EOF ) {
+    $headingChunks = explode("<br />", $fullHistory->fields['order_title']);
+    foreach( $headingChunks as $index => $thisHeading ) {
+      $cleanHeading = trim($thisHeading);
+      if( substr($cleanHeading, -1) == ":" ) {
+        $cleanHeading = substr($cleanHeading, 0, -1);
+      }
+      if( $cleanHeading != "Total" && !isset($headingIndices[$cleanHeading]) ) {
+        $headingIndices[$cleanHeading] = count($headingIndices);
+        fwrite($csvFile, "\"Total " . $cleanHeading . " Cost\",");
+      }
+    }
+    $fullHistory->moveNext();
+  }
+  $headingIndices["Total"] = count($headingIndices);
+  fwrite($csvFile, "\"Total Cost\"\n");
 
   // get the full history
   $fullHistory = $db->Execute($history_query_raw);
@@ -118,23 +138,24 @@ if( isset($_GET["regenerateCSV"]) ) {
         }
       }
       $ppe = zen_round(zen_add_tax($order->products[$i]['final_price'], $order->products[$i]['tax']), $currencies->get_decimal_places($order->info['currency']));
-      if( $order->products[$i]['payment_plan'] ) {
-        fwrite($csvFile, "\",,\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\"");
-        $lines = explode("<br />", $order->products[$i]['payment_plan']);
-        foreach( $lines as $thisLine ) {
-            $tokens = explode("[[[", $thisLine);
-            foreach( $tokens as $thisToken ) {
-                $tokenSplit = explode("]]]", $thisToken);
-                if( count($tokenSplit) > 1 ) {
-                  fwrite($csvFile, ",\"" . $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * $tokenSplit[1], true, $order->info['currency'], $order->info['currency_value']) . "\"");
-                }
-            }
+      $theseChunks = [];
+      $headingChunks = explode("<br />", $fullHistory->fields['order_title']);
+      $totalChunks = explode("<br />", $fullHistory->fields['order_total']);
+      foreach( $headingChunks as $index => $thisHeading ) {
+        $cleanHeading = trim($thisHeading);
+        if( substr($cleanHeading, -1) == ":" ) {
+          $cleanHeading = substr($cleanHeading, 0, -1);
         }
-        fwrite($csvFile, "\n");
-      } else {
-        fwrite($csvFile, "\",\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\",,,,,,\"" . 
-                         $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . "\"\n");
+        $theseChunks[$cleanHeading] = trim($totalChunks[$index]);
       }
+
+      fwrite($csvFile, "\"," . ($order->products[$i]['payment_plan'] ? "," : "") . 
+                               ("\"" . $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . "\"") . 
+                               ($order->products[$i]['payment_plan'] ? "" : ","));
+      foreach( $headingIndices as $thisHeading => $index ) {
+        fwrite($csvFile, "," . (isset($theseChunks[$thisHeading]) ? ("\"" . $theseChunks[$thisHeading] . "\"") : ""));
+      }
+      fwrite($csvFile, "\n");
     }
     $fullHistory->moveNext();
   }
