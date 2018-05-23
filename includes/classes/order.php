@@ -203,7 +203,7 @@ class order extends base {
                                  op.products_quantity, final_price, op.products_cost,
                                  onetime_charges, p.products_type, pt.payment_plan, op.products_prid, 
                                  op.products_priced_by_attribute, op.product_is_free, op.products_discount_type,
-                                 op.products_discount_type_from
+                                 op.products_discount_type_from, pt.terms_link
                                   from orders_products op join products p on p.products_id = op.products_id
                                   join product_types pt on pt.type_id = p.products_type
                                   left outer join products_config pc on op.products_prid = pc.products_prid
@@ -285,6 +285,10 @@ class order extends base {
       }
 
       $this->info['tax_groups']["{$this->products[$index]['tax']}"] = '1';
+
+      if( !isset($this->info['terms']) && $orders_products->fields['terms_link'] ) {
+        $this->info['terms'] = $orders_products->fields['terms_link'];
+      }
 
       $index++;
       $orders_products->MoveNext();

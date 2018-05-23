@@ -167,6 +167,19 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
   if (DOWNLOAD_ENABLED == 'true') require($template->get_template_dir('tpl_modules_downloads.php',DIR_WS_TEMPLATE, $current_page_base,'templates'). '/tpl_modules_downloads.php');
 ?>
 
+<?php
+/**
+ * Used to show the terms and conditions for this order
+ */
+  if( $order->info['terms'] ) {
+?>
+<h2 id="orderTermsStatus"><?php echo HEADING_ORDER_TERMS; ?></h2>
+<div>Agreed upon <a href="<?php echo $order->info['terms']; ?>" target="_blank">Terms and Conditions</a> for Order #<?php echo $order->info["order_id"]; ?></div>
+<br>
+
+<?php
+  }
+?>
 
 <?php
 /**
