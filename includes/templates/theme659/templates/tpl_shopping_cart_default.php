@@ -62,7 +62,11 @@
       $items = array();
       $quantity = array();
       $total = array();
+      $erate = array();
       $monitors = array();
+      $antennae = array();
+      $installs = array();
+      $cablings = array();
       $totalsDisplay = array();
 
       foreach ($thisCart as $key => $product) {
@@ -70,12 +74,22 @@
           $items[$product['products_type']] = array();
           $quantity[$product['products_type']] = 0;
           $total[$product['products_type']] = 0;
+          $erate[$product['products_type']] = 0;
           $monitors[$product['products_type']] = 0;
+          $antennae[$product['products_type']] = 0;
+          $installs[$product['products_type']] = 0;
+          $cablings[$product['products_type']] = 0;
         }
         $items[$product['products_type']][] = $product;
         $quantity[$product['products_type']] += $product['quantity'];
-        $total[$product['products_type']] += str_replace(",", "", str_replace("$", "", $product['productsPrice']));
+        if( !in_array($product["id"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+          $total[$product['products_type']] += str_replace(",", "", str_replace("$", "", $product['productsPrice']));
+          $erate[$product['products_type']] += str_replace(",", "", str_replace("$", "", $product['productsErateEligible']));
+        }
         $monitors[$product['products_type']] += $product['neededMonitors'];
+        $antennae[$product['products_type']] += $product['neededAntennae'];
+        $installs[$product['products_type']] += $product['optionalInstalls'];
+        $cablings[$product['products_type']] += $product['optionalCablings'];
       }
 
       $showSectionBreak = false;
@@ -86,7 +100,9 @@
           } else {
             $showSectionBreak = true;
           }
-          $totalsDisplay[$products_type] = TEXT_TOTAL_ITEMS . $quantity[$products_type] . TEXT_TOTAL_AMOUNT . $currencies->display_price($total[$products_type], 0, 1)
+          $totalMultiplier = ($products_type == 7) ? 3 : ((($products_type == 6) || ($products_type == 14)) ? 2 : 1);
+          $displayTotal = $total[$products_type];
+          $totalsDisplay[$products_type] = TEXT_TOTAL_ITEMS . $quantity[$products_type] . TEXT_TOTAL_AMOUNT . $currencies->display_price($displayTotal, 0, $totalMultiplier)
 ?>
 <h1><?php echo $thisList[0]['type_name']; ?> Items</h1><br>
 <div class="tie text2">
@@ -129,18 +145,33 @@
         <th scope="col" id="scQuantityHeading"><?php echo TABLE_HEADING_QUANTITY; ?></th>
         <th scope="col" id="scUpdateQuantity"><?php echo REFRESH; ?></th>
         <th scope="col" id="scProductsHeading"><?php echo TABLE_HEADING_PRODUCTS; ?></th>
-        <th scope="col" id="scUnitHeading"><?php echo ($thisList[0]['payment_plan'] ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_PRICE); ?></th>
-        <th scope="col" id="scTotalHeading"><?php echo ($thisList[0]['payment_plan'] ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL); ?></th>
+        <th scope="col" id="scUnitHeading"><?php echo (($thisList[0]['payment_plan'] && ($products_type != WAP_TYPE_ID)) ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_PRICE); ?></th>
+        <th scope="col" id="scTotalHeading"><?php echo (($thisList[0]['payment_plan'] && ($products_type != WAP_TYPE_ID)) ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL); ?></th>
         <th scope="col" id="scRemoveHeading"><?php echo DELETE; ?></th>
      </tr>
          <!-- Loop through all products /-->
 <?php
+          // bubble WAP config to the bottom of the list
+          $leaveInOrder = [];
+          $pushToEnd = [];
           foreach ($thisList as $product) {
+            if( in_array($product["id"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+              $pushToEnd[] = $product;
+            } else {
+              $leaveInOrder[] = $product;
+            }
+          }
+          $thisList = array_merge($leaveInOrder, $pushToEnd);
+
+          foreach ($thisList as $product) {
+            $wapConfig = in_array($product["id"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]);
 ?>
      <tr class="<?php echo $product['rowClass']; ?>">
        <td class="cartQuantity">
 <?php
-            if ($product['flagShowFixedQuantity']) {
+            if ($wapConfig) {
+              echo substr($product['showFixedQuantityAmount'], 0, strpos($product['showFixedQuantityAmount'], "<"));
+            } else if ($product['flagShowFixedQuantity']) {
               echo $product['showFixedQuantityAmount'] . '<br /><span class="alert bold">' . $product['flagStockCheck'] . '</span><br /><br />' . $product['showMinUnits'];
             } else {
               echo $product['quantityField'] . '<br /><span class="alert bold">' . $product['flagStockCheck'] . '</span><br /><br />' . $product['showMinUnits'];
@@ -149,7 +180,7 @@
        </td>
        <td class="cartQuantityUpdate buttonRow">
 <?php
-            if ($product['buttonUpdate'] == '') {
+            if ($wapConfig || $product['buttonUpdate'] == '') {
               echo '' ;
             } else {
               echo $product['buttonUpdate'];
@@ -157,7 +188,7 @@
 ?>
        </td>
        <td class="cartProductDisplay">
-<a href="<?php echo $product['linkProductsName']; ?>"><span id="cartProdTitle"><?php echo $product['productsName'] . '<span class="alert bold">' . $product['flagStockCheck'] . '</span>'; ?></span><span id="cartImage" class="back"><?php echo $product['productsImage']; ?></span></a>
+           <a<?php if( !$wapConfig ) { ?> href="<?php echo $product['linkProductsName']; ?>"<?php } ?>><span id="cartProdTitle"><?php echo $product['productsName'] . '<span class="alert bold">' . $product['flagStockCheck'] . '</span>'; ?></span><span id="cartImage" class="back"><?php echo $product['productsImage']; ?></span></a>
 <br class="clearBoth" />
 
 
@@ -183,10 +214,32 @@
 <?
             if( $product['payment_plan'] ) {
               $tokens = explode("[[[", $product['payment_plan']);
-              $totalStr = $tokens[0];
+              $totalStr = (($product["id"] == WAP_INSTALL) ? ("Base Price: " . $currencies->display_price(WAP_INSTALL_BASE_PRICE, 0, 1) . "<br>") : "") . $tokens[0];
               for( $i=1; $i<count($tokens); $i++ ) {
                 $tokenSplit = explode("]]]", $tokens[$i]);
-                $totalStr .= $currencies->display_price(substr(str_replace(",", "", $product['productsPrice']), 1), 0, $tokenSplit[0]) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+                if( is_numeric($tokenSplit[0]) ) {
+                  $totalStr .= $currencies->display_price(substr(str_replace(",", "", $product['productsPrice']), 1), 0, $tokenSplit[0]) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+                } else if( $tokenSplit[0] == "p" ) {
+                  $thisVal = substr(str_replace(",", "", $product['productsPrice']), 1);
+                  $totalStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+                } else if( $tokenSplit[0] == "el" ) {
+                  $thisVal = substr(str_replace(",", "", $product['productsErateEligible']), 1);
+                  $totalStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+                } else if( $tokenSplit[0] == "er" ) {
+                  $thisVal = (substr(str_replace(",", "", $product['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"];
+                  $totalStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+                } else if( $tokenSplit[0] == "ap" ) {
+                  $thisVal = substr(str_replace(",", "", $product['productsPrice']), 1) - ((substr(str_replace(",", "", $product['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"]);
+                  $totalStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+                } else if( $tokenSplit[0] == "r" ) {
+                  $totalStr .= (100 * $_SESSION["selected_erate_discount"]) . "%" . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else {
+                  $totalStr .= $tokenSplit[0] . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                }
+              }
+              if( $wapConfig ) {
+                $thisVal = substr(str_replace(",", "", $product['productsPrice']), 1) - ((substr(str_replace(",", "", $product['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"]);
+                $totalStr .= "<br>eiNetwork pays: " . $currencies->display_price($thisVal, 0, 1) . "<br>Due up front by library: " . $currencies->display_price(0, 0, 1);
               }
 ?>
        <td class="cartTotalDisplay"><?php echo $totalStr; ?></td>
@@ -204,7 +257,7 @@
            <a href="<?php echo zen_href_link(FILENAME_SHOPPING_CART, 'action=remove_product&product_id=' . $product['id']); ?>"><?php echo zen_image($template->get_template_dir(ICON_IMAGE_TRASH, DIR_WS_TEMPLATE, $current_page_base,'images/icons'). '/' . ICON_IMAGE_TRASH, ICON_TRASH_ALT); ?></a>
 <?php */
             } //endif ($product['buttonDelete'])
-            if ($product['checkBoxDelete'] ) {
+            if (!$wapConfig && $product['checkBoxDelete'] ) {
               echo zen_draw_checkbox_field('cart_delete[]', $product['id']);
             }
 ?>
@@ -218,7 +271,7 @@
 	 </div>
 </div>
 
-<div id="cartSubTotal"><?php echo SUB_TITLE_SUB_TOTAL; ?> <span class="price"><?php echo $currencies->display_price($total[$products_type], 0, 3); ?></span></div>
+<div id="cartSubTotal"><?php echo SUB_TITLE_SUB_TOTAL; ?> <span class="price"><?php echo $currencies->display_price($displayTotal, 0, $totalMultiplier); ?></span></div>
 <br class="clearBoth" />
 
 <!--bof shopping cart buttons-->
@@ -258,12 +311,36 @@
     and acknowledge that submitting this order will result in a binding contract subject to the Terms and Conditions.
     <br><br>
 <?php
-            if( $monitors['products_type'] != 0 ) {
+            if( $installs[$products_type] < 0 ) {
+?>
+    <input type="checkbox" disabled />
+    You have selected <?php echo abs($installs[$products_type]); ?> more install<?php echo (abs($installs[$products_type]) == 1) ? "" : "s"; ?> than WAPs. You cannot proceed until correcting this above.<br><br>
+<?php
+            } //endif ( $installs[$products_type] != 0 )
+?>
+<?php
+            if( $cablings[$products_type] < 0 ) {
+?>
+    <input type="checkbox" disabled />
+    You have selected <?php echo abs($cablings[$products_type]); ?> more cabling service<?php echo (abs($cablings[$products_type]) == 1) ? "" : "s"; ?> than WAPs. You cannot proceed until correcting this above.<br><br>
+<?php
+            } //endif ( $cablings[$products_type] != 0 )
+?>
+<?php
+            if( $monitors[$products_type] != 0 ) {
 ?>
     <input type="checkbox" onclick="ToggleCheckoutLink(this)" />
-    I am intentionally selecting <?php echo abs($monitors['products_type']); ?> more <?php echo (($monitors['products_type'] > 0) ? "computers" : "monitors"); ?> than <?php echo (($monitors['products_type'] < 0) ? "computers" : "monitors"); ?>.<br><br>
+    I am intentionally selecting <?php echo abs($monitors[$products_type]); ?> more <?php echo (($monitors[$products_type] > 0) ? "computers" : "monitors"); ?> than <?php echo (($monitors[$products_type] < 0) ? "computers" : "monitors"); ?>.<br><br>
 <?php
-            } //endif ( $leaseMonitors != 0 )
+            } //endif ( $monitors[$products_type] != 0 )
+?>
+<?php
+            if( $antennae[$products_type] != 0 ) {
+?>
+    <input type="checkbox" onclick="ToggleCheckoutLink(this)" />
+    I am intentionally selecting <?php echo abs($antennae[$products_type]); ?> more <?php echo (($antennae[$products_type] > 0) ? ("External Antenna WAP" . ((abs($antennae[$products_type]) == 1) ? "" : "s") . " (Aruba 514)") : ("antenna" . ((abs($antennae[$products_type]) == 1) ? "" : "e"))); ?> than <?php echo (($antennae[$products_type] < 0) ? "External Antenna WAPs (Aruba 514)" : "antennae"); ?>.<br><br>
+<?php
+            } //endif ( $antennae[$products_type] != 0 )
 ?>
   </span>
   <div class="btn1">

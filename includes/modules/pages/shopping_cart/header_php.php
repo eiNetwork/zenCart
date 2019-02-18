@@ -9,6 +9,12 @@
  * @version $Id: Author: DrByte  Fri Dec 4 16:31:15 2015 -0500 Modified in v1.5.5 $
  */
 
+define('WAP_ANTENNA_OPTION', 136);
+define('EIN_COVER', 'eiNetwork pays');
+define('LIBRARY_DUE', 'Total due up front by library');
+$antennaeIDs = [284,285,286,287,288,289,290];
+$wapIDs = [WAP_WITH_ANTENNA,WAP_NO_ANTENNA];
+
 // This should be first line of the script:
 $zco_notifier->notify('NOTIFY_HEADER_START_SHOPPING_CART');
 
@@ -90,6 +96,7 @@ if( $products['multiCart'] ) {
       $attributeHiddenField = "";
       $attrArray = false;
       $productsName = $thisList[$i]['name'];
+      $needAntenna = false;
       // Push all attributes information in an array
       if (isset($thisList[$i]['attributes']) && is_array($thisList[$i]['attributes'])) {
         if (PRODUCTS_OPTIONS_SORT_ORDER=='0') {
@@ -98,7 +105,7 @@ if( $products['multiCart'] ) {
           $options_order_by= ' ORDER BY popt.products_options_name';
         }
         foreach ($thisList[$i]['attributes'] as $option => $value) {
-          $attributes = "SELECT popt.products_options_name, poval.products_options_values_name, pa.options_values_price, pa.price_prefix
+          $attributes = "SELECT popt.products_options_name, poval.products_options_values_id, poval.products_options_values_name, pa.options_values_price, pa.price_prefix
                          FROM " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa
                          WHERE pa.products_id = :productsID
                          AND pa.options_id = :optionsID
@@ -121,6 +128,7 @@ if( $products['multiCart'] ) {
             $attributeHiddenField .= zen_draw_hidden_field('id[' . $thisList[$i]['id'] . '][' . $option . ']', $value);
             $attr_value = $attributes_values->fields['products_options_values_name'];
           }
+          $needAntenna = ($attributes_values->fields['products_options_values_id'] == WAP_ANTENNA_OPTION);
 
           $attrArray[$option]['products_options_name'] = $attributes_values->fields['products_options_name'];
           $attrArray[$option]['options_values_id'] = $value;
@@ -150,9 +158,14 @@ if( $products['multiCart'] ) {
       $quantityField = zen_draw_input_field('cart_quantity[]', $thisList[$i]['quantity'], 'size="4" class="cart_input_'.$thisList[$i]['id'].'"');
       $ppe = $thisList[$i]['final_price'];
       $ppe = zen_round(zen_add_tax($ppe, zen_get_tax_rate($thisList[$i]['tax_class_id'])), $currencies->get_decimal_places($_SESSION['currency']));
-      $ppt = $ppe * $thisList[$i]['quantity'];
+      $ppt = $ppe * $thisList[$i]['quantity'] + (($thisList[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
+      $peree = $thisList[$i]['erate_eligible'];
+      $peree = zen_round(zen_add_tax($peree, zen_get_tax_rate($thisList[$i]['tax_class_id'])), $currencies->get_decimal_places($_SESSION['currency']));
+      $peret = $peree * $thisList[$i]['quantity'] + (($thisList[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
       $productsPriceEach = $currencies->format($ppe) . ($thisList[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($thisList[$i]['onetime_charges'], zen_get_tax_rate($thisList[$i]['tax_class_id']), 1) : '');
       $productsPriceTotal = $currencies->format($ppt) . ($thisList[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($thisList[$i]['onetime_charges'], zen_get_tax_rate($thisList[$i]['tax_class_id']), 1) : '');
+      $productsErateEligibleEach = $currencies->format($peree) . ($thisList[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($thisList[$i]['onetime_charges'], zen_get_tax_rate($thisList[$i]['tax_class_id']), 1) : '');
+      $productsErateEligibleTotal = $currencies->format($peret) . ($thisList[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($thisList[$i]['onetime_charges'], zen_get_tax_rate($thisList[$i]['tax_class_id']), 1) : '');
       $buttonUpdate = ((SHOW_SHOPPING_CART_UPDATE == 1 or SHOW_SHOPPING_CART_UPDATE == 3) ? zen_image_submit(ICON_IMAGE_UPDATE, ICON_UPDATE_ALT) : '') . zen_draw_hidden_field('products_id[]', $thisList[$i]['id']);
       $productArray[$key][$i] = array('attributeHiddenField'=>$attributeHiddenField,
                                      'flagStockCheck'=>$flagStockCheck,
@@ -168,6 +181,8 @@ if( $products['multiCart'] ) {
                                      'buttonUpdate'=>$buttonUpdate,
                                      'productsPrice'=>$productsPriceTotal,
                                      'productsPriceEach'=>$productsPriceEach,
+                                     'productsErateEligible'=>$productsErateEligibleTotal,
+                                     'productsErateEligibleEach'=>$productsErateEligibleEach,
                                      'rowClass'=>$rowClass,
                                      'buttonDelete'=>$buttonDelete,
                                      'checkBoxDelete'=>$checkBoxDelete,
@@ -176,6 +191,9 @@ if( $products['multiCart'] ) {
                                      'payment_plan'=>$thisList[$i]['payment_plan'],
                                      'quantity'=>$thisList[$i]['quantity'],
                                      'neededMonitors'=>$thisList[$i]['quantity'] * (($thisList[$i]['category'] == 66) ? 1 : ((($thisList[$i]['category'] == 74) || ($thisList[$i]['category'] == 75)) ? -1 : 0)),
+                                     'neededAntennae'=>$thisList[$i]['quantity'] * ($needAntenna ? 1 : (in_array($thisList[$i]['id'], $antennaeIDs) ? -1 : 0)),
+                                     'optionalInstalls'=>$thisList[$i]['quantity'] * (in_array($thisList[$i]['id'], $wapIDs) ? 1 : (($thisList[$i]['id'] == WAP_INSTALL) ? -1 : 0)),
+                                     'optionalCablings'=>$thisList[$i]['quantity'] * (in_array($thisList[$i]['id'], $wapIDs) ? 1 : (($thisList[$i]['id'] == WAP_CABLING) ? -1 : 0)),
                                      'type_name'=>$thisList[$i]['type_name'],
                                      'terms_link'=>$thisList[$i]['terms_link'],
                                      'attributes'=>$attrArray);
@@ -206,6 +224,7 @@ if( $products['multiCart'] ) {
     $attributeHiddenField = "";
     $attrArray = false;
     $productsName = $products[$i]['name'];
+    $needAntenna = false;
     // Push all attributes information in an array
     if (isset($products[$i]['attributes']) && is_array($products[$i]['attributes'])) {
       if (PRODUCTS_OPTIONS_SORT_ORDER=='0') {
@@ -214,7 +233,7 @@ if( $products['multiCart'] ) {
         $options_order_by= ' ORDER BY popt.products_options_name';
       }
       foreach ($products[$i]['attributes'] as $option => $value) {
-        $attributes = "SELECT popt.products_options_name, poval.products_options_values_name, pa.options_values_price, pa.price_prefix
+        $attributes = "SELECT popt.products_options_name, poval.products_options_values_id, poval.products_options_values_name, pa.options_values_price, pa.price_prefix
                        FROM " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa
                        WHERE pa.products_id = :productsID
                        AND pa.options_id = :optionsID
@@ -237,6 +256,7 @@ if( $products['multiCart'] ) {
           $attributeHiddenField .= zen_draw_hidden_field('id[' . $products[$i]['id'] . '][' . $option . ']', $value);
           $attr_value = $attributes_values->fields['products_options_values_name'];
         }
+        $needAntenna = ($attributes_values->fields['products_options_values_id'] == WAP_ANTENNA_OPTION);
 
         $attrArray[$option]['products_options_name'] = $attributes_values->fields['products_options_name'];
         $attrArray[$option]['options_values_id'] = $value;
@@ -268,9 +288,14 @@ if( $products['multiCart'] ) {
     $quantityField = zen_draw_input_field('cart_quantity[]', $products[$i]['quantity'], 'size="4" class="cart_input_'.$products[$i]['id'].'"');
     $ppe = $products[$i]['final_price'];
     $ppe = zen_round(zen_add_tax($ppe, zen_get_tax_rate($products[$i]['tax_class_id'])), $currencies->get_decimal_places($_SESSION['currency']));
-    $ppt = $ppe * $products[$i]['quantity'];
+    $ppt = $ppe * $products[$i]['quantity'] + (($products[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
+    $peree = $products[$i]['erate_eligible'];
+    $peree = zen_round(zen_add_tax($peree, zen_get_tax_rate($products[$i]['tax_class_id'])), $currencies->get_decimal_places($_SESSION['currency']));
+    $peret = $peree * $products[$i]['quantity'] + (($products[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
     $productsPriceEach = $currencies->format($ppe) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
     $productsPriceTotal = $currencies->format($ppt) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
+    $productsErateEligibleEach = $currencies->format($peree) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
+    $productsErateEligibleTotal = $currencies->format($peret) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
     $buttonUpdate = ((SHOW_SHOPPING_CART_UPDATE == 1 or SHOW_SHOPPING_CART_UPDATE == 3) ? zen_image_submit(ICON_IMAGE_UPDATE, ICON_UPDATE_ALT) : '') . zen_draw_hidden_field('products_id[]', $products[$i]['id']);
 //    $productsPriceEach = $currencies->display_price($products[$i]['final_price'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
 //    $productsPriceTotal = $currencies->display_price($products[$i]['final_price'], zen_get_tax_rate($products[$i]['tax_class_id']), $products[$i]['quantity']) . ($products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->display_price($products[$i]['onetime_charges'], zen_get_tax_rate($products[$i]['tax_class_id']), 1) : '');
@@ -290,6 +315,8 @@ if( $products['multiCart'] ) {
                               'buttonUpdate'=>$buttonUpdate,
                               'productsPrice'=>$productsPriceTotal,
                               'productsPriceEach'=>$productsPriceEach,
+                              'productsErateEligible'=>$productsErateEligibleTotal,
+                              'productsErateEligibleEach'=>$productsErateEligibleEach,
                               'rowClass'=>$rowClass,
                               'buttonDelete'=>$buttonDelete,
                               'checkBoxDelete'=>$checkBoxDelete,
@@ -298,6 +325,9 @@ if( $products['multiCart'] ) {
                               'payment_plan'=>$products[$i]['payment_plan'],
                               'quantity'=>$products[$i]['quantity'],
                               'neededMonitors'=>$products[$i]['quantity'] * (($products[$i]['category'] == 66) ? 1 : ((($products[$i]['category'] == 74) || ($products[$i]['category'] == 75)) ? -1 : 0)),
+                              'neededAntennae'=>$products[$i]['quantity'] * ($needAntenna ? 1 : (in_array($products[$i]['id'], $antennaeIDs) ? -1 : 0)),
+                              'optionalInstalls'=>$products[$i]['quantity'] * (in_array($products[$i]['id'], $wapIDs) ? 1 : (($products[$i]['id'] == WAP_INSTALL) ? -1 : 0)),
+                              'optionalCablings'=>$products[$i]['quantity'] * (in_array($products[$i]['id'], $wapIDs) ? 1 : (($products[$i]['id'] == WAP_CABLING) ? -1 : 0)),
                               'type_name'=>$products[$i]['type_name'],
                               'terms_link'=>$products[$i]['terms_link'],
                               'attributes'=>$attrArray);
@@ -406,15 +436,23 @@ if( isset($_GET["regenerateCSV"]) ) {
           if( substr($cleanHeading, -1) == ":" ) {
             $cleanHeading = substr($cleanHeading, 0, -1);
           }
-          if( $cleanHeading != "Total" && !isset($headingIndices[$cleanHeading]) ) {
+          if( substr($cleanHeading, -1) == "(" ) {
+            $cleanHeading = substr($cleanHeading, 0, -2);
+          }
+          if( ($cleanHeading != "Total") && !isset($headingIndices[$cleanHeading]) ) {
             $headingIndices[$cleanHeading] = count($headingIndices);
-            fwrite($csvFile, "\"Total " . $cleanHeading . " Cost\",");
+            $cleanHeading = "\"" . (($thisProduct['products_type'] == WAP_TYPE_ID) ? "" : "Total ") . $cleanHeading . (($thisProduct['products_type'] == WAP_TYPE_ID) ? "" : " Cost") . "\",";
+            fwrite($csvFile, $cleanHeading);
           }
         }
       }
     }
-    $headingIndices["Total"] = count($headingIndices);
-    fwrite($csvFile, "\"Total Cost\"\n");
+    if( $thisProduct['products_type'] == WAP_TYPE_ID ) {
+      fwrite($csvFile, "\"" . EIN_COVER . "\",\"" . LIBRARY_DUE . "\"\n");
+    } else {
+      $headingIndices["Total"] = count($headingIndices);
+      fwrite($csvFile, "\"Total Cost\"\n");
+    }
 
     foreach($productArray as $thisProduct) {
       fwrite($csvFile, "\"" . $name->fields['name'] . "\"," . $thisProduct['quantity'] . ",\"" . $thisProduct['productsName'] . "\",\"");
@@ -436,16 +474,43 @@ if( isset($_GET["regenerateCSV"]) ) {
           if( substr($cleanHeading, -1) == ":" ) {
             $cleanHeading = substr($cleanHeading, 0, -1);
           }
+          if( substr($cleanHeading, -1) == "(" ) {
+            $cleanHeading = substr($cleanHeading, 0, -2);
+          }
           $thisSplit = explode("]]]", $thisSplit[1]);
-          $theseChunks[$cleanHeading] = $currencies->display_price($ppe * $thisProduct['quantity'] * $thisSplit[0]);
+          if( $thisProduct['products_type'] == WAP_TYPE_ID ) {
+            if( $thisSplit[0] == "p" ) {
+              $thisVal = substr(str_replace(",", "", $thisProduct['productsPrice']), 1);
+              $theseChunks[$cleanHeading] = $currencies->display_price($thisVal, 0, 1);
+            } else if( $thisSplit[0] == "r" ) {
+              $thisVal = (substr(str_replace(",", "", $thisProduct['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"];
+              $theseChunks[$cleanHeading] = $currencies->display_price($thisVal, 0, 1);
+            } else if( $thisSplit[0] == "ap" ) {
+              $thisVal = substr(str_replace(",", "", $thisProduct['productsPrice']), 1) - ((substr(str_replace(",", "", $thisProduct['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"]);
+              $theseChunks[$cleanHeading] = $currencies->display_price($thisVal, 0, 1);
+            } else {
+              $theseChunks[$cleanHeading] = $thisSplit[0];
+            }
+          } else {
+            $theseChunks[$cleanHeading] = $currencies->display_price($ppe * $thisProduct['quantity'] * $thisSplit[0], 0, 1);
+          }
         }
       }
 
       fwrite($csvFile, "\"," . ($thisProduct['payment_plan'] ? "," : "") . 
-                               ("\"" . $currencies->display_price($ppe) . "\"") . 
+                               ("\"" . $currencies->display_price($ppe, 0, 1) . "\"") . 
                                ($thisProduct['payment_plan'] ? "" : ","));
       foreach( $headingIndices as $thisHeading => $index ) {
         fwrite($csvFile, "," . (isset($theseChunks[$thisHeading]) ? ("\"" . $theseChunks[$thisHeading] . "\"") : ""));
+      }
+      if( $thisProduct['products_type'] == WAP_TYPE_ID ) {
+        $thisVal1 = substr(str_replace(",", "", $thisProduct['productsPrice']), 1) - ((substr(str_replace(",", "", $thisProduct['productsErateEligible']), 1)) * $_SESSION["selected_erate_discount"]);
+        $thisVal2 = substr(str_replace(",", "", $thisProduct['productsPrice']), 1);
+        if( in_array($thisProduct['id'], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+          fwrite($csvFile, ",\"" . $currencies->display_price($thisVal1, 0, 1) . "\",\"" . $currencies->display_price(0, 0, 1) . "\"");
+        } else {
+          fwrite($csvFile, ",\"" . $currencies->display_price(0, 0, 1) . "\",\"" . $currencies->display_price($thisVal2, 0, 1) . "\"");
+        }
       }
       fwrite($csvFile, "\n");
     }

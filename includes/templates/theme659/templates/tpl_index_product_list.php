@@ -13,7 +13,7 @@
  */
 ?>
 <div class="centerColumn" id="indexProductList">
-
+<?php echo ($_REQUEST["cPath"] == 94 /*MAGIC NUMBER FOR WAP CATEGORY ID*/) ? "<a style=\"height:0px;float:left;width:100%;text-align:center\" href=\"http://intranet.einetwork.net/images/network/FAQ.pdf\" target=\"_blank\">FAQ 2019 Program</a>" : ""; ?>
 <h1 id="productListHeading"><?php echo $breadcrumb->last(); ?></h1>
 
 

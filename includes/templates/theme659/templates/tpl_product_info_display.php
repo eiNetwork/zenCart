@@ -302,7 +302,7 @@ require($template->get_template_dir('/tpl_products_next_previous.php',DIR_WS_TEM
 	
 	<!-- bof Social Media Icons -->
 	<?php
-	  if (SOCIAL_MEDIA_STATUS == 1) {
+	  if (defined('SOCIAL_MEDIA_STATUS') && SOCIAL_MEDIA_STATUS == 1) {
 		if (SOCIAL_POSITION == 'bottom' || SOCIAL_POSITION == 'both') {
 		  echo '<div id="socialIcons" class="fright">';
 		  echo social_media($products_id_current, $products_name);

@@ -510,6 +510,7 @@ CAPTION {
 .accountTotalDisplay, .accountTaxDisplay {
         width: 20%;
         text-align: right;
+        white-space: nowrap;
         /*vertical-align: top*/
         }
 

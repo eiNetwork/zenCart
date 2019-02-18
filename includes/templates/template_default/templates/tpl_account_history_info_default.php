@@ -39,15 +39,17 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
 <?php
   }
 ?>
-        <th scope="col"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_PRICE; ?></th>
-        <th scope="col" id="myAccountTotal"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_TOTAL_COST : HEADING_TOTAL; ?></th>
+        <th scope="col"><?php echo ($order->products[0]['payment_plan'] && ($order->products[0]['products_type'] != WAP_TYPE_ID)) ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_PRICE; ?></th>
+        <th scope="col" id="myAccountTotal"><?php echo ($order->products[0]['payment_plan'] && ($order->products[0]['products_type'] != WAP_TYPE_ID)) ? TABLE_HEADING_TOTAL_COST : HEADING_TOTAL; ?></th>
     </tr>
 <?php
+  $erate_totals = ["p" => 0, "el" => 0, "er" => 0, "ap" => 0];
   for ($i=0, $n=sizeof($order->products); $i<$n; $i++) {
+    $wapConfig = in_array($order->products[$i]["hashedid"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]);
 ?>
     <tr>
-        <td class="accountQuantityDisplay"><?php echo  $order->products[$i]['qty'] . QUANTITY_SUFFIX; ?></td>
-        <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'] . ' (Config ' . $order->products[$i]['config_id'] . ')';
+        <td class="accountQuantityDisplay"><?php echo $order->products[$i]['qty'] . QUANTITY_SUFFIX; ?></td>
+        <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'] . ($order->products[$i]['config_id'] ? (' (Config ' . $order->products[$i]['config_id'] . ')') : "");
 
     if ( (isset($order->products[$i]['attributes'])) && (sizeof($order->products[$i]['attributes']) > 0) ) {
       echo '<ul class="orderAttribsList">';
@@ -68,7 +70,9 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
         <td class="accountTotalDisplay">
         <?php
           $ppe = zen_round(zen_add_tax($order->products[$i]['final_price'], $order->products[$i]['tax']), $currencies->get_decimal_places($order->info['currency']));
-          echo $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
+          if( $order->products[$i]["id"] != WAP_CONFIG_SERVICE ) {
+            echo $currencies->format($ppe, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '');
+          }
           if( $order->products[$i]['hashedid'] == "213:173abe7021f8faacc9edb9247d00b6f8" ) {
             echo "<br><br>(reduced from " . $currencies->format(530, true, $order->info['currency']) . ")";
           } else if( $order->products[$i]['hashedid'] == "213:654a31a174713758ea2d8cf3ff6b31a9" ) {
@@ -97,14 +101,41 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
         <?php
           if( $order->products[$i]['payment_plan'] ) {
             $lines = explode("<br />", $order->products[$i]['payment_plan']);
+            echo (($order->products[$i]["id"] == WAP_INSTALL) ? ("<strong>Base Price:</strong> " . $currencies->display_price(WAP_INSTALL_BASE_PRICE, 0, 1) . "<br />") : "");
             foreach( $lines as $lineIndex => $thisLine ) {
               $tokens = explode("[[[", $thisLine);
               $totalStr = "<strong>" . $tokens[0] . "</strong>";
+              $total = $order->products[$i]['final_price'] * $order->products[$i]['qty'] + (($order->products[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
+              $eratable = $order->products[$i]['erate_eligible'] * $order->products[$i]['qty'] + (($order->products[$i]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
               for( $j=1; $j<count($tokens); $j++ ) {
                 $tokenSplit = explode("]]]", $tokens[$j]);
-                $totalStr .= $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                if( is_numeric($tokenSplit[0]) ) {
+                  $totalStr .= $currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else if( $tokenSplit[0] == "p" ) {
+                  $erate_totals[$tokenSplit[0]] += $wapConfig ? 0 : $total;
+                  $totalStr .= $currencies->format($total, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else if( $tokenSplit[0] == "el" ) {
+                  $erate_totals[$tokenSplit[0]] += $wapConfig ? 0 : $eratable;
+                  $totalStr .= $currencies->format($eratable, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else if( $tokenSplit[0] == "er" ) {
+                  $thisVal = $eratable * $_SESSION["selected_erate_discount"];
+                  $erate_totals[$tokenSplit[0]] += $wapConfig ? 0 : $thisVal;
+                  $totalStr .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else if( $tokenSplit[0] == "ap" ) {
+                  $thisVal = $total - ($eratable * $_SESSION["selected_erate_discount"]);
+                  $erate_totals[$tokenSplit[0]] += $wapConfig ? 0 : $thisVal;
+                  $totalStr .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']) . ($order->products[$i]['onetime_charges'] != 0 ? '<br />' . $currencies->format(zen_add_tax($order->products[$i]['onetime_charges'], $order->products[$i]['tax']), true, $order->info['currency'], $order->info['currency_value']) : '') . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else if( $tokenSplit[0] == "r" ) {
+                  $totalStr .= (100 * $_SESSION["selected_erate_discount"]) . "%" . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                } else {
+                  $totalStr .= $tokenSplit[0] . ((count($tokenSplit) > 1) ? ("<strong>" . $tokenSplit[1] . "</strong>") : "");
+                }
               }
               echo $totalStr . (($lineIndex < (count($lines) - 1)) ? "<br />" : "");
+            }
+            if( $wapConfig ) {
+              $thisVal = $total - ($eratable * $_SESSION["selected_erate_discount"]);
+              echo "<br><strong>eiNetwork pays:</strong> " . $currencies->display_price($thisVal, 0, 1) . "<br><strong>Due up front by library:</strong> " . $currencies->display_price(0, 0, 1);
             }
           } else {
               $ppt = $ppe * $order->products[$i]['qty'];
@@ -129,7 +160,13 @@ if( ($_SESSION["customer_first_name"] == "Mary") && ($_SESSION["customer_last_na
           foreach( $tokens as $thisToken ) {
               $tokenSplit = explode("]]]", $thisToken);
               if( count($tokenSplit) > 1 ) {
-                $text .= $currencies->display_price($order->totals[$i]['value'], 0, $tokenSplit[0]);
+                if( is_numeric($tokenSplit[0]) ) {
+                  $text .= $currencies->display_price($order->totals[$i]['value'], 0, $tokenSplit[0]);
+                } else if( $tokenSplit[0] == "r" ) {
+                  $title .= (100 * $_SESSION["selected_erate_discount"]) . "%";
+                } else {
+                  $text .= $currencies->display_price($erate_totals[$tokenSplit[0]], 0, 1);
+                }
                 $title .= "<strong>" . $tokenSplit[1] . "</strong>";
               } else {
                 $title .= "<strong>" . $tokenSplit[0] . "</strong>";

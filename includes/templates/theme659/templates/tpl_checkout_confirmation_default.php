@@ -45,7 +45,7 @@
 ?>
 <div class="important">
 <?php
-      for ($i=0, $n=sizeof($confirmation['fields']); $i<$n; $i++) {
+      for ($i=0, $n=is_array($confirmation['fields'])?sizeof($confirmation['fields']):0; $i<$n; $i++) {
 ?>
 <div class="back"><?php echo $confirmation['fields'][$i]['title']; ?></div>
 <div ><?php echo $confirmation['fields'][$i]['field']; ?></div>
@@ -65,7 +65,7 @@
 ?>
 <div id="checkoutShipto">
 <h2 id="checkoutConfirmDefaultShippingAddress"><?php echo HEADING_DELIVERY_ADDRESS; ?></h2>
-<div class="buttonRow forward"><?php echo '<a href="' . $editShippingButtonLink . '">' . zen_image_button(BUTTON_IMAGE_EDIT_SMALL, BUTTON_EDIT_SMALL_ALT) . '</a>'; ?></div>
+<div class="buttonRow forward" style="display:none"><?php echo '<a href="' . $editShippingButtonLink . '">' . zen_image_button(BUTTON_IMAGE_EDIT_SMALL, BUTTON_EDIT_SMALL_ALT) . '</a>'; ?></div>
 
 <address><?php echo zen_address_format($order->delivery['format_id'], $order->delivery, 1, ' ', '<br />'); ?></address>
 
@@ -100,7 +100,7 @@
 
 <h2 id="checkoutConfirmDefaultHeadingCart"><?php echo HEADING_PRODUCTS; ?></h2>
 
-<div class="buttonRow forward"><?php echo '<a href="' . zen_href_link(FILENAME_SHOPPING_CART, '', 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_EDIT_SMALL, BUTTON_EDIT_SMALL_ALT) . '</a>'; ?></div>
+<div class="buttonRow forward" style="display:none"><?php echo '<a href="' . zen_href_link(FILENAME_SHOPPING_CART, '', 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_EDIT_SMALL, BUTTON_EDIT_SMALL_ALT) . '</a>'; ?></div>
 <br class="clearBoth" />
 
 <?php  if ($flagAnyOutOfStock) { ?>
@@ -117,9 +117,22 @@
         <th scope="col" id="ccTypeHeading" width="10" class="showBorder"><?php echo TABLE_HEADING_TERMS; ?></th>
         <th scope="col" id="ccProductsHeading" class="showBorder"><?php echo TABLE_HEADING_PRODUCTS; ?></th>
         <th scope="col" id="ccQuantityHeading" width="10" class="showBorder"><?php echo TABLE_HEADING_QUANTITY; ?></th>
-        <th scope="col" id="ccProductsHeading" width="5" class="showBorder"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_ITEM_COST;  ?></th>
-        <th scope="col" id="ccTotalHeading" class="showBorder"><?php echo $order->products[0]['payment_plan'] ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL; ?></th>
+        <th scope="col" id="ccProductsHeading" width="5" class="showBorder"><?php echo ($order->products[0]['payment_plan'] && ($order->products[0]['products_type'] != WAP_TYPE_ID)) ? TABLE_HEADING_ANNUAL_COST : TABLE_HEADING_ITEM_COST;  ?></th>
+        <th scope="col" id="ccTotalHeading" class="showBorder"><?php echo ($order->products[0]['payment_plan'] && ($order->products[0]['products_type'] != WAP_TYPE_ID)) ? TABLE_HEADING_TOTAL_COST : TABLE_HEADING_TOTAL; ?></th>
         </tr>
+<?php
+    // bubble WAP config to the bottom of the list
+    $leaveInOrder = [];
+    $pushToEnd = [];
+    foreach ($order->products as $product) {
+      if( in_array($product["id"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+        $pushToEnd[] = $product;
+      } else {
+        $leaveInOrder[] = $product;
+      }
+    }
+    $order->products = array_merge($leaveInOrder, $pushToEnd);
+?>
 <?php // now loop thru all products to display quantity and price ?>
 <?php for ($i=0, $n=sizeof($order->products); $i<$n; $i++) { ?>
         <tr class="<?php echo $order->products[$i]['rowClass']; ?>">
@@ -137,6 +150,7 @@
       } // end loop
       echo '</ul>';
     } // endif attribute-info
+    $wapConfig = in_array($order->products[$i]["id"], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]);
 ?>
         </td>
         <td class="cartQuantity showBorder"><?php echo $order->products[$i]['qty']; ?></td>  
@@ -146,10 +160,32 @@
   // show the payment plan
   if( $order->products[$i]['payment_plan'] ) {  
     $tokens = explode("[[[", $order->products[$i]['payment_plan']);
-    echo $tokens[0];
+    echo (($order->products[$i]["id"] == WAP_INSTALL) ? ("Base Price: " . $currencies->display_price(WAP_INSTALL_BASE_PRICE, 0, 1) . "<br>") : "") . $tokens[0];
+    $total = $order->products[$i]['final_price'] * $order->products[$i]['qty'] + (($order->products[$i]["id"] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
+    $eratable = $order->products[$i]['erate_eligible'] * $order->products[$i]['qty'] + (($order->products[$i]["id"] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
     for( $j=1; $j<count($tokens); $j++ ) {
       $tokenSplit = explode("]]]", $tokens[$j]);
-      echo $currencies->display_price($order->products[$i]['final_price'] * $tokenSplit[0], $order->products[$i]['tax'], $order->products[$i]['qty']) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+      if( is_numeric($tokenSplit[0]) ) {
+        echo $currencies->display_price($order->products[$i]['final_price'] * $tokenSplit[0], $order->products[$i]['tax'], $order->products[$i]['qty']) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+      } else if( $tokenSplit[0] == "p" ) {
+        echo $currencies->display_price($total, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      } else if( $tokenSplit[0] == "el" ) {
+        echo $currencies->display_price($eratable, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      } else if( $tokenSplit[0] == "er" ) {
+        $thisVal = $eratable * $_SESSION["selected_erate_discount"];
+        echo $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      } else if( $tokenSplit[0] == "ap" ) {
+        $thisVal = $total - $eratable * $_SESSION["selected_erate_discount"];
+        echo $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      } else if( $tokenSplit[0] == "r" ) {
+        echo (100 * $_SESSION["selected_erate_discount"]) . "%" . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      } else {
+        echo $tokenSplit[0] . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+      }
+    }
+    if( $wapConfig ) {
+      $thisVal = ($order->products[$i]['final_price'] - ($order->products[$i]['erate_eligible'] * $_SESSION["selected_erate_discount"])) * $order->products[$i]['qty'];
+      echo "<br>eiNetwork pays: " . $currencies->display_price($thisVal, 0, 1) . "<br>Due up front by library: " . $currencies->display_price(0, 0, 1);
     }
   // show the single payment
   } else {

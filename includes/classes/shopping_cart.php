@@ -14,6 +14,17 @@ if (!defined('IS_ADMIN_FLAG')) {
 }
 
 define('MASTER_CART', -19);
+define('WAP_TYPE_ID', 15);
+define('WAP_CONFIG_SERVICE', '291:b939a5923d5a9312245c815028df75b4');
+define('WAP_CLOUD_MANAGEMENT', '292:4be22063d2f020962db4f610062f2ccc');
+define('WAP_WITH_ANTENNA', 280);
+define('WAP_NO_ANTENNA', 281);
+define('WAP_INSTALL', 282);
+define('WAP_INSTALL_BASE_PRICE', 110.00);
+define('WAP_CABLING', 283);
+define('WAP_REQUIRED_TEXT_ID', 29);
+define('WAP_REQUIRED_CONFIG_TEXT_VALUE_ID', 137);
+define('WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID', 138);
 
 class shoppingCart extends base {
   /**
@@ -380,7 +391,7 @@ class shoppingCart extends base {
                                         values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input($products_id) . "', '" .
                                         (int)$option.'_chk'. (int)$val . "', '" . (int)$val . "',  '" . $products_options_sort_order . "')";
 
-                                        $db->Execute($sql);
+                  $db->Execute($sql);
                 }
               } else {
                 if ($attr_value) {
@@ -392,13 +403,67 @@ class shoppingCart extends base {
                                       values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input($products_id) . "', '" .
                                       (int)$option . "', '" . (int)$value . "', '" . $attr_value . "', '" . $products_options_sort_order . "')";
 
-                                      $db->Execute($sql);
+                $db->Execute($sql);
               }
             }
           }
         }
       }
     }
+
+    // check whether we need to add a wireless configuration cost and cloud management costs
+    $wapQty = 0;
+    foreach( array_keys($this->contents[$_SESSION['selectedCartID']]) as $thisID ) {
+      if( in_array(explode(":", $thisID)[0], [WAP_WITH_ANTENNA,WAP_NO_ANTENNA]) ) {
+        $wapQty += $this->contents[$_SESSION['selectedCartID']][$thisID]["qty"];
+      }
+    }
+    if( $wapQty > 0 && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CONFIG_SERVICE);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE] = array('qty' => 1);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]['attributes'][WAP_REQUIRED_TEXT_ID] = WAP_REQUIRED_CONFIG_TEXT_VALUE_ID;
+      // insert into database
+      if (isset($_SESSION['customer_id'])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '1', '" . date('Ymd') . "', " . $_SESSION["selectedCartID"] .")";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CONFIG_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      }
+    } else if( ($wapQty == 0) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->remove(WAP_CONFIG_SERVICE);
+    }
+    if( $wapQty > 0 && (!isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) || ($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"] != $wapQty)) ) {
+      // insert into database
+      if (isset($_SESSION['customer_id']) && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" . zen_db_input($wapQty) . "', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      } else if (isset($_SESSION['customer_id']) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "update " . TABLE_CUSTOMERS_BASKET . " set customers_basket_quantity='" . zen_db_input($wapQty) . "', customers_id='" . (int)$_SESSION['customer_id'] . 
+               "', customers_basket_date_added='" . date('Ymd') . "' where products_id='" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "' and customers_basket_new_id='" . (int)$_SESSION["selectedCartID"] . "'";
+        $db->Execute($sql);
+      }
+      if( !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]) ) {
+        $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CLOUD_MANAGEMENT);
+      }
+      $this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT] = array('qty' => $wapQty, 'attributes' => array(WAP_REQUIRED_TEXT_ID => WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID));
+    } else if( $wapQty == 0 && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) ) {
+      $this->remove(WAP_CLOUD_MANAGEMENT);
+    }
+
     $this->cleanup();
 
     // assign a temporary unique ID to the order contents to prevent hack attempts during the checkout procedure
@@ -655,6 +720,60 @@ class shoppingCart extends base {
 
     }
 
+    // check whether we need to add a wireless configuration cost
+    $wapQty = 0;
+    foreach( array_keys($this->contents[$_SESSION['selectedCartID']]) as $thisID ) {
+      if( in_array(explode(":", $thisID)[0], [WAP_WITH_ANTENNA,WAP_NO_ANTENNA]) ) {
+        $wapQty += $this->contents[$_SESSION['selectedCartID']][$thisID]["qty"];
+      }
+    }
+    if( $wapQty > 0 && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CONFIG_SERVICE);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE] = array('qty' => 1);
+      // insert into database
+      if (isset($_SESSION['customer_id'])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '1', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CONFIG_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      }
+    } else if( ($wapQty == 0) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->remove(WAP_CONFIG_SERVICE);
+    }
+    if( $wapQty > 0 && (!isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) || ($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"] != $wapQty)) ) {
+      // insert into database
+      if (isset($_SESSION['customer_id']) && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" . zen_db_input($wapQty) . "', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      } else if (isset($_SESSION['customer_id']) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "update " . TABLE_CUSTOMERS_BASKET . " set customers_basket_quantity='" . zen_db_input($wapQty) . "', customers_id='" . (int)$_SESSION['customer_id'] . 
+               "', customers_basket_date_added='" . date('Ymd') . "' where products_id='" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "' and customers_basket_new_id='" . (int)$_SESSION["selectedCartID"] ."'";
+        $db->Execute($sql);
+      }
+      if( !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]) ) {
+        $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CLOUD_MANAGEMENT);
+      }
+      $this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT] = array('qty' => $wapQty, 'attributes' => array(WAP_REQUIRED_TEXT_ID => WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID));
+    } else if( $wapQty == 0 && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) ) {
+      $this->remove(WAP_CLOUD_MANAGEMENT);
+    }
+
+    $this->cleanup();
+
     // assign a temporary unique ID to the order contents to prevent hack attempts during the checkout procedure
     $this->cartID = $this->generate_cart_id();
     $this->notify('NOTIFIER_CART_REMOVE_END');
@@ -710,6 +829,11 @@ class shoppingCart extends base {
     if (!defined('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL')) define('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL', 1);
     reset($this->contents[$_SESSION['selectedCartID']]);
     while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+      // ignore the ones we're covering
+      if( in_array($products_id, [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+        continue;
+      }
+
       $total_before_discounts = 0;
       $freeShippingTotal = $productTotal = $totalOnetimeCharge = $totalOnetimeChargeNoDiscount = 0;
       $qty = $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'];
@@ -1452,7 +1576,7 @@ class shoppingCart extends base {
     reset($thisCart);
     while (list($products_id, ) = each($thisCart)) {
       $products_query = "select p.products_id, p.products_type, p.master_categories_id, p.products_status, pd.products_name, p.products_model, p.mfg_part_number, p.quote_number, p.products_image,
-                                  p.products_price, p.products_cost, p.products_weight, p.products_tax_class_id,
+                                  p.products_price, p.products_cost, p.products_erate_eligible, p.products_weight, p.products_tax_class_id,
                                   p.products_quantity_order_min, p.products_quantity_order_units, p.products_quantity_order_max,
                                   p.product_is_free, p.products_priced_by_attribute,
                                   p.products_discount_type, p.products_discount_type_from, p.products_virtual, p.product_is_always_free_shipping,
@@ -1468,6 +1592,7 @@ class shoppingCart extends base {
         $prid = $products->fields['products_id'];
         $products_price = $products->fields['products_price'];
         $products_cost = $products->fields['products_cost'];
+        $products_erate_eligible = $products->fields['products_erate_eligible'];
         //fix here
         /*
         $special_price = zen_get_products_special_price($prid);
@@ -1620,6 +1745,8 @@ class shoppingCart extends base {
                                   'quote_number' => $products->fields['quote_number'],
                                   'image' => $products->fields['products_image'],
                                   'price' => ($products->fields['product_is_free'] =='1' ? 0 : $products_price),
+                                  'cost' => ($products->fields['product_is_free'] =='1' ? 0 : $products_cost),
+                                  'erate_eligible' => ($products->fields['product_is_free'] =='1' ? 0 : $products_erate_eligible),
         //                                    'quantity' => $thisCart[$products_id]['qty'],
                                   'quantity' => $new_qty,
                                   'weight' => $products->fields['products_weight'] + $this->attributes_weight($products_id),

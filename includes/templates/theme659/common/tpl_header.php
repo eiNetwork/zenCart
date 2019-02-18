@@ -34,6 +34,10 @@
   // change their selected address
   if( isset($_POST["changeAddress"]) && $_POST["changeAddress"] ) {
     $_SESSION["selected_address_id"] = $_POST["address_id"];
+    $get_erate_query = "SELECT erate_discount FROM address_book WHERE address_book_id = :addressID";
+    $get_erate_query = $db->bindVars($get_erate_query, ':addressID', $_SESSION["selected_address_id"], 'integer');
+    $grab_erate = $db->Execute($get_erate_query);
+    $_SESSION["selected_erate_discount"] = $grab_erate->fields['erate_discount'];
     unset($_SESSION["availableCarts"]);
   }
 

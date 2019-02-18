@@ -152,7 +152,7 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
         // I'm not using bindVars below because I couldn't find a way to use it to insert an array of strings.  This is less secure than doing it the bindVars way, but
         // being that everything we're feeding in there is a group name coming from Active directory, I think we can be reasonably certain it contains no SQL injection. -- BJP
         $checkGroupNameQuery = "SELECT address_book.address_book_id as ID, 1 as modify_cart, if(security_level='Order',1,0) as approve_cart, 1 as view_orders, 
-                                       entry_company as library_name, address_book.librarycode, address_book.library_system_id 
+                                       entry_company as library_name, address_book.librarycode, address_book.library_system_id, erate_discount
                                 FROM user_authorization LEFT JOIN library_system USING (library_system_id) 
                                 LEFT JOIN address_book ON (user_authorization.address_book_id=address_book.address_book_id OR 
                                                            (address_book.library_system_id=library_system.library_system_id AND user_authorization.address_book_id=0))
@@ -173,7 +173,8 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
           if( $foundLocation == -1 ) {
             $_SESSION['customer_addresses'][] = ["ID" => $checkGroupName->fields['ID'], "library_name" => $checkGroupName->fields['library_name'], 
                                                  "modify_cart" => $checkGroupName->fields['modify_cart'], "approve_cart" => $checkGroupName->fields['approve_cart'], 
-                                                 "view_orders" => $checkGroupName->fields['view_orders'], "librarycode" => $checkGroupName->fields['librarycode']];
+                                                 "view_orders" => $checkGroupName->fields['view_orders'], "librarycode" => $checkGroupName->fields['librarycode'],
+                                                 "erate_discount" => $checkGroupName->fields['erate_discount']];
           // if not, update it
           } else {
             if( $_SESSION['customer_addresses'][$foundLocation]["modify_cart"] == 0 ) {
@@ -205,6 +206,7 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
         $_SESSION["selected_librarycode"] = count($_SESSION['customer_addresses']) ? $_SESSION['customer_addresses'][0]['librarycode'] : null;
 ***/
         $_SESSION["selected_address_id"] = count($_SESSION['customer_addresses']) ? $_SESSION['customer_addresses'][0]['ID'] : null;
+        $_SESSION["selected_erate_discount"] = count($_SESSION['customer_addresses']) ? $_SESSION['customer_addresses'][0]['erate_discount'] : null;
 
         // enforce db integrity: make sure related record exists
         $sql = "SELECT customers_info_date_of_last_logon FROM " . TABLE_CUSTOMERS_INFO . " WHERE customers_info_id = :customersID";

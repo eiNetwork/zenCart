@@ -31,6 +31,7 @@ define('TEXT_CHECKOUT_LOGOFF_CUSTOMER', 'Please click the Log Off link to ensure
 define('HEADING_ORDER_NUMBER', 'Order #%s');
 define('HEADING_ORDER_DATE', 'Order Date:');
 define('HEADING_ORDER_TOTAL', 'Order Total:');
+define('HEADING_ORDER_TERMS', 'Order Terms &amp; Conditions');
 
 define('HEADING_DELIVERY_ADDRESS', 'Delivery Address');
 define('HEADING_SHIPPING_METHOD', 'Shipping Method');

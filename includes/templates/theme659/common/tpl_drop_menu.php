@@ -48,6 +48,7 @@
  $menulist = str_replace('<li class="submenu">','<li class="submenu">',$menulist);
  $menulist = str_replace("</li>\n</ul>\n</li>\n</ul>\n","</li>\n</ul>\n",$menulist);
  echo $menulist;
+/*****
 ?>
 <!-- You can also add links on this side of your catefories menu
       <li class="submenu"><a href="<?php echo zen_href_link(FILENAME_DEFAULT); ?>"><?php echo HEADER_TITLE_INFORMATION; ?></a>
@@ -65,6 +66,9 @@
         </ul>
       </li>
 -->
+<?php 
+*****/ 
+?>
     </ul>
   </div>
 </div>

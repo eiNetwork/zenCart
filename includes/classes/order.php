@@ -200,7 +200,7 @@ class order extends base {
     $orders_products_query = "select orders_products_id, p.products_id, products_name, p.mfg_part_number, p.quote_number,
                                  ifnull(pc.vendor_config_id,p.mfg_part_number) as config_id,
                                  op.products_model, op.products_price, products_tax,
-                                 op.products_quantity, final_price, op.products_cost,
+                                 op.products_quantity, final_price, op.products_cost, op.products_erate_eligible,
                                  onetime_charges, p.products_type, pt.payment_plan, op.products_prid, 
                                  op.products_priced_by_attribute, op.product_is_free, op.products_discount_type,
                                  op.products_discount_type_from, pt.terms_link
@@ -248,6 +248,7 @@ class order extends base {
                                       'products_type' => $orders_products->fields['products_type'],
                                       'payment_plan' => htmlspecialchars_decode($orders_products->fields['payment_plan']),
                                       'wholesale_cost' => $orders_products->fields['products_cost'],
+                                      'erate_eligible' => $orders_products->fields['products_erate_eligible'],
                                       'final_price' => $orders_products->fields['final_price'],
                                       'onetime_charges' => $orders_products->fields['onetime_charges'],
                                       'products_priced_by_attribute' => $orders_products->fields['products_priced_by_attribute'],
@@ -443,6 +444,7 @@ class order extends base {
                         'shipping_module_code' => (isset($_SESSION['shipping']['id']) && strpos($_SESSION['shipping']['id'], '_') > 0 ? $_SESSION['shipping']['id'] : $_SESSION['shipping']),
                         'shipping_cost' => isset($_SESSION['shipping']['cost']) ? $_SESSION['shipping']['cost'] : 0,
                         'subtotal' => 0,
+                        'erate_eligible' => 0,
                         'subcost' => 0,
                         'shipping_tax' => 0,
                         'tax' => 0,
@@ -531,11 +533,17 @@ class order extends base {
       $allProducts = $allProducts[$_REQUEST["cart_id"]];
     }
     $products = array();
+    $pushToEnd = array();
     foreach( $allProducts as $thisProduct ) {
       if( $thisProduct['products_type'] == $_REQUEST["products_type"] ) {
-        $products[] = $thisProduct;
+        if( in_array($thisProduct['id'], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+          $pushToEnd[] = $thisProduct;
+        } else {
+          $products[] = $thisProduct;
+        }
       }
     }
+    $products = array_merge($products, $pushToEnd);
     for ($i=0, $n=sizeof($products); $i<$n; $i++) {
       if (($i/2) == floor($i/2)) {
         $rowClass="rowEven";
@@ -552,6 +560,7 @@ class order extends base {
                                       'tax_description' => zen_get_tax_description($products[$i]['tax_class_id'], $taxCountryId, $taxZoneId),
                                       'price' => $products[$i]['price'],
                                       'wholesale_cost' => zen_round($products[$i]['wholesale_cost'], $decimals),
+                                      'erate_eligible' => zen_round($products[$i]['erate_eligible'], $decimals),
                                       'final_price' => zen_round($products[$i]['price'] + $_SESSION['cart']->attributes_price($products[$i]['id']), $decimals),
                                       'onetime_charges' => $_SESSION['cart']->attributes_price_onetime_charges($products[$i]['id'], $products[$i]['quantity']),
                                       'onetime_costs' => $_SESSION['cart']->attributes_cost_onetime_charges($products[$i]['id'], $products[$i]['quantity']),
@@ -636,13 +645,16 @@ class order extends base {
       $this->use_external_tax_handler_only = FALSE;
       $this->notify('NOTIFY_ORDER_CART_EXTERNAL_TAX_HANDLING', array(), $index, $taxCountryId, $taxZoneId);
 
-      if ($this->use_external_tax_handler_only == FALSE) {
+      if ($this->use_external_tax_handler_only == FALSE && !in_array($products[$i]['id'], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT])) {
         /*********************************************
          * Calculate taxes for this product
          *********************************************/
-        $shown_price = (zen_add_tax($this->products[$index]['final_price'] * $this->products[$index]['qty'], $this->products[$index]['tax']))
+        $shown_price = (zen_add_tax(($this->products[$index]['final_price'] * $this->products[$index]['qty']) + (($this->products[$index]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0), $this->products[$index]['tax']))
         + zen_add_tax($this->products[$index]['onetime_charges'], $this->products[$index]['tax']);
         $this->info['subtotal'] += $shown_price;
+        $shown_erate = (zen_add_tax(($this->products[$index]['erate_eligible'] * $this->products[$index]['qty']) + (($this->products[$index]['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0), $this->products[$index]['tax']))
+        + zen_add_tax($this->products[$index]['onetime_charges'], $this->products[$index]['tax']);
+        $this->info['erate_eligible'] += $shown_erate;
         $shown_cost = (zen_add_tax($this->products[$index]['wholesale_cost'] * $this->products[$index]['qty'], $this->products[$index]['tax']))
         + zen_add_tax($this->products[$index]['onetime_costs'], $this->products[$index]['tax']);
         $this->info['subcost'] += $shown_cost;
@@ -660,6 +672,7 @@ class order extends base {
           $tax_add = ($products_tax/100) * $shown_price;
         }
         $this->info['tax'] += $tax_add;
+/*
         foreach ($taxRates as $taxDescription=>$taxRate)
         {
           $taxAdd = zen_calculate_tax($this->products[$index]['final_price']*$this->products[$index]['qty'], $taxRate)
@@ -672,6 +685,7 @@ class order extends base {
             $this->info['tax_groups'][$taxDescription] = $taxAdd;
           }
         }
+*/
         /*********************************************
          * END: Calculate taxes for this product
          *********************************************/
@@ -827,6 +841,7 @@ class order extends base {
     $this->products_ordered = '';
     $this->products_ordered_html = '';
     $this->subtotal = 0;
+    $this->erate_eligible = 0;
     $this->total_tax = 0;
 
     $this->costTotal = '';
@@ -837,8 +852,8 @@ class order extends base {
 
     $this->products_ordered_html .= '<tr><td class="products-details" style="font-weight:700">Quantity</td>
                                          <td class="products-details" style="font-weight:700">Description</td>
-                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
-                                         <td class="products-details" style="font-weight:700">' . ($this->products[0]['payment_plan'] ? "Total Program Cost" : "Total") . '</td></tr>';
+                                         <td class="products-details" style="font-weight:700">' . (($this->products[0]['payment_plan'] && ($this->products[0]['products_type'] != WAP_TYPE_ID)) ? "Annual Cost Per Unit" : "Unit Cost") . '</td>
+                                         <td class="products-details" style="font-weight:700">' . (($this->products[0]['payment_plan'] && ($this->products[0]['products_type'] != WAP_TYPE_ID)) ? "Total Program Cost" : "Total") . '</td></tr>';
 
     for ($i=0, $n=sizeof($this->products); $i<$n; $i++) {
       $custom_insertable_text = '';
@@ -913,6 +928,7 @@ class order extends base {
                               'products_price' => $this->products[$i]['price'],
                               'final_price' => $this->products[$i]['final_price'],
                               'products_cost' => $this->products[$i]['wholesale_cost'],
+                              'products_erate_eligible' => $this->products[$i]['erate_eligible'],
                               'onetime_charges' => $this->products[$i]['onetime_charges'],
                               'products_tax' => $this->products[$i]['tax'],
                               'products_quantity' => $this->products[$i]['qty'],
@@ -1072,9 +1088,9 @@ class order extends base {
       '<small><em> '. nl2br($this->products_ordered_attributes) .'</em></small>' .
       '</nobr>' .
       '</td>' . "\n" .
-      '<td class="product-details-num" valign="top" align="right">' .
+      '<td class="product-details-num" valign="top" align="right">' . (
       '<EINONLY>' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], 1) . '</EINONLY>' .
-      '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], 1) . '</RTIONLY>' .
+      '<RTIONLY>' . $currencies->display_price($this->products[$i]['wholesale_cost'], $this->products[$i]['tax'], 1) . '</RTIONLY>') .
       '</td><td class="product-details-num" valign="top" align="right">' . 
       $this->formatTotalForEmail($this->products[0]['payment_plan'], $this->products[$i]) . 
       ($this->products[$i]['onetime_charges'] !=0 ?
@@ -1089,15 +1105,38 @@ class order extends base {
 
   function formatTotalForEmail($payment_plan, $product_details) {
     global $currencies;
+    $wapConfig = in_array($product_details['id'], [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]);
     if( !$payment_plan ) {
       return '<EINONLY>' . $currencies->display_price($product_details['final_price'], $product_details['tax'], $product_details['qty']) . '</EINONLY>' .
              '<RTIONLY>' . $currencies->display_price($product_details['wholesale_cost'], $product_details['tax'], $product_details['qty']) . '</RTIONLY>';
     } else {
       $tokens = explode("[[[", $payment_plan);
-      $returnStr = $tokens[0];
+      $returnStr = (($product_details["id"] == WAP_INSTALL) ? ("Base Price: " . $currencies->display_price(WAP_INSTALL_BASE_PRICE, 0, 1) . "<br>") : "") . $tokens[0];
+      $total = $product_details['final_price'] * $product_details['qty'] + (($product_details['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
+      $eratable = $product_details['erate_eligible'] * $product_details['qty'] + (($product_details['id'] == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0);
       for( $i=1; $i<count($tokens); $i++ ) {
         $tokenSplit = explode("]]]", $tokens[$i]);
-        $returnStr .= $currencies->display_price($product_details['final_price'], $product_details['tax'], $product_details['qty'] * $tokenSplit[0]) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+        if( is_numeric($tokenSplit[0]) ) {
+          $returnStr .= $currencies->display_price($product_details['final_price'], $product_details['tax'], $product_details['qty'] * $tokenSplit[0]) . ((count($tokenSplit) > 1)? $tokenSplit[1] : "");
+        } else if( $tokenSplit[0] == "p" ) {
+          $returnStr .= $currencies->display_price($total, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        } else if( $tokenSplit[0] == "el" ) {
+          $returnStr .= $currencies->display_price($eratable, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        } else if( $tokenSplit[0] == "er" ) {
+          $thisVal = $eratable * $_SESSION["selected_erate_discount"];
+          $returnStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        } else if( $tokenSplit[0] == "ap" ) {
+          $thisVal = $total - ($eratable * $_SESSION["selected_erate_discount"]);
+          $returnStr .= $currencies->display_price($thisVal, 0, 1) . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        } else if( $tokenSplit[0] == "r" ) {
+          $returnStr .= (100 * $_SESSION["selected_erate_discount"]) . "%" . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        } else {
+          $returnStr .= $tokenSplit[0] . ((count($tokenSplit) > 1) ? $tokenSplit[1] : "");
+        }
+      }
+      if( $wapConfig ) {
+        $thisVal = $total - ($eratable * $_SESSION["selected_erate_discount"]);
+        $returnStr .= "<br>eiNetwork pays: " . $currencies->display_price($thisVal, 0, 1) . "<br>Due up front by library: " . $currencies->display_price(0, 0, 1);
       }
       return $returnStr; 
     }
@@ -1314,24 +1353,26 @@ class order extends base {
     }
 
     //RTI email order - fixthis
-    // clean out the customer-only bits
-    $emailText = $originalProductsText;
-    while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
-      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
+    if( isset($this->products[0]['vendor_email']) && $this->products[0]['vendor_email'] ) {
+      // clean out the customer-only bits
+      $emailText = $originalProductsText;
+      while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
+        $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
+      }
+      $emailText = str_replace("<RTIONLY>", "", $emailText);
+      $emailText = str_replace("</RTIONLY>", "", $emailText);
+      $html_msg['PRODUCTS_DETAIL'] = $emailText;
+      $emailText = $originalOrdersText;
+      while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
+        $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
+      }
+      $emailText = str_replace("<RTIONLY>", "", $emailText);
+      $emailText = str_replace("</RTIONLY>", "", $emailText);
+      $html_msg['ORDER_TOTALS'] = $emailText;
+      //Don't inclulde an attachment for the RTI email
+      //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
+      zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor');
     }
-    $emailText = str_replace("<RTIONLY>", "", $emailText);
-    $emailText = str_replace("</RTIONLY>", "", $emailText);
-    $html_msg['PRODUCTS_DETAIL'] = $emailText;
-    $emailText = $originalOrdersText;
-    while( ($start = strpos($emailText, "<EINONLY>")) !== false ) {
-      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</EINONLY>") + 10);
-    }
-    $emailText = str_replace("<RTIONLY>", "", $emailText);
-    $emailText = str_replace("</RTIONLY>", "", $emailText);
-    $html_msg['ORDER_TOTALS'] = $emailText;
-    //Don't inclulde an attachment for the RTI email
-    //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
-    zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor');
 
     $this->notify('NOTIFY_ORDER_AFTER_SEND_ORDER_EMAIL', $zf_insert_id, $emailText, $extra_info, $html_msg);
   }
@@ -1518,6 +1559,7 @@ require(DIR_WS_CLASSES . 'order_total.php');
     $this->products_ordered = '';
     $this->products_ordered_html = '';
     $this->subtotal = 0;
+    $this->erate_eligible = 0;
     $this->total_tax = 0;
 
     $this->products_ordered_html .= '<tr><td class="products-details" style="font-weight:700">Quantity</td>

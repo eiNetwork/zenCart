@@ -128,6 +128,7 @@ legend{ border:solid 1px #dee6ee; padding:10px 20px; color:#494949; background:#
 }
 .cartTotalDisplay{
 	text-align:left!important;
+	white-space:nowrap;
 }
 .productListing-data{
 	padding-left:13px!important;
@@ -381,7 +382,8 @@ h2.centerBoxHeading {text-transform:uppercase;
 .cartContentsDisplay th {font-size:12px; font-weight:normal; background:#fafafa; color:#000;}
 .cartContentsDisplay th a {color:#000;}
 .cartContentsDisplay td {border-right:1px solid #dee6ee; border-bottom:1px solid #dee6ee; padding:5px; text-align:center;}
-.cartContentsDisplay td .cartAttribsList {text-align:left;}
+#.cartContentsDisplay td .cartAttribsList {text-align:left;max-width:400px}
+.cartAttribsList {text-align:left;max-width:400px}
 .cartContentsDisplay td.cartTotalDisplay {font-size:12px;
 	line-height:18px;
 	color:#3b499f;

@@ -32,7 +32,9 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
 <meta name="robots" content="noindex, nofollow" />
 <?php } ?>
 <link rel="icon" href="<?php echo DIR_WS_TEMPLATE. 'favicon.ico'?>" type="image/x-icon" />
+<?php if (defined('FAVICON')) { ?>
 <link rel="shortcut icon" href="<?php echo FAVICON; ?>" type="image/x-icon" />
+<?php } ?>
 
 <base href="<?php echo (($request_type == 'SSL') ? HTTPS_SERVER . DIR_WS_HTTPS_CATALOG : HTTP_SERVER . DIR_WS_CATALOG ); ?>" />
 <?php if (isset($canonicalLink) && $canonicalLink != '') { ?>

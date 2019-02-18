@@ -31,8 +31,31 @@
             foreach( $tokens as $thisToken ) {
                 $tokenSplit = explode("]]]", $thisToken);
                 if( count($tokenSplit) > 1 ) {
-                  $text .= $currencies->format($order->info['total'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']);
-                  $title .= $tokenSplit[1];
+                  if( is_numeric($tokenSplit[0]) ) {
+                    $text .= $currencies->format($order->info['total'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "p" ) {
+                    $thisVal = $order->info['total'];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "el" ) {
+                    $thisVal = $order->info['erate_eligible'];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "er" ) {
+                    $thisVal = $order->info['erate_eligible'] * $_SESSION["selected_erate_discount"];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "ap" ) {
+                    $thisVal = $order->info['total'] - ($order->info['erate_eligible'] * $_SESSION["selected_erate_discount"]);
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "r" ) {
+                    $title .= (100 * $_SESSION["selected_erate_discount"]) . "%" . $tokenSplit[1];
+                  } else {
+                    $text .= $tokenSplit[0];
+                    $title .= $tokenSplit[1];
+                  }
                 } else {
                   $title .= $tokenSplit[0];
                 }
