@@ -1159,9 +1159,9 @@ class order extends base {
     $html_msg=array();
 
     // add the attachment -- production CHANGEME
-    //$this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
     // add the attachment -- development
-    $this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
+    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
@@ -1399,9 +1399,9 @@ class order extends base {
     $html_msg=array();
 
     // CHANGEME add the attachment - production
-    //$this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
+    $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
     // add the attachment - development 
-    $this->attachArray = array( array('file' => "/home/devintra/public_html/zenCartt/" . $this->products[0]['terms_link']) );
+    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCartt/" . $this->products[0]['terms_link']) );
     // add the attachment 
     $this->attachArray = array( array('file' => DIR_FS_CATALOG . $this->products[0]['terms_link']) );
 
