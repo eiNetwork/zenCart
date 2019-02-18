@@ -22,6 +22,8 @@
     $products_price = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_cost']);
     $products_cost = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
+    $tmp_value = zen_db_prepare_input($_POST['products_erate_eligible']);
+    $products_erate_eligible = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_weight']);
     $products_weight = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['manufacturers_id']);
@@ -34,6 +36,7 @@
                             'quote_number' => zen_db_prepare_input($_POST['quote_number']),
                             'products_price' => $products_price,
                             'products_cost' => $products_cost,
+                            'products_erate_eligible' => $products_erate_eligible,
                             'products_date_available' => $products_date_available,
                             'products_weight' => $products_weight,
                             'products_status' => zen_db_prepare_input((int)$_POST['products_status']),

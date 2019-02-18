@@ -100,6 +100,7 @@ define('TEXT_PRODUCTS_URL_WITHOUT_HTTP', '<small>(without http://)</small>');
 define('TEXT_PRODUCTS_PRICE_NET', 'Products Price (Net):');
 define('TEXT_PRODUCTS_PRICE_GROSS', 'Products Price (Gross):');
 define('TEXT_PRODUCTS_COST', 'Wholesale Cost:');
+define('TEXT_PRODUCTS_ERATE', 'E-rate Eligible Price:');
 define('TEXT_PRODUCTS_WEIGHT', 'Products Shipping Weight:');
 
 define('EMPTY_CATEGORY', 'Empty Category');
