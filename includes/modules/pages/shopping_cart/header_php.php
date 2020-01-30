@@ -12,6 +12,8 @@
 define('WAP_ANTENNA_OPTION', 136);
 define('EIN_COVER', 'eiNetwork pays');
 define('LIBRARY_DUE', 'Total due up front by library');
+$desktopCategoryIDs = [108];
+$monitorCategoryIDs = [111];
 $antennaeIDs = [284,285,286,287,288,289,290];
 $wapIDs = [WAP_WITH_ANTENNA,WAP_NO_ANTENNA];
 
@@ -190,7 +192,7 @@ if( $products['multiCart'] ) {
                                      'products_type'=>$thisList[$i]['products_type'],
                                      'payment_plan'=>$thisList[$i]['payment_plan'],
                                      'quantity'=>$thisList[$i]['quantity'],
-                                     'neededMonitors'=>$thisList[$i]['quantity'] * (($thisList[$i]['category'] == 66) ? 1 : ((($thisList[$i]['category'] == 74) || ($thisList[$i]['category'] == 75)) ? -1 : 0)),
+                                     'neededMonitors'=>$thisList[$i]['quantity'] * (in_array($thisList[$i]['category'], $desktopCategoryIDs) ? 1 : (in_array($thisList[$i]['category'], $monitorCategoryIDs) ? -1 : 0)),
                                      'neededAntennae'=>$thisList[$i]['quantity'] * ($needAntenna ? 1 : (in_array($thisList[$i]['id'], $antennaeIDs) ? -1 : 0)),
                                      'optionalInstalls'=>$thisList[$i]['quantity'] * (in_array($thisList[$i]['id'], $wapIDs) ? 1 : (($thisList[$i]['id'] == WAP_INSTALL) ? -1 : 0)),
                                      'optionalCablings'=>$thisList[$i]['quantity'] * (in_array($thisList[$i]['id'], $wapIDs) ? 1 : (($thisList[$i]['id'] == WAP_CABLING) ? -1 : 0)),
@@ -324,7 +326,7 @@ if( $products['multiCart'] ) {
                               'products_type'=>$products[$i]['products_type'],
                               'payment_plan'=>$products[$i]['payment_plan'],
                               'quantity'=>$products[$i]['quantity'],
-                              'neededMonitors'=>$products[$i]['quantity'] * (($products[$i]['category'] == 66) ? 1 : ((($products[$i]['category'] == 74) || ($products[$i]['category'] == 75)) ? -1 : 0)),
+                              'neededMonitors'=>$products[$i]['quantity'] * (in_array($products[$i]['category'], $desktopCategoryIDs) ? 1 : (in_array($products[$i]['category'], $monitorCategoryIDs) ? -1 : 0)),
                               'neededAntennae'=>$products[$i]['quantity'] * ($needAntenna ? 1 : (in_array($products[$i]['id'], $antennaeIDs) ? -1 : 0)),
                               'optionalInstalls'=>$products[$i]['quantity'] * (in_array($products[$i]['id'], $wapIDs) ? 1 : (($products[$i]['id'] == WAP_INSTALL) ? -1 : 0)),
                               'optionalCablings'=>$products[$i]['quantity'] * (in_array($products[$i]['id'], $wapIDs) ? 1 : (($products[$i]['id'] == WAP_CABLING) ? -1 : 0)),
@@ -414,7 +416,7 @@ if( isset($_GET["regenerateCSV"]) ) {
         }
         fwrite($csvFile, "\n");
       }
-    }
+    } 
   } else {
     $name_query = "select entry_company as name
                    from " . TABLE_ADDRESS_BOOK . " 
@@ -457,7 +459,7 @@ if( isset($_GET["regenerateCSV"]) ) {
     foreach($productArray as $thisProduct) {
       fwrite($csvFile, "\"" . $name->fields['name'] . "\"," . $thisProduct['quantity'] . ",\"" . $thisProduct['productsName'] . "\",\"");
       $addComma = false;
-      foreach($thisProduct["attributes"] as $thisAttr) {
+      foreach($thisProduct["attributes"] ?? [] as $thisAttr) {
         fwrite($csvFile, ($addComma ? "\n" : "") . $thisAttr['products_options_name'] . " - " . nl2br($thisAttr['products_options_values_name']));
         $addComma = true;
       }
@@ -465,7 +467,7 @@ if( isset($_GET["regenerateCSV"]) ) {
 
       $theseChunks = [];
       if( !$thisProduct['payment_plan'] ) {
-        $theseChunks["Total"] = $currencies->display_price($ppe * $thisProduct['quantity']);
+        $theseChunks["Total"] = $currencies->display_price($ppe * $thisProduct['quantity'], 0, 1);
       } else {
         $headingChunks = explode("<br />", $thisProduct['payment_plan']);
         foreach( $headingChunks as $index => $thisHeading ) {

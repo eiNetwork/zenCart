@@ -44,7 +44,7 @@
 <?php
   // export to CSV
 
-  if(isset($_POST["regenerateCSV"])) {
+  if(isset($_GET["regenerateCSV"])) {
 
    //open the csv file
    $csvFile = fopen("/home/einet/public_html/intranet/vendorOrder.csv", "w");
@@ -134,7 +134,7 @@
   }
 ?>
 
-<form method="post" id="generateCSVForm" target="_blank" action="#">
+<form method="get" id="generateCSVForm" target="_blank" action="#">
   <input type="hidden" name="regenerateCSV" value="true">
   <input type="hidden" name="manufacturer" value="<?php echo $_GET['manufacturer'];?>">
   <input type="hidden" name="order_status" value="<?php echo $_GET['order_status'];?>">
