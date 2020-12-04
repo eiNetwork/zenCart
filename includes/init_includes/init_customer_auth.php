@@ -105,8 +105,8 @@ switch (true) {
 /**
  * check store status before authorizations
  */
-  //case (STORE_STATUS != 0):
-  //  break;
+  case (STORE_STATUS != 0):
+    break;
 /**
  * if not down for maintenance check login status
  */
@@ -145,8 +145,8 @@ switch (true) {
 /**
  * check store status before authorizations
  */
-  //case (STORE_STATUS != 0):
-  //  break;
+  case (STORE_STATUS != 0):
+    break;
 
   case (CUSTOMERS_APPROVAL_AUTHORIZATION == '1' and (int)$_SESSION['customer_id'] == 0):
   /**

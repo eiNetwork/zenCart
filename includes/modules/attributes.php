@@ -161,9 +161,8 @@ $sql = "select count(*) as total
                         if ($new_attributes_price == 0) {
                           $products_options_display_price= '';
                         } else {
-                          $product_check = $db->Execute("select products_tax_class_id, products_price, products_erate_eligible, products_priced_by_attribute, product_is_free, product_is_call, products_type, payment_plan from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . " on (products_type=type_id) where products_id = '" . (int)$_GET['products_id'] . "'" . " limit 1");
                           $products_options_display_price= ATTRIBUTES_PRICE_DELIMITER_PREFIX . $products_options->fields['price_prefix'] .
-                          $currencies->display_price($new_attributes_price, zen_get_tax_rate($product_info->fields['products_tax_class_id'])) . ($product_check->fields['payment_plan'] ? '/year' : '') . ATTRIBUTES_PRICE_DELIMITER_SUFFIX;
+                          $currencies->display_price($new_attributes_price, zen_get_tax_rate($product_info->fields['products_tax_class_id'])) . ATTRIBUTES_PRICE_DELIMITER_SUFFIX;
                         }
                       }
                     }

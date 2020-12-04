@@ -34,8 +34,8 @@ if (!defined('IS_ADMIN_FLAG')) {
             }
           } elseif ($_POST['copy_as'] == 'duplicate') {
             $old_products_id = (int)$products_id;
-            $product = $db->Execute("select products_type, products_quantity, products_model, mfg_part_number, quote_number, products_image,
-                                            products_price, products_cost, products_virtual, products_date_available, products_weight,
+            $product = $db->Execute("select products_type, products_quantity, products_model, products_image,
+                                            products_price, products_virtual, products_date_available, products_weight,
                                             products_tax_class_id, manufacturers_id,
                                             products_quantity_order_min, products_quantity_order_units, products_priced_by_attribute,
                                             product_is_free, product_is_call, products_quantity_mixed,
@@ -59,14 +59,12 @@ if (!defined('IS_ADMIN_FLAG')) {
             $products_quantity = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
             $tmp_value = zen_db_input($product->fields['products_price']);
             $products_price = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
-            $tmp_value = zen_db_input($product->fields['products_cost']);
-            $products_cost = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
             $tmp_value = zen_db_input($product->fields['products_weight']);
             $products_weight = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
 
             $db->Execute("insert into " . TABLE_PRODUCTS . "
-                                      (products_type, products_quantity, products_model, mfg_part_number, quote_number, products_image,
-                                       products_price, products_cost, products_virtual, products_date_added, products_date_available,
+                                      (products_type, products_quantity, products_model, products_image,
+                                       products_price, products_virtual, products_date_added, products_date_available,
                                        products_weight, products_status, products_tax_class_id,
                                        manufacturers_id,
                                        products_quantity_order_min, products_quantity_order_units, products_priced_by_attribute,
@@ -77,11 +75,8 @@ if (!defined('IS_ADMIN_FLAG')) {
                           values ('" . zen_db_input($product->fields['products_type']) . "',
                                   '" . $products_quantity . "',
                                   '" . zen_db_input($product->fields['products_model']) . "',
-                                  '" . zen_db_input($product->fields['mfg_part_number']) . "',
-                                  '" . zen_db_input($product->fields['quote_number']) . "',
                                   '" . zen_db_input($product->fields['products_image']) . "',
                                   '" . $products_price . "',
-                                  '" . $products_cost . "',
                                   '" . zen_db_input($product->fields['products_virtual']) . "',
                                   now(),
                                   " . (zen_not_null(zen_db_input($product->fields['products_date_available'])) ? "'" . zen_db_input($product->fields['products_date_available']) . "'" : 'null') . ",

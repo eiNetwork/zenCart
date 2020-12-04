@@ -14,55 +14,22 @@
 ?>
 <div class="centerColumn" id="accountHistoryDefault">
 
-<h1 id="accountHistoryDefaultHeading"><?php echo HEADING_TITLE; ?><a href="#" target="_blank"><button style="float:right;margin-right:20px;padding:2px 10px" onclick="$(this).parent().attr('href', window.location.href + '&regenerateCSV=true');">Export to CSV</button></a></h1>
+<h1 id="accountHistoryDefaultHeading"><?php echo HEADING_TITLE; ?></h1>
 
 <?php
   if ($accountHasHistory === true) {
-    $prevID = "";
     foreach ($accountHistory as $history) {
-      if( $_SESSION["selectedCartID"] == MASTER_CART && $prevID != $history['address_book_id'] ) {
-        if( $prevID != "" ) {
-          echo "</fieldset>";
-        }
 ?>
-<fieldset style="background:#f8f8f8">
-<legend><?php echo $history['entry_company'] . " Orders"; ?></legend>
-<?
-      }
-?>
-<fieldset style="background:#fff">
+<fieldset>
 <legend><?php echo TEXT_ORDER_NUMBER . $history['orders_id']; ?></legend>
-<div class="notice forward"><?php echo "Confirmed by: " . $history['customers_name']; ?></div>
+<div class="notice forward"><?php echo TEXT_ORDER_STATUS . $history['orders_status_name']; ?></div>
 <br class="clearBoth" />
-    <div class="content back" style="margin-right:50px"><?php echo '<strong>' . TEXT_ORDER_DATE . '</strong> ' . zen_date_long($history['date_purchased']) . '<br />'; ?></div>
-    <div class="content back" style="margin-right:50px"><?php echo '<strong>' . TEXT_ORDER_STATUS . '</strong> ' . $history['orders_status_name'] . '<br />'; ?></div>
-    <div class="content">
-<?php
-      echo '<strong>' . TEXT_ORDER_PRODUCTS . '</strong> ' . $history['product_count'] . '<br />';
-      if( strpos($history['order_title'], "Shipping") !== false ) {
-        echo '<strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags(substr($history['order_total'], strrpos($history['order_total'], "<br />", -7))); 
-      } else {
-        if( strpos($history['order_total'], "<br />") !== false ) {
-          $titleChunks = explode("<br />", $history['order_title']);
-          $totalChunks = explode("<br />", $history['order_total']);
-          echo "<table style='display:inline-table'>";
-          foreach( $titleChunks as $i => $thisChunk ) {
-            echo "<tr><td><strong>" . $titleChunks[$i] . "</strong></td><td>" . $totalChunks[$i] . "</td></tr>";
-          }
-          echo "</table>";
-        } else {
-          echo '<strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags($history['order_total']); 
-        }
-      }
-?></div>
+    <div class="content back"><?php echo '<strong>' . TEXT_ORDER_DATE . '</strong> ' . zen_date_long($history['date_purchased']) . '<br /><strong>' . $history['order_type'] . '</strong> ' . zen_output_string_protected($history['order_name']); ?></div>
+    <div class="content"><?php echo '<strong>' . TEXT_ORDER_PRODUCTS . '</strong> ' . $history['product_count'] . '<br /><strong>' . TEXT_ORDER_COST . '</strong> ' . strip_tags($history['order_total']); ?></div>
     <div class="content forward"><?php echo '<a href="' . zen_href_link(FILENAME_ACCOUNT_HISTORY_INFO, (isset($_GET['page']) ? 'page=' . $_GET['page'] . '&' : '') . 'order_id=' . $history['orders_id'], 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_VIEW_SMALL, BUTTON_VIEW_SMALL_ALT) . '</a>'; ?></div>
 <br class="clearBoth" />
 </fieldset>
 <?php
-      $prevID = $history['address_book_id'];
-    }
-    if( $_SESSION["selectedCartID"] == MASTER_CART && $prevID != "" ) {
-      echo "</fieldset>";
     }
 ?>
 <div class="navSplitPagesLinks forward"><?php echo TEXT_RESULT_PAGE . $history_split->display_links($max_display_page_links, zen_get_all_get_params(array('page', 'info', 'x', 'y', 'main_page')), $paginateAsUL); ?></div>
@@ -77,6 +44,6 @@
   }
 ?>
 
-<div style="display:none" class="buttonRow forward"><?php echo '<a href="' . zen_href_link(FILENAME_ACCOUNT, '', 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_BACK, BUTTON_BACK_ALT) . '</a>'; ?></div>
+<div class="buttonRow forward"><?php echo '<a href="' . zen_href_link(FILENAME_ACCOUNT, '', 'SSL') . '">' . zen_image_button(BUTTON_IMAGE_BACK, BUTTON_BACK_ALT) . '</a>'; ?></div>
 
 </div>

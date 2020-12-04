@@ -10,11 +10,11 @@
 define('NAVBAR_TITLE_1', 'Checkout');
 define('NAVBAR_TITLE_2', 'Shipping Method');
 
-define('HEADING_TITLE', 'Step 1 of 2 - Delivery Information');
+define('HEADING_TITLE', 'Step 1 of 3 - Delivery Information');
 
 define('TABLE_HEADING_SHIPPING_ADDRESS', 'Shipping Address');
-define('TEXT_CHOOSE_SHIPPING_DESTINATION', 'If this order includes equipment to be shipped to your library, please confirm that this is the correct shipping address.  If shipping address is incorrect, please contact accountspayable@einetwork.net to have your shipping information updated prior to submitting your order');
-define('TITLE_SHIPPING_ADDRESS', 'Shipping Information (if applicable):');
+define('TEXT_CHOOSE_SHIPPING_DESTINATION', 'Your order will be shipped to the address at the left or you may change the shipping address by clicking the <em>Change Address</em> button.');
+define('TITLE_SHIPPING_ADDRESS', 'Shipping Information:');
 
 define('TABLE_HEADING_SHIPPING_METHOD', 'Shipping Method:');
 define('TEXT_CHOOSE_SHIPPING_METHOD', 'Please select the preferred shipping method to use on this order.');
@@ -23,7 +23,7 @@ define('TEXT_ENTER_SHIPPING_INFORMATION', 'This is currently the only shipping m
 define('TITLE_NO_SHIPPING_AVAILABLE', 'Not Available At This Time');
 define('TEXT_NO_SHIPPING_AVAILABLE','<span class="alert">Sorry, we are not shipping to your region at this time.</span><br />Please contact us for alternate arrangements.');
 
-define('TABLE_HEADING_COMMENTS', 'Installation Contact: If a different staff member will be the installation contact, please enter their name and email address.');
+define('TABLE_HEADING_COMMENTS', 'Special Instructions or Comments About Your Order');
 
 define('TITLE_CONTINUE_CHECKOUT_PROCEDURE', 'Continue to Step 2');
 define('TEXT_CONTINUE_CHECKOUT_PROCEDURE', '- choose your payment method.');

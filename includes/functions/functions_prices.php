@@ -142,38 +142,6 @@
       return $the_base_price;
   }
 
-// computes products_price + option groups lowest attributes price of each group when on
-  function zen_get_products_erate_price($products_id) {
-    global $db;
-      $product_check = $db->Execute("select products_price, products_erate_eligible, products_priced_by_attribute from " . TABLE_PRODUCTS . " where products_id = '" . (int)$products_id . "'");
-
-// is there a products_price to add to attributes
-      $products_price = $product_check->fields['products_price'];
-
-      // do not select display only attributes and attributes_price_base_included is true
-      $product_att_query = $db->Execute("select options_id, price_prefix, options_values_price, attributes_display_only, attributes_price_base_included, round(concat(price_prefix, options_values_price), 5) as value from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int)$products_id . "' and attributes_display_only != '1' and attributes_price_base_included='1'". " order by options_id, value");
-
-      $the_options_id= 'x';
-      $the_base_price= 0;
-// add attributes price to price
-      if ($product_check->fields['products_priced_by_attribute'] == '1' and $product_att_query->RecordCount() >= 1) {
-        while (!$product_att_query->EOF) {
-          if ( $the_options_id != $product_att_query->fields['options_id']) {
-            $the_options_id = $product_att_query->fields['options_id'];
-            $the_base_price += (($product_att_query->fields['price_prefix'] == '-') ? -1 : 1) * $product_att_query->fields['options_values_price'];
-          }
-          $product_att_query->MoveNext();
-        }
-
-        $the_base_price = $products_price + $the_base_price;
-      } else {
-        $the_base_price = $products_price;
-      }
-
-      $erate_price = (($product_check->fields['products_erate_eligible'] + (($products_id == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0)) * (1 - $_SESSION["selected_erate_discount"])) + ($the_base_price - $product_check->fields['products_erate_eligible']);
-      return $erate_price;
-  }
-
 
 ////
 // Display Price Retail
@@ -226,7 +194,7 @@
     }
 
     // $new_fields = ', product_is_free, product_is_call, product_is_showroom_only';
-    $product_check = $db->Execute("select products_tax_class_id, products_price, products_erate_eligible, products_priced_by_attribute, product_is_free, product_is_call, products_type, payment_plan from " . TABLE_PRODUCTS . " join " . TABLE_PRODUCT_TYPES . " on (products_type=type_id) where products_id = '" . (int)$products_id . "'" . " limit 1");
+    $product_check = $db->Execute("select products_tax_class_id, products_price, products_priced_by_attribute, product_is_free, product_is_call, products_type from " . TABLE_PRODUCTS . " where products_id = '" . (int)$products_id . "'" . " limit 1");
 
     // no prices on Document General
     if ($product_check->fields['products_type'] == 3) {
@@ -235,7 +203,6 @@
 
     $show_display_price = '';
     $display_normal_price = zen_get_products_base_price($products_id);
-    $display_erate_price = zen_get_products_erate_price($products_id);
     $display_special_price = zen_get_products_special_price($products_id, true);
     $display_sale_price = zen_get_products_special_price($products_id, false);
 
@@ -287,17 +254,8 @@
       } else {
         if ($product_check->fields['product_is_free'] == '1') {
           $show_normal_price = '<span class="productFreePrice"><s>' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</s></span>';
-        } else if( $products_id == WAP_INSTALL ) {
-          $show_normal_price = '<span class="productBasePrice">Base Price: ' . $currencies->display_price(WAP_INSTALL_BASE_PRICE, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span><br>';
-          $show_normal_price .= '<span class="productBasePrice">Per Unit Price: ' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span><br>';
-          $show_normal_price .= '<span class="productBasePrice">E-rate Reimbursement (' . (100 * $_SESSION["selected_erate_discount"]) . '%): ' . $currencies->display_price($display_normal_price + (($products_id == WAP_INSTALL) ? WAP_INSTALL_BASE_PRICE : 0) - $display_erate_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span><br>';
-          $show_normal_price .= '<span class="productBasePrice">Net Price (after E-rate): ' . $currencies->display_price($display_erate_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span>';
-        } else if( $product_check->fields['products_type'] == WAP_TYPE_ID ) {
-          $show_normal_price = '<span class="productBasePrice">Full Price: ' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span><br>';
-          $show_normal_price .= '<span class="productBasePrice">E-rate Reimbursement (' . (100 * $_SESSION["selected_erate_discount"]) . '%): ' . $currencies->display_price($display_normal_price - $display_erate_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span><br>';
-          $show_normal_price .= '<span class="productBasePrice">Net Price (after E-rate): ' . $currencies->display_price($display_erate_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span>';
         } else {
-          $show_normal_price = '<span class="productBasePrice">' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . ($product_check->fields['payment_plan'] ? '/year' : '') . '</span>';
+          $show_normal_price = '<span class="productBasePrice">' . $currencies->display_price($display_normal_price, zen_get_tax_rate($product_check->fields['products_tax_class_id'])) . '</span>';
         }
         $show_special_price = '';
         $show_sale_price = '';
