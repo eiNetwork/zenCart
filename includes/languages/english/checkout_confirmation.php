@@ -26,4 +26,9 @@ define('TEXT_CONTINUE_CHECKOUT_PROCEDURE', '- continue to confirm your order. Th
 
 define('OUT_OF_STOCK_CAN_CHECKOUT', 'Products marked with ' . STOCK_MARK_PRODUCT_OUT_OF_STOCK . ' are out of stock.<br />Items not in stock will be placed on backorder.');
 
+define('TABLE_HEADING_ANNUAL_COST', 'Annual Cost per Unit');
+define('TABLE_HEADING_TOTAL_COST', 'Total Program Cost');
+define('TABLE_HEADING_ITEM_COST', 'Item Cost');
+define('TABLE_HEADING_TOTAL', 'Total');
+
 ?>

@@ -28,6 +28,12 @@ include(DIR_WS_MODULES . zen_get_module_directory(FILENAME_CREATE_ACCOUNT));
 $error = false;
 if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
   $email_address = zen_db_prepare_input($_POST['email_address']);
+
+  if( substr(trim($email_address), -14) != "@einetwork.net" ) {
+    $email_address = trim($email_address) . "@einetwork.net";
+  }
+  $CLP_email_address = substr($email_address, 0, -14) . "@carnegielibrary.org";
+
   $password = zen_db_prepare_input($_POST['password']);
   $loginAuthorized = false;
 
@@ -59,14 +65,10 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
       $messageStack->add('login', TEXT_LOGIN_BANNED);
     } else {
 
-      $dbPassword = $check_customer->fields['customers_password'];
-      // Check whether the password is good
-      if (zen_validate_password($password, $dbPassword)) {
-        $loginAuthorized = true;
-        if (password_needs_rehash($dbPassword, PASSWORD_DEFAULT)) {
-          $newPassword = zcPassword::getInstance(PHP_VERSION)->updateNotLoggedInCustomerPassword($password, $email_address);
-        }
-      }
+      $ldap = ldap_connect("208.89.32.143") or die("can't connect");
+      ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+      ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+      $loginAuthorized = @ldap_bind($ldap, $email_address, $password);      
 
       $zco_notifier->notify('NOTIFY_PROCESS_3RD_PARTY_LOGINS', $email_address, $password, $loginAuthorized);
 
@@ -74,26 +76,93 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
         $error = true;
         $messageStack->add('login', TEXT_LOGIN_ERROR);
       } else {
+        // grab some ldap info
+        $ldap_dn = "DC=einetwork,DC=net";
+        $results = ldap_search($ldap, $ldap_dn,"(|(mail=$email_address)(mail=$CLP_email_address))",array("givenName","sn","memberOf"));
+	$entries = ldap_get_entries($ldap, $results);
+
+        // if they don't exist, create them
+        if (!$check_customer->RecordCount()) {
+          $firstName = $entries[0]["givenname"][0];
+          $lastName = $entries[0]["sn"][0];
+
+          $create_customer_query = "INSERT INTO customers (customers_firstname, customers_lastname, customers_email_address)
+                                    VALUES (:firstName, :lastName, :emailAddress)";
+          $create_customer_query = $db->bindVars($create_customer_query, ':firstName', $firstName, 'string');
+          $create_customer_query = $db->bindVars($create_customer_query, ':lastName', $lastName, 'string');
+          $create_customer_query = $db->bindVars($create_customer_query, ':emailAddress', $email_address, 'string');
+          $db->Execute($create_customer_query);
+
+          // rerun the check customer query
+          $check_customer = $db->Execute($check_customer_query);
+        }
+
         if (SESSION_RECREATE == 'True') {
           zen_session_recreate();
         }
 
-        $check_country_query = "SELECT entry_country_id, entry_zone_id
-                              FROM " . TABLE_ADDRESS_BOOK . "
-                              WHERE customers_id = :customersID
-                              AND address_book_id = :addressBookID";
-
-        $check_country_query = $db->bindVars($check_country_query, ':customersID', $check_customer->fields['customers_id'], 'integer');
-        $check_country_query = $db->bindVars($check_country_query, ':addressBookID', $check_customer->fields['customers_default_address_id'], 'integer');
-        $check_country = $db->Execute($check_country_query);
-
         $_SESSION['customer_id'] = $check_customer->fields['customers_id'];
-        $_SESSION['customer_default_address_id'] = $check_customer->fields['customers_default_address_id'];
-        $_SESSION['customers_authorization'] = $check_customer->fields['customers_authorization'];
         $_SESSION['customer_first_name'] = $check_customer->fields['customers_firstname'];
         $_SESSION['customer_last_name'] = $check_customer->fields['customers_lastname'];
-        $_SESSION['customer_country_id'] = $check_country->fields['entry_country_id'];
-        $_SESSION['customer_zone_id'] = $check_country->fields['entry_zone_id'];
+
+        // load up all of the locations they are allowed to shop for
+        $_SESSION['customer_addresses'] = [];
+        $groupNames = '"Dummy Security Group Name"';
+        foreach( $entries[0]["memberof"] as $group ) {
+          $startIndex = strpos($group, "CN=") + 3;
+          if( strlen($group) > $startIndex ) {
+            $endIndex = strpos($group, ",OU=", $startIndex);
+            if( !$endIndex ) {
+              $endIndex = strpos($group, ",DC=", $startIndex);
+            }
+            if( $endIndex ) {
+              $groupNames .= ',"' . substr($group, $startIndex, $endIndex - $startIndex) . '"';
+            }
+          }
+        }
+
+        // I'm not using bindVars below because I couldn't find a way to use it to insert an array of strings.  This is less secure than doing it the bindVars way, but
+        // being that everything we're feeding in there is a group name coming from Active directory, I think we can be reasonably certain it contains no SQL injection. -- BJP
+        $checkGroupNameQuery = "SELECT address_book.address_book_id as ID, 1 as modify_cart, if(security_level='Order',1,0) as approve_cart, 1 as view_orders, 
+                                       entry_company as library_name, address_book.librarycode, address_book.library_system_id, erate_discount
+                                FROM user_authorization LEFT JOIN library_system USING (library_system_id) 
+                                LEFT JOIN address_book ON (user_authorization.address_book_id=address_book.address_book_id OR 
+                                                           (address_book.library_system_id=library_system.library_system_id AND user_authorization.address_book_id=0))
+                                WHERE security_group_name IN (" . $groupNames . ")
+                                ORDER BY library_name";
+        $checkGroupName = $db->Execute($checkGroupNameQuery);
+
+        while(!$checkGroupName->EOF) {
+          // see if it's new to the list
+          $foundLocation = -1;
+          foreach($_SESSION['customer_addresses'] as $index => $address) {
+            if( $address["ID"] == $checkGroupName->fields['ID'] ) {
+              $foundLocation = $index;
+            }
+          }
+
+          // if so, add it
+          if( $foundLocation == -1 ) {
+            $_SESSION['customer_addresses'][] = ["ID" => $checkGroupName->fields['ID'], "library_name" => $checkGroupName->fields['library_name'], 
+                                                 "modify_cart" => $checkGroupName->fields['modify_cart'], "approve_cart" => $checkGroupName->fields['approve_cart'], 
+                                                 "view_orders" => $checkGroupName->fields['view_orders'], "librarycode" => $checkGroupName->fields['librarycode'],
+                                                 "erate_discount" => $checkGroupName->fields['erate_discount']];
+          // if not, update it
+          } else {
+            if( $_SESSION['customer_addresses'][$foundLocation]["modify_cart"] == 0 ) {
+              $_SESSION['customer_addresses'][$foundLocation]["modify_cart"] = $checkGroupName->fields['modify_cart'];
+            }
+            if( $_SESSION['customer_addresses'][$foundLocation]["approve_cart"] == 0 ) {
+              $_SESSION['customer_addresses'][$foundLocation]["approve_cart"] = $checkGroupName->fields['approve_cart'];
+            }
+            if( $_SESSION['customer_addresses'][$foundLocation]["view_orders"] == 0 ) {
+              $_SESSION['customer_addresses'][$foundLocation]["view_orders"] = $checkGroupName->fields['view_orders'];
+            }
+          }
+          $checkGroupName->MoveNext();
+        }
+        $_SESSION["selected_address_id"] = count($_SESSION['customer_addresses']) ? $_SESSION['customer_addresses'][0]['ID'] : null;
+        $_SESSION["selected_erate_discount"] = count($_SESSION['customer_addresses']) ? $_SESSION['customer_addresses'][0]['erate_discount'] : null;
 
         // enforce db integrity: make sure related record exists
         $sql = "SELECT customers_info_date_of_last_logon FROM " . TABLE_CUSTOMERS_INFO . " WHERE customers_info_id = :customersID";

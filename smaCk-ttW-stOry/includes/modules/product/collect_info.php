@@ -10,13 +10,18 @@ if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
 }
     $parameters = array('products_name' => '',
+                       'products_type' => '',
                        'products_description' => '',
                        'products_url' => '',
                        'products_id' => '',
                        'products_quantity' => '',
                        'products_model' => '',
+                       'mfg_part_number' => '',
+                       'quote_number' => '',
                        'products_image' => '',
                        'products_price' => '',
+                       'products_cost' => '',
+                       'products_erate_eligible' => '',
                        'products_virtual' => DEFAULT_PRODUCT_PRODUCTS_VIRTUAL,
                        'products_weight' => '',
                        'products_date_added' => '',
@@ -44,9 +49,9 @@ if (!defined('IS_ADMIN_FLAG')) {
     $pInfo = new objectInfo($parameters);
 
     if (isset($_GET['pID']) && empty($_POST)) {
-      $product = $db->Execute("select pd.products_name, pd.products_description, pd.products_url,
-                                      p.products_id, p.products_quantity, p.products_model,
-                                      p.products_image, p.products_price, p.products_virtual, p.products_weight,
+      $product = $db->Execute("select pd.products_name, p.products_type, pd.products_description, pd.products_url,
+                                      p.products_id, p.products_quantity, p.products_model, p.mfg_part_number, p.quote_number, 
+                                      p.products_image, p.products_price, p.products_cost, p.products_erate_eligible, p.products_virtual, p.products_weight,
                                       p.products_date_added, p.products_last_modified,
                                       date_format(p.products_date_available, '%Y-%m-%d') as
                                       products_date_available, p.products_status, p.products_tax_class_id,
@@ -88,6 +93,15 @@ if (!defined('IS_ADMIN_FLAG')) {
       $manufacturers_array[] = array('id' => $manufacturers->fields['manufacturers_id'],
                                      'text' => $manufacturers->fields['manufacturers_name']);
       $manufacturers->MoveNext();
+    }
+
+    $product_types_array = array(array('id' => '', 'text' => TEXT_NONE));
+    $product_types = $db->Execute("select type_id, type_name
+                                   from " . TABLE_PRODUCT_TYPES . " order by type_name");
+    while (!$product_types->EOF) {
+      $product_types_array[] = array('id' => $product_types->fields['type_id'],
+                                     'text' => $product_types->fields['type_name']);
+      $product_types->MoveNext();
     }
 
     $tax_class_array = array(array('id' => '0', 'text' => TEXT_NONE));
@@ -316,6 +330,13 @@ echo zen_draw_hidden_field('products_price_sorter', $pInfo->products_price_sorte
           <tr>
             <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>
           </tr>
+          <tr>
+            <td class="main"><?php echo TEXT_PRODUCT_TYPE_NAME; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_pull_down_menu('products_type', $product_types_array, $pInfo->products_type); ?></td>
+          </tr>
+          <tr>
+            <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>
+          </tr>
 
           <tr>
             <td class="main"><?php echo TEXT_PRODUCT_IS_FREE; ?></td>
@@ -345,6 +366,15 @@ echo zen_draw_hidden_field('products_price_sorter', $pInfo->products_price_sorte
           <tr bgcolor="#ebebff">
             <td class="main"><?php echo TEXT_PRODUCTS_PRICE_GROSS; ?></td>
             <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_price_gross', $pInfo->products_price, 'OnKeyUp="updateNet()"'); ?></td>
+          </tr>
+          <tr>
+          <tr bgcolor="#ebebff">
+            <td class="main"><?php echo TEXT_PRODUCTS_COST; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_cost', $pInfo->products_cost); ?></td>
+          </tr>
+          <tr bgcolor="#ebebff">
+            <td class="main"><?php echo TEXT_PRODUCTS_ERATE; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_erate_eligible', $pInfo->products_erate_eligible); ?></td>
           </tr>
           <tr>
             <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>
@@ -429,6 +459,14 @@ updateGross();
           <tr>
             <td class="main"><?php echo TEXT_PRODUCTS_MODEL; ?></td>
             <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('products_model', htmlspecialchars(stripslashes($pInfo->products_model), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'products_model')); ?></td>
+          </tr>
+          <tr>
+            <td class="main"><?php echo TEXT_PRODUCTS_PART_NUMBER; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('mfg_part_number', htmlspecialchars(stripslashes($pInfo->mfg_part_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'mfg_part_number')); ?></td>
+          </tr>
+          <tr>
+            <td class="main"><?php echo TEXT_PRODUCTS_QUOTE_NUMBER; ?></td>
+            <td class="main"><?php echo zen_draw_separator('pixel_trans.gif', '24', '15') . '&nbsp;' . zen_draw_input_field('quote_number', htmlspecialchars(stripslashes($pInfo->quote_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'quote_number')); ?></td>
           </tr>
           <tr>
             <td colspan="2"><?php echo zen_draw_separator('pixel_trans.gif', '1', '10'); ?></td>

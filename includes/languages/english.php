@@ -1,10 +1,10 @@
 <?php
 /**
  * @package languageDefines
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2010 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Tue Jan 5 15:06:15 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: english.php 15514 2010-02-18 07:27:05Z drbyte $
  */
 
 // FOLLOWING WERE moved to meta_tags.php
@@ -13,11 +13,13 @@
 //define('CUSTOM_KEYWORDS', 'ecommerce, open source, shop, online shopping');
 // END: moved to meta_tags.php
 
-  define('FOOTER_TEXT_BODY', 'Copyright &copy; ' . date('Y') . ' <a href="' . zen_href_link(FILENAME_DEFAULT) . '" target="_blank">' . STORE_NAME . '</a>. Powered by <a href="http://www.zen-cart.com" target="_blank">Zen Cart</a>');
+  define('FOOTER_TEXT_BODY', 'Copyright &copy; ' . date('Y') . ' <a href="' . zen_href_link(FILENAME_DEFAULT) . '" >' . STORE_NAME . '</a>. Powered by <a href="http://www.zen-cart.com" target="_blank">Zen Cart</a>');
 
 // look in your $PATH_LOCALE/locale directory for available locales..
-  $locales = array('en_US', 'en_US.utf8', 'en', 'English_United States.1252');
-  @setlocale(LC_TIME, $locales);
+// on RedHat try 'en_US'
+// on FreeBSD try 'en_US.ISO_8859-1'
+// on Windows try 'en', or 'English'
+  @setlocale(LC_TIME, 'en_US.ISO_8859-1');
   define('DATE_FORMAT_SHORT', '%m/%d/%Y');  // this is used for strftime()
   define('DATE_FORMAT_LONG', '%A %d %B, %Y'); // this is used for strftime()
   define('DATE_FORMAT', 'm/d/Y'); // this is used for date()
@@ -44,7 +46,7 @@
   define('HTML_PARAMS','dir="ltr" lang="en"');
 
 // charset for web pages and emails
-  define('CHARSET', 'utf-8');
+  define('CHARSET', 'iso-8859-1');
 
 // footer text in includes/footer.php
   define('FOOTER_TEXT_REQUESTS_SINCE', 'requests since');
@@ -104,7 +106,7 @@
   define('BOX_REVIEWS_TEXT_OF_5_STARS', '%s of 5 Stars!');
 
 // shopping_cart box text in sideboxes/shopping_cart.php
-  define('BOX_HEADING_SHOPPING_CART', 'Shopping Cart');
+  define('BOX_HEADING_SHOPPING_CART', 'Shopping cart');
   define('BOX_SHOPPING_CART_EMPTY', 'Your cart is empty.');
   define('BOX_SHOPPING_CART_DIVIDER', 'ea.-&nbsp;');
 
@@ -137,6 +139,7 @@
   define('BOX_INFORMATION_CONDITIONS', 'Conditions of Use');
   define('BOX_INFORMATION_SHIPPING', 'Shipping &amp; Returns');
   define('BOX_INFORMATION_CONTACT', 'Contact Us');
+  define('BOX_BBINDEX', 'Forum');
   define('BOX_INFORMATION_UNSUBSCRIBE', 'Newsletter Unsubscribe');
 
   define('BOX_INFORMATION_SITE_MAP', 'Site Map');
@@ -146,6 +149,13 @@
   define('BOX_INFORMATION_PAGE_2', 'Page 2');
   define('BOX_INFORMATION_PAGE_3', 'Page 3');
   define('BOX_INFORMATION_PAGE_4', 'Page 4');
+
+// wishlist box text in includes/boxes/wishlist.php
+  define('BOX_HEADING_CUSTOMER_WISHLIST', 'My Wishlist');
+  define('BOX_WISHLIST_EMPTY', 'You have no items on your Wishlist');
+  define('IMAGE_BUTTON_ADD_WISHLIST', 'Add to Wishlist');
+  define('TEXT_WISHLIST_COUNT', 'Currently %s items are on your Wishlist.');
+  define('TEXT_DISPLAY_NUMBER_OF_WISHLIST', '<span>Displaying</span> %d to %d (of %d items on your wishlist)');
 
 //New billing address text
   define('SET_AS_PRIMARY' , 'Set as Primary Address');
@@ -253,13 +263,13 @@
 
   // constants for use in zen_prev_next_display function
   define('TEXT_RESULT_PAGE', '');
-  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> products)');
-  define('TEXT_DISPLAY_NUMBER_OF_ORDERS', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> orders)');
-  define('TEXT_DISPLAY_NUMBER_OF_REVIEWS', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> reviews)');
-  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_NEW', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> new products)');
-  define('TEXT_DISPLAY_NUMBER_OF_SPECIALS', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> specials)');
-  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_FEATURED_PRODUCTS', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> featured products)');
-  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_ALL', 'Displaying <strong>%d</strong> to <strong>%d</strong> (of <strong>%d</strong> products)');
+  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS', '<span>Displaying</span> %d to %d (of <span>%d</span> products)');
+  define('TEXT_DISPLAY_NUMBER_OF_ORDERS', '<span>Displaying</span> %d to %d (of <span>%d</span> orders)');
+  define('TEXT_DISPLAY_NUMBER_OF_REVIEWS', '<span>Displaying</span> %d to %d (of <span>%d</span> reviews)');
+  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_NEW', '<span>Displaying</span> %d to %d (of <span>%d</span> new products)');
+  define('TEXT_DISPLAY_NUMBER_OF_SPECIALS', '<span>Displaying</span> %d to %d (of <span>%d</span> specials)');
+  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_FEATURED_PRODUCTS', '<span>Displaying</span> %d to %d (of <span>%d</span> featured products)');
+  define('TEXT_DISPLAY_NUMBER_OF_PRODUCTS_ALL', '<span>Displaying</span> %d to %d (of <span>%d</span> products)');
 
   define('PREVNEXT_TITLE_FIRST_PAGE', 'First Page');
   define('PREVNEXT_TITLE_PREVIOUS_PAGE', 'Previous Page');
@@ -268,10 +278,10 @@
   define('PREVNEXT_TITLE_PAGE_NO', 'Page %d');
   define('PREVNEXT_TITLE_PREV_SET_OF_NO_PAGE', 'Previous Set of %d Pages');
   define('PREVNEXT_TITLE_NEXT_SET_OF_NO_PAGE', 'Next Set of %d Pages');
-  define('PREVNEXT_BUTTON_FIRST', '&laquo;FIRST');
-  define('PREVNEXT_BUTTON_PREV', '[&laquo;&nbsp;Prev]');
-  define('PREVNEXT_BUTTON_NEXT', '[Next&nbsp;&raquo;]');
-  define('PREVNEXT_BUTTON_LAST', 'LAST&raquo;');
+  define('PREVNEXT_BUTTON_FIRST', '&lt;&lt;FIRST');
+  define('PREVNEXT_BUTTON_PREV', '&lt;&lt;&nbsp;Prev');
+  define('PREVNEXT_BUTTON_NEXT', 'Next&nbsp;&gt;&gt;');
+  define('PREVNEXT_BUTTON_LAST', 'LAST&gt;&gt;');
 
   define('TEXT_BASE_PRICE','Starting at: ');
 
@@ -294,9 +304,11 @@
 
   define('TEXT_REQUIRED', '<span class="errorText">Required</span>');
 
-  define('WARNING_INSTALL_DIRECTORY_EXISTS', 'SECURITY WARNING: Installation directory exists at: %s. Please remove this directory for security reasons.');
+  define('WARNING_INSTALL_DIRECTORY_EXISTS', 'Warning: Installation directory exists at: %s. Please remove this directory for security reasons.');
   define('WARNING_CONFIG_FILE_WRITEABLE', 'Warning: I am able to write to the configuration file: %s. This is a potential security risk - please set the right user permissions on this file (read-only, CHMOD 644 or 444 are typical). You may need to use your webhost control panel/file-manager to change the permissions effectively. Contact your webhost for assistance. <a href="http://tutorials.zen-cart.com/index.php?article=90" target="_blank">See this FAQ</a>');
   define('ERROR_FILE_NOT_REMOVEABLE', 'Error: Could not remove the file specified. You may have to use FTP to remove the file, due to a server-permissions configuration limitation.');
+  define('WARNING_SESSION_DIRECTORY_NON_EXISTENT', 'Warning: The sessions directory does not exist: ' . zen_session_save_path() . '. Sessions will not work until this directory is created.');
+  define('WARNING_SESSION_DIRECTORY_NOT_WRITEABLE', 'Warning: I am not able to write to the sessions directory: ' . zen_session_save_path() . '. Sessions will not work until the right user permissions are set.');
   define('WARNING_SESSION_AUTO_START', 'Warning: session.auto_start is enabled - please disable this PHP feature in php.ini and restart the web server.');
   define('WARNING_DOWNLOAD_DIRECTORY_NON_EXISTENT', 'Warning: The downloadable products directory does not exist: ' . DIR_FS_DOWNLOAD . '. Downloadable products will not work until this directory is valid.');
   define('WARNING_SQL_CACHE_DIRECTORY_NON_EXISTENT', 'Warning: The SQL cache directory does not exist: ' . DIR_FS_SQL_CACHE . '. SQL caching will not work until this directory is created.');
@@ -451,9 +463,9 @@
   define('TEXT_PRODUCTS_MIX_OFF_SHOPPING_CART','<br />*You can not mix the options on this item to meet the minimum quantity requirement.*<br />');
   define('TEXT_PRODUCTS_MIX_ON_SHOPPING_CART','*Mixed Option Values is ON<br />');
 
-  define('ERROR_MAXIMUM_QTY','The quantity added to your cart has been adjusted because of a restriction on maximum you are allowed. See this item:<br />');
+  define('ERROR_MAXIMUM_QTY','The quantity added to your cart has been adjusted because of a restriction on maximum you are allowed. See this item: ');
   define('ERROR_CORRECTIONS_HEADING','Please correct the following: <br />');
-  define('ERROR_QUANTITY_ADJUSTED', 'The quantity added to your cart has been adjusted. The item you wanted is not available in fractional quantities. The quantity of item:<br />');
+  define('ERROR_QUANTITY_ADJUSTED', 'The quantity added to your cart has been adjusted. The item you wanted is not available in fractional quantities. The quantity of item: ');
   define('ERROR_QUANTITY_CHANGED_FROM', ', has been changed from: ');
   define('ERROR_QUANTITY_CHANGED_TO', ' to ');
 
@@ -463,10 +475,8 @@
   define('TEXT_FILESIZE_MEGS', ' MB');
 
 // shopping cart errors
-  define('ERROR_PRODUCT','<br />The item: ');
+  define('ERROR_PRODUCT','The item: ');
   define('ERROR_PRODUCT_STATUS_SHOPPING_CART','<br />We are sorry but this product has been removed from our inventory at this time.<br />This item has been removed from your shopping cart.');
-  define('ERROR_PRODUCT_ATTRIBUTES','<br />The item: ');
-  define('ERROR_PRODUCT_STATUS_SHOPPING_CART_ATTRIBUTES','<br />We are sorry but selected options have changed for this product and have been removed from our inventory at this time.<br />This item has been removed from your shopping cart.');
   define('ERROR_PRODUCT_QUANTITY_MIN',',  ... Minimum Quantity errors - ');
   define('ERROR_PRODUCT_QUANTITY_UNITS',' ... Quantity Units errors - ');
   define('ERROR_PRODUCT_OPTION_SELECTION','<br /> ... Invalid Option Values Selected ');
@@ -477,7 +487,6 @@
   define('ERROR_PRODUCT_QUANTITY_MAX_SHOPPING_CART',' ... Maximum Quantity errors - ');
 
   define('WARNING_SHOPPING_CART_COMBINED', 'NOTICE: For your convenience, your current shopping cart has been combined with your shopping cart from your last visit. Please review your shopping cart before checking out.');
-  define('WARNING_PRODUCT_QUANTITY_ADJUSTED', 'Quantity has been adjusted to what is in stock. ');
 
 // error on checkout when $_SESSION['customers_id' does not exist in customers table
   define('ERROR_CUSTOMERS_ID_INVALID', 'Customer information cannot be validated!<br />Please login or recreate your account ...');
@@ -508,7 +517,6 @@
   define('TEXT_AUTHORIZATION_PENDING_PRICE', 'Price Unavailable');
   define('TEXT_AUTHORIZATION_PENDING_BUTTON_REPLACE', 'APPROVAL PENDING');
   define('TEXT_LOGIN_TO_SHOP_BUTTON_REPLACE','Login to Shop');
-  define('TEXT_AUTHORIZATION_PENDING_CHECKOUT', 'Checkout Unavailable - Approval Pending');
 
 // text pricing
   define('TEXT_CHARGES_WORD','Calculated Charge:');
@@ -586,10 +594,14 @@
 
 // misc
   define('COLON_SPACER', ':&nbsp;&nbsp;');
-  define('PAYMENT_JAVASCRIPT_DISABLED', 'We could not continue with checkout as Javascript is disabled. You must enable it to continue');
 
 // table headings for cart display and upcoming products
-  define('TABLE_HEADING_QUANTITY', 'Qty.');
+  define('TABLE_HEADING_TERMS', 'Terms - click to view');
+  define('TABLE_HEADING_NUMPAY','Number of Payments');
+  define('TABLE_HEADING_PAYFREQ','Billing Frequency');
+  define('TABLE_HEADING_QUANTITY', 'Quantity');
+  define('REFRESH', 'Refresh');
+  define('DELETE', 'Delete');
   define('TABLE_HEADING_PRODUCTS', 'Item Name');
   define('TABLE_HEADING_TOTAL', 'Total');
 
@@ -603,15 +615,12 @@
   define('TABLE_HEADING_LOGIN_DETAILS', 'Login Details');
   define('TABLE_HEADING_REFERRAL_DETAILS', 'Were You Referred to Us?');
 
-  define('ERROR_TEXT_COUNTRY_DISABLED_PLEASE_CHANGE', 'Sorry, but we no longer accept billing or shipping addresses in "%s".  Please update this address to continue.');
-
   define('ENTRY_EMAIL_PREFERENCE','Newsletter and Email Details');
   define('ENTRY_EMAIL_HTML_DISPLAY','HTML');
   define('ENTRY_EMAIL_TEXT_DISPLAY','TEXT-Only');
   define('EMAIL_SEND_FAILED','ERROR: Failed sending email to: "%s" <%s> with subject: "%s"');
 
   define('DB_ERROR_NOT_CONNECTED', 'Error - Could not connect to Database');
-  define('ERROR_DATABASE_MAINTENANCE_NEEDED', '<a href="http://www.zen-cart.com/content.php?334-ERROR-0071-There-appears-to-be-a-problem-with-the-database-Maintenance-is-required" target="_blank">ERROR 0071: There appears to be a problem with the database. Maintenance is required.</a>');
 
   // EZ-PAGES Alerts
   define('TEXT_EZPAGES_STATUS_HEADER_ADMIN', 'WARNING: EZ-PAGES HEADER - On for Admin IP Only');

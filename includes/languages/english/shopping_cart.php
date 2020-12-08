@@ -7,7 +7,7 @@
  * @version $Id: Author: DrByte  Fri Sep 11 15:56:13 2015 -0400 Modified in v1.5.5 $
  */
 
-define('TEXT_INFORMATION', 'You may proceed with your purchase by clicking the Checkout button below. Shipping and Taxes and Discounts will be handled on subsequent pages.');
+define('TEXT_INFORMATION', 'You may proceed with your order by clicking the Checkout button below.');
 
 define('NAVBAR_TITLE', 'The Shopping Cart');
 define('HEADING_TITLE', 'Your Shopping Cart Contents');
@@ -29,3 +29,6 @@ define('TEXT_TOTAL_AMOUNT', '&nbsp;&nbsp;Amount: ');
 
 define('TEXT_VISITORS_CART', '<a href="javascript:session_win();">[help (?)]</a>');
 define('TEXT_OPTION_DIVIDER', '&nbsp;-&nbsp;');
+
+define('TABLE_HEADING_ANNUAL_COST', 'Annual Cost per Unit');
+define('TABLE_HEADING_TOTAL_COST', 'Total Program Cost');

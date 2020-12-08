@@ -48,10 +48,18 @@
         }
         if (isset($_GET['ptID'])) $type_id = zen_db_prepare_input($_GET['ptID']);
         $type_name = zen_db_prepare_input($_POST['type_name']);
+        $terms_link = zen_db_prepare_input($_POST['terms_link']);
+        $confirmation_format_link = zen_db_prepare_input($_POST['confirmation_format_link']);
+        $payment_plan = zen_db_prepare_input($_POST['payment_plan']);
+        $vendor_email = zen_db_prepare_input($_POST['vendor_email']);
         $handler = zen_db_prepare_input($_POST['handler']);
         $allow_add_to_cart =  zen_db_prepare_input(($_POST['catalog_add_to_cart'] ? 'Y' : 'N'));
 
         $sql_data_array = array('type_name' => $type_name,
+                                'terms_link' => $terms_link,
+                                'confirmation_format_link' => $confirmation_format_link,
+                                'payment_plan' => $payment_plan,
+                                'vendor_email' => $vendor_email,
                                 'type_handler' => $handler,
                                 'allow_add_to_cart' => $allow_add_to_cart);
 
@@ -62,6 +70,14 @@
 
           zen_db_perform(TABLE_PRODUCT_TYPES, $sql_data_array);
           $type_id = $db->Insert_ID();
+
+          // add the new layout
+          $db->Execute("INSERT INTO " . TABLE_PRODUCT_TYPE_LAYOUT . " (configuration_title, configuration_key, configuration_value, " . 
+                          "configuration_description, product_type_id, sort_order, use_function, set_function) " . 
+                       "SELECT configuration_title, concat(left(configuration_key, if(left(configuration_key, 4)='SHOW',13,16)), 'TYPE_', " . 
+                          $type_id . ", substr(configuration_key,if(left(configuration_key,4)='SHOW',13,16))), configuration_value, configuration_description, " . 
+                          $type_id . ", sort_order, use_function, set_function " . 
+                       "FROM " . TABLE_PRODUCT_TYPE_LAYOUT . " WHERE product_type_id = 1");
         } elseif ($action == 'save') {
           $master_type = zen_db_prepare_input($_POST['master_type']);
 
@@ -294,6 +310,37 @@ if ($_GET['action'] == 'layout' || $_GET['action'] == 'layout_edit') {
   </tr>
 </table>
 <?php
+} else if($_GET['action'] == 'new') {
+  $heading[] = array('text' => '<b>' . TEXT_HEADING_EDIT_PRODUCT_TYPE . ' :: ' . $ptInfo->type_name . '</b>');
+
+  $contents = array('form' => zen_draw_form('product_types', FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&ptID=' . $ptInfo->type_id . '&action=insert', 'post', 'enctype="multipart/form-data"'));
+  $contents[] = array('text' => TEXT_EDIT_INTRO);
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_NAME . '<br>' . zen_draw_input_field('type_name', $ptInfo->type_name, zen_set_field_length(TABLE_PRODUCT_TYPES, 'type_name')));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_TERMS_LINK . '<br>' . zen_draw_input_field('terms_link', $ptInfo->terms_link, zen_set_field_length(TABLE_PRODUCT_TYPES, 'terms_link')));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_CONFIRMATION_FORMAT_LINK . '<br>' . zen_draw_input_field('confirmation_format_link', $ptInfo->confirmation_format_link, zen_set_field_length(TABLE_PRODUCT_TYPES, 'confirmation_format_link')));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_PAYMENT_PLAN . '<br>' . zen_draw_input_field('payment_plan', $ptInfo->payment_plan, zen_set_field_length(TABLE_PRODUCT_TYPES, 'payment_plan')));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_VENDOR_EMAIL . '<br>' . zen_draw_input_field('vendor_email', $ptInfo->vendor_email, zen_set_field_length(TABLE_PRODUCT_TYPES, 'vendor_email')));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_IMAGE . '<br>' . zen_draw_file_field('default_image') . '<br />' . $ptInfo->default_image);
+  $dir_info = zen_build_subdirectories_array(DIR_FS_CATALOG_IMAGES);
+  $default_directory = substr( $ptInfo->default_image, 0,strpos( $ptInfo->default_image, '/')+1);
+  $contents[] = array('text' => '<BR />' . TEXT_PRODUCTS_IMAGE_DIR . zen_draw_pull_down_menu('img_dir', $dir_info, $default_directory));
+  $contents[] = array('text' => '<br />' . zen_info_image($ptInfo->default_image, $ptInfo->type_name));
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_HANDLER . '<br>' . zen_draw_input_field('handler', $ptInfo->type_handler, zen_set_field_length(TABLE_PRODUCT_TYPES, 'type_handler')));
+
+  $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_ALLOW_ADD_CART . '<br>' . zen_draw_checkbox_field('catalog_add_to_cart', $ptInfo->allow_add_to_cart, ($ptInfo->allow_add_to_cart == 'Y' ? true : false)));
+  $sql = "select type_id, type_name from " . TABLE_PRODUCT_TYPES;
+  $product_type_list = $db->Execute($sql);
+  while (!$product_type_list->EOF) {
+    $product_type_array[] = array('text' => $product_type_list->fields['type_name'], 'id' => $product_type_list->fields['type_id']);
+    $product_type_list->MoveNext();
+  }
+  $contents[] = array('text' => '<br />' . TEXT_MASTER_TYPE . zen_draw_pull_down_menu('master_type', $product_type_array, $ptInfo->type_master_type));
+
+  $contents[] = array('align' => 'center', 'text' => '<br>' . zen_image_submit('button_save.gif', IMAGE_SAVE) . ' <a href="' . zen_href_link(FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&ptID=' . $_GET['ptID']) . '">' . zen_image_button('button_cancel.gif', IMAGE_CANCEL) . '</a>');
+
+  $box = new box;
+  echo $box->infoBox($heading, $contents);
+
 } else {
 ?>
 <table border="0" width="100%" cellspacing="2" cellpadding="2">
@@ -350,6 +397,7 @@ if ($_GET['action'] == 'layout' || $_GET['action'] == 'layout_edit') {
                 <td colspan="3"><table border="0" width="100%" cellspacing="0" cellpadding="2">
                   <tr>
                     <td class="smallText" valign="top"><?php echo $product_types_split->display_count($product_types_query_numrows, MAX_DISPLAY_SEARCH_RESULTS, $_GET['page'], TEXT_DISPLAY_NUMBER_OF_PRODUCT_TYPES); ?></td>
+                    <td align="right" class="smallText"><?php if (sizeof($cPath_array) > 0) echo '<a href="' . zen_href_link(FILENAME_PRODUCT_TYPES, $cPath_back) . '">' . zen_image_button('button_back.gif', IMAGE_BACK) . '</a>&nbsp;'; if (!isset($_GET['search'])) echo '<a href="' . zen_href_link(FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&ptID=' . $_GET['ptID'] . '&action=new') . '">' . zen_image_button('button_new_product_type.gif', IMAGE_NEW_PRODUCT_TYPE) . '</a>&nbsp;'; ?>
                     <td class="smallText" align="right"><?php echo $product_types_split->display_links($product_types_query_numrows, MAX_DISPLAY_SEARCH_RESULTS, MAX_DISPLAY_PAGE_LINKS, $_GET['page']); ?></td>
                   </tr>
                 </table></td>
@@ -372,6 +420,10 @@ if ($_GET['action'] == 'layout' || $_GET['action'] == 'layout_edit') {
       $contents = array('form' => zen_draw_form('product_types', FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&ptID=' . $ptInfo->type_id . '&action=save', 'post', 'enctype="multipart/form-data"'));
       $contents[] = array('text' => TEXT_EDIT_INTRO);
       $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_NAME . '<br>' . zen_draw_input_field('type_name', $ptInfo->type_name, zen_set_field_length(TABLE_PRODUCT_TYPES, 'type_name')));
+      $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_TERMS_LINK . '<br>' . zen_draw_input_field('terms_link', $ptInfo->terms_link, zen_set_field_length(TABLE_PRODUCT_TYPES, 'terms_link')));
+      $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_CONFIRMATION_FORMAT_LINK . '<br>' . zen_draw_input_field('confirmation_format_link', $ptInfo->confirmation_format_link, zen_set_field_length(TABLE_PRODUCT_TYPES, 'confirmation_format_link')));
+      $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_PAYMENT_PLAN . '<br>' . zen_draw_input_field('payment_plan', $ptInfo->payment_plan, zen_set_field_length(TABLE_PRODUCT_TYPES, 'payment_plan')));
+      $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_VENDOR_EMAIL . '<br>' . zen_draw_input_field('vendor_email', $ptInfo->vendor_email, zen_set_field_length(TABLE_PRODUCT_TYPES, 'vendor_email')));
       $contents[] = array('text' => '<br />' . TEXT_PRODUCT_TYPES_IMAGE . '<br>' . zen_draw_file_field('default_image') . '<br />' . $ptInfo->default_image);
       $dir_info = zen_build_subdirectories_array(DIR_FS_CATALOG_IMAGES);
       $default_directory = substr( $ptInfo->default_image, 0,strpos( $ptInfo->default_image, '/')+1);

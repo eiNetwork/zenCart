@@ -20,16 +20,13 @@ if (!isset($_GET['order_id']) || (isset($_GET['order_id']) && !is_numeric($_GET[
   zen_redirect(zen_href_link(FILENAME_ACCOUNT_HISTORY, '', 'SSL'));
 }
 
-$customer_info_query = "SELECT customers_id
+$customer_info_query = "SELECT address_book_id
                         FROM   " . TABLE_ORDERS . "
+                        JOIN   " . TABLE_ADDRESS_BOOK . " USING (librarycode)
                         WHERE  orders_id = :ordersID";
 
 $customer_info_query = $db->bindVars($customer_info_query, ':ordersID', $_GET['order_id'], 'integer');
 $customer_info = $db->Execute($customer_info_query);
-
-if ($customer_info->fields['customers_id'] != $_SESSION['customer_id']) {
-  zen_redirect(zen_href_link(FILENAME_ACCOUNT_HISTORY, '', 'SSL'));
-}
 
 $statuses_query = "SELECT os.orders_status_name, osh.date_added, osh.comments
                    FROM   " . TABLE_ORDERS_STATUS . " os, " . TABLE_ORDERS_STATUS_HISTORY . " osh
