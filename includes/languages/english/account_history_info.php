@@ -29,6 +29,7 @@ define('HEADING_QUANTITY', 'Qty.');
 define('HEADING_BILLING_ADDRESS', 'Billing Address');
 define('HEADING_PAYMENT_METHOD', 'Payment Method');
 
+define('HEADING_ORDER_TERMS', 'Order Terms &amp; Conditions');
 define('HEADING_ORDER_HISTORY', 'Status History &amp; Comments');
 define('TEXT_NO_COMMENTS_AVAILABLE', 'No comments available.');
 define('TABLE_HEADING_STATUS_DATE', 'Date');
@@ -37,4 +38,8 @@ define('TABLE_HEADING_STATUS_COMMENTS', 'Comments');
 define('QUANTITY_SUFFIX', '&nbsp;ea.  ');
 define('ORDER_HEADING_DIVIDER', '&nbsp;-&nbsp;');
 define('TEXT_OPTION_DIVIDER', '&nbsp;-&nbsp;');
+
+define('TABLE_HEADING_PRICE', 'Unit');
+define('TABLE_HEADING_ANNUAL_COST', 'Annual Cost per Unit');
+define('TABLE_HEADING_TOTAL_COST', 'Total Program Cost');
 ?>

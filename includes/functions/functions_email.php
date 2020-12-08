@@ -95,13 +95,22 @@
         continue;
       }
 
+      // grab the override template if one exists
+      $overrideTemplate = "";
+      if( $module == "checkout_extra" ) {
+        $sql = "select confirmation_format_link from " . TABLE_ORDERS_PRODUCTS . " join " . TABLE_PRODUCTS . " using (products_id) join " . TABLE_PRODUCT_TYPES . " on (products_type=product_types.type_id) where orders_id= :ordersId:";
+        $sql = $db->bindVars($sql, ':ordersId:', $block['INTRO_ORDER_NUMBER'], 'string');
+        $result = $db->Execute($sql);
+        $overrideTemplate = ($result->RecordCount() > 0) ? $result->fields['confirmation_format_link'] : '';
+      }
+
       //define some additional html message blocks available to templates, then build the html portion.
       if (!isset($block['EMAIL_TO_NAME']) || $block['EMAIL_TO_NAME'] == '')       $block['EMAIL_TO_NAME'] = $to_name;
       if (!isset($block['EMAIL_TO_ADDRESS']) || $block['EMAIL_TO_ADDRESS'] == '') $block['EMAIL_TO_ADDRESS'] = $to_email_address;
       if (!isset($block['EMAIL_SUBJECT']) || $block['EMAIL_SUBJECT'] == '')       $block['EMAIL_SUBJECT'] = $email_subject;
       if (!isset($block['EMAIL_FROM_NAME']) || $block['EMAIL_FROM_NAME'] == '')   $block['EMAIL_FROM_NAME'] = $from_email_name;
       if (!isset($block['EMAIL_FROM_ADDRESS']) || $block['EMAIL_FROM_ADDRESS'] == '') $block['EMAIL_FROM_ADDRESS'] = $from_email_address;
-      $email_html = (!is_array($block) && substr($block, 0, 6) == '<html>') ? $block : zen_build_html_email_from_template($module, $block);
+      $email_html = (!is_array($block) && substr($block, 0, 6) == '<html>') ? $block : zen_build_html_email_from_template($module, $block, $overrideTemplate);
       if (!is_array($block) && $block == '' || $block == 'none') $email_html = '';
 
       // Build the email based on whether customer has selected HTML or TEXT, and whether we have supplied HTML or TEXT-only components
@@ -301,6 +310,9 @@
       } //endif attachments_enabled
       $zco_notifier->notify('NOTIFY_EMAIL_AFTER_PROCESS_ATTACHMENTS', sizeof($attachments_list));
 
+      // Prepare HTML message
+      $mail->MsgHTML($email_html);
+/*
       // prepare content sections:
       if (EMAIL_USE_HTML == 'true' && trim($email_html) != '' &&
          ($customers_email_format == 'HTML' || (ADMIN_EXTRA_EMAIL_FORMAT != 'TEXT' && substr($module,-6)=='_extra')))
@@ -315,6 +327,7 @@
         // If we got here, then other rules specified to send a text-only message instead of HTML
         $mail->Body = $text;
       }
+*/
 
       // Handle auto-generated admin notices, or newsletters, or contact-us as bulk to avoid autoresponder responses and risk of spam flagging
       if (in_array($module, array('no_archive', 'admin_settings_changed', 'newsletters', 'product_notification', 'contact_us')) || substr($module, -6) == '_extra') {
@@ -457,7 +470,7 @@
  * selectively go thru each template tag and substitute appropriate text
  * finally, build full html content as "return" output from class
 **/
-  function zen_build_html_email_from_template($module='default', $content='') {
+  function zen_build_html_email_from_template($module='default', $content='', $overrideTemplate='') {
     global $messageStack, $current_page_base;
     if (NULL == $current_page_base) $current_page_base = $module;
     $block = array();
@@ -504,7 +517,8 @@
     $template_filename_base_en = DIR_FS_EMAIL_TEMPLATES . "email_template_";
     $template_filename = DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html";
 
-    $filesToTest = array(DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html",
+    $filesToTest = array($overrideTemplate,
+                         DIR_FS_EMAIL_TEMPLATES . $langfolder . "email_template_" . $current_page_base . ".html",
                          DIR_FS_EMAIL_TEMPLATES . "email_template_" . $current_page_base . ".html",
                          (isset($block['EMAIL_TEMPLATE_FILENAME']) && $block['EMAIL_TEMPLATE_FILENAME'] != '' ? $block['EMAIL_TEMPLATE_FILENAME'] . '.html' : NULL),
                          $template_filename_base . str_replace(array('_extra','_admin'),'',$module) . '.html',
@@ -612,16 +626,21 @@
       ($email_host_address != '' ? OFFICE_HOST_ADDRESS . "\t" . $email_host_address  . "\n" : '') .
       OFFICE_DATE_TIME . "\t" . date("D M j Y G:i:s T") . "\n";
 
+/*
     $extra_info['HTML'] = '<table class="extra-info">' .
-      '<tr><td class="extra-info-bold" colspan="2">' . OFFICE_USE . '</td></tr>' .
-      '<tr><td class="extra-info-bold">' . OFFICE_FROM . '</td><td>' . $from . '</td></tr>' .
-      '<tr><td class="extra-info-bold">' . OFFICE_EMAIL. '</td><td>' . $email_from . '</td></tr>' .
-      ($login !='' ? '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_NAME . '</td><td>' . $login . '</td></tr>' : '') .
-      ($login_email !='' ? '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_EMAIL . '</td><td>' . $login_email . '</td></tr>' : '') .
+      '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_NAME . '</td><td>' . $login . '</td></tr>' .
+      '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_EMAIL . '</td><td>' . $login_email . '</td></tr>' : '') .
       ($login_phone !='' ? '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_PHONE . '</td><td>' . $login_phone . '</td></tr>' : '') .
       ($login_fax !='' ? '<tr><td class="extra-info-bold">' . OFFICE_LOGIN_FAX . '</td><td>' . $login_fax . '</td></tr>' : '') .
       '<tr><td class="extra-info-bold">' . OFFICE_IP_ADDRESS . '</td><td>' . $_SESSION['customers_ip_address'] . ' - ' . $_SERVER['REMOTE_ADDR'] . '</td></tr>' .
       ($email_host_address != '' ? '<tr><td class="extra-info-bold">' . OFFICE_HOST_ADDRESS . '</td><td>' . $email_host_address . '</td></tr>' : '') .
+      '<tr><td class="extra-info-bold">' . OFFICE_DATE_TIME . '</td><td>' . date('D M j Y G:i:s T') . '</td></tr>';
+*/
+    $extra_info['HTML'] = '<table class="extra-info">' .
+      '<tr><td class="extra-info-bold" colspan="2">Order Confirmation Info</td></tr>' .
+      '<tr><td class="extra-info-bold">Location:</td><td>' . $login_phone . '</td></tr>' .
+      '<tr><td class="extra-info-bold">' . OFFICE_FROM . '</td><td>' . $login . '</td></tr>' .
+      '<tr><td class="extra-info-bold">' . OFFICE_EMAIL. '</td><td>' . $login_email . '</td></tr>' .
       '<tr><td class="extra-info-bold">' . OFFICE_DATE_TIME . '</td><td>' . date('D M j Y G:i:s T') . '</td></tr>';
 
     foreach($moreinfo as $key => $val) {

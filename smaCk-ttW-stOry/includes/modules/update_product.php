@@ -20,15 +20,23 @@
     $products_quantity = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_price']);
     $products_price = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
+    $tmp_value = zen_db_prepare_input($_POST['products_cost']);
+    $products_cost = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
+    $tmp_value = zen_db_prepare_input($_POST['products_erate_eligible']);
+    $products_erate_eligible = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['products_weight']);
     $products_weight = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
     $tmp_value = zen_db_prepare_input($_POST['manufacturers_id']);
     $manufacturers_id = (!zen_not_null($tmp_value) || $tmp_value=='' || $tmp_value == 0) ? 0 : $tmp_value;
 
     $sql_data_array = array('products_quantity' => $products_quantity,
-                            'products_type' => zen_db_prepare_input($_GET['product_type']),
+                            'products_type' => zen_db_prepare_input(isset($_POST['products_type']) ? $_POST['products_type'] : $_GET['product_type']),
                             'products_model' => zen_db_prepare_input($_POST['products_model']),
+                            'mfg_part_number' => zen_db_prepare_input($_POST['mfg_part_number']),
+                            'quote_number' => zen_db_prepare_input($_POST['quote_number']),
                             'products_price' => $products_price,
+                            'products_cost' => $products_cost,
+                            'products_erate_eligible' => $products_erate_eligible,
                             'products_date_available' => $products_date_available,
                             'products_weight' => $products_weight,
                             'products_status' => zen_db_prepare_input((int)$_POST['products_status']),

@@ -17,7 +17,7 @@ if (!defined('IS_ADMIN_FLAG')) {
     } else {
       $product = $db->Execute("select p.products_id, pd.language_id, pd.products_name,
                                       pd.products_description, pd.products_url, p.products_quantity,
-                                      p.products_model, p.products_image, p.products_price, p.products_virtual,
+                                      p.products_model, p.mfg_part_number, p.quote_number, p.products_image, p.products_price, p.products_cost, p.products_virtual,
                                       p.products_weight, p.products_date_added, p.products_last_modified,
                                       p.products_date_available, p.products_status, p.manufacturers_id,
                                       p.products_quantity_order_min, p.products_quantity_order_units, p.products_priced_by_attribute,

@@ -52,22 +52,7 @@
 
 // if no shipping destination address was selected, use the customers own address as default
   if (!$_SESSION['sendto']) {
-    $_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
-  } else {
-// verify the selected shipping address
-    $check_address_query = "SELECT count(*) AS total
-                            FROM   " . TABLE_ADDRESS_BOOK . "
-                            WHERE  customers_id = :customersID
-                            AND    address_book_id = :addressBookID";
-
-    $check_address_query = $db->bindVars($check_address_query, ':customersID', $_SESSION['customer_id'], 'integer');
-    $check_address_query = $db->bindVars($check_address_query, ':addressBookID', $_SESSION['sendto'], 'integer');
-    $check_address = $db->Execute($check_address_query);
-
-    if ($check_address->fields['total'] != '1') {
-      $_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
-      unset($_SESSION['shipping']);
-    }
+    $_SESSION['sendto'] = $_SESSION["selected_address_id"];
   }
 
   require(DIR_WS_CLASSES . 'order.php');
@@ -167,9 +152,9 @@ if (isset($_SESSION['cart']->cartID)) {
             if ( (isset($quote[0]['methods'][0]['title'])) && (isset($quote[0]['methods'][0]['cost'])) ) {
               $_SESSION['shipping'] = array('id' => $_POST['shipping'],
                                 'title' => (($free_shipping == true) ?  $quote[0]['methods'][0]['title'] : $quote[0]['module'] . ' (' . $quote[0]['methods'][0]['title'] . ')'),
+                                'RTI' => $quote[0]['methods'][0]['RTI'],
                                 'cost' => $quote[0]['methods'][0]['cost']);
-
-              zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
+              zen_redirect( zen_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL') . '&conditions=1&products_type=' . $_POST["products_type"] . (($_SESSION['selectedCartID'] == MASTER_CART) ? ('&cart_id=' . $_POST["cart_id"]) : ''));
             }
           }
         } else {
