@@ -2,11 +2,10 @@
 /**
  * category_tree Class.
  *
- * @package classes
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: category_tree.php 3041 2006-02-15 21:56:45Z wilt $
+ * @version $Id: mc12345678 2019 Oct 09 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -15,7 +14,6 @@ if (!defined('IS_ADMIN_FLAG')) {
  * category_tree Class.
  * This class is used to generate the category tree used for the categories sidebox
  *
- * @package classes
  */
 class category_tree extends base {
 
@@ -23,7 +21,7 @@ class category_tree extends base {
     global $db, $cPath, $cPath_array;
     if ($product_type != 'all') {
       $sql = "select type_master_type from " . TABLE_PRODUCT_TYPES . "
-                where type_master_type = " . $product_type . "";
+              where type_master_type = " . $product_type;
       $master_type_result = $db->Execute($sql);
       $master_type = $master_type_result->fields['type_master_type'];
     }
@@ -49,12 +47,14 @@ class category_tree extends base {
     }
     $categories = $db->Execute($categories_query, '', true, 150);
     while (!$categories->EOF)  {
-      $this->tree[$categories->fields['categories_id']] = array('name' => $categories->fields['categories_name'],
-      'parent' => $categories->fields['parent_id'],
-      'level' => 0,
-      'path' => $categories->fields['categories_id'],
-      'image' => $categories->fields['categories_image'],
-      'next_id' => false);
+      $this->tree[$categories->fields['categories_id']] = array(
+              'name' => $categories->fields['categories_name'],
+              'parent' => $categories->fields['parent_id'],
+              'level' => 0,
+              'path' => $categories->fields['categories_id'],
+              'image' => $categories->fields['categories_image'],
+              'next_id' => false,
+              );
 
       if (isset($parent_id)) {
         $this->tree[$parent_id]['next_id'] = $categories->fields['categories_id'];
@@ -69,8 +69,7 @@ class category_tree extends base {
     }
     if (zen_not_null($cPath)) {
       $new_path = '';
-      reset($cPath_array);
-      while (list($key, $value) = each($cPath_array)) {
+      foreach($cPath_array as $key => $value) {
         unset($parent_id);
         unset($first_id);
         if ($product_type == 'all') {
@@ -101,7 +100,6 @@ class category_tree extends base {
                              and cd.language_id=" . (int)$_SESSION['languages_id'] ."
                              and c.categories_status= 1
                              order by sort_order, cd.categories_name";
-
         }
 
         $rows = $db->Execute($categories_query);
@@ -128,7 +126,9 @@ class category_tree extends base {
             $last_id = $rows->fields['categories_id'];
             $rows->MoveNext();
           }
-          $this->tree[$last_id]['next_id'] = $this->tree[$value]['next_id'];
+          if (!empty($value) && !empty($this->tree[$value]) /* Needed to thwart notice */) {
+            $this->tree[$last_id]['next_id'] = $this->tree[$value]['next_id'];
+          }
           $this->tree[$value]['next_id'] = $first_id;
           $new_path .= '_';
         } else {
@@ -196,4 +196,3 @@ class category_tree extends base {
     return $this->box_categories_array;
   }
 }
-?>

@@ -2,11 +2,10 @@
 /**
  * whos_online sidebox - displays how many guests/members are online currently
  *
- * @package templateSystem
- * @copyright Copyright 2003-2005 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: whos_online.php 2718 2005-12-28 06:42:39Z drbyte $
+ * @version $Id: Scott C Wilson 2020 Apr 09 Modified in v1.5.7 $
  */
 
 // test if box should display
@@ -14,13 +13,14 @@
   $show_whos_online= true;
   $n_guests = 0;
   $n_members = 0;
+  $whos_online = array();
 
 // Set expiration time, default is 1200 secs (20 mins)
   $xx_mins_ago = (time() - 1200);
 
-  $db->Execute("delete from " . TABLE_WHOS_ONLINE . " where time_last_click < '" . $xx_mins_ago . "'");
+  $db->Execute("DELETE FROM " . TABLE_WHOS_ONLINE . " WHERE time_last_click < '" . $xx_mins_ago . "'");
 
-  $whos_online_query = $db->Execute("select customer_id from " . TABLE_WHOS_ONLINE);
+  $whos_online_query = $db->Execute("SELECT customer_id FROM " . TABLE_WHOS_ONLINE);
   while (!$whos_online_query->EOF) {
     if (!$whos_online_query->fields['customer_id'] == 0) $n_members++;
     if ($whos_online_query->fields['customer_id'] == 0) $n_guests++;
@@ -73,4 +73,3 @@
     $title_link = false;
     require($template->get_template_dir($column_box_default, DIR_WS_TEMPLATE, $current_page_base,'common') . '/' . $column_box_default);
   }
-?>

@@ -2,11 +2,10 @@
 /**
  * shipping class
  *
- * @package classes
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sun Oct 18 01:50:12 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Oct 29 Modified in v1.5.7a $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -15,25 +14,26 @@ if (!defined('IS_ADMIN_FLAG')) {
  * shipping class
  * Class used for interfacing with shipping modules
  *
- * @package classes
  */
 class shipping extends base {
   var $modules;
 
-  // class constructor
-  function __construct($module = '') {
-    global $PHP_SELF, $messageStack;
+  function __construct($module = null) {
+      global $PHP_SELF, $messageStack;
 
-    if (defined('MODULE_SHIPPING_INSTALLED') && zen_not_null(MODULE_SHIPPING_INSTALLED)) {
-      $this->modules = explode(';', MODULE_SHIPPING_INSTALLED);
+      if (defined('MODULE_SHIPPING_INSTALLED') && !empty(MODULE_SHIPPING_INSTALLED)) {
+        $this->modules = explode(';', MODULE_SHIPPING_INSTALLED);
+      }
+      $this->notify('NOTIFY_SHIPPING_CLASS_GET_INSTALLED_MODULES', $module);
+
+      if (empty($this->modules)) return;
 
       $include_modules = array();
 
       if ( (zen_not_null($module)) && (in_array(substr($module['id'], 0, strpos($module['id'], '_')) . '.' . substr($PHP_SELF, (strrpos($PHP_SELF, '.')+1)), $this->modules)) ) {
         $include_modules[] = array('class' => substr($module['id'], 0, strpos($module['id'], '_')), 'file' => substr($module['id'], 0, strpos($module['id'], '_')) . '.' . substr($PHP_SELF, (strrpos($PHP_SELF, '.')+1)));
       } else {
-        reset($this->modules);
-        while (list(, $value) = each($this->modules)) {
+        foreach($this->modules as $value) {
           $class = substr($value, 0, strrpos($value, '.'));
           $include_modules[] = array('class' => $class, 'file' => $value);
         }
@@ -51,11 +51,14 @@ class shipping extends base {
         if (@file_exists($lang_file)) {
           include_once($lang_file);
         } else {
-          if (IS_ADMIN_FLAG === false && is_object($messageStack)) {
-            $messageStack->add('checkout_shipping', WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
-          } else {
-            $messageStack->add_session(WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+          if (is_object($messageStack)) {
+            if (IS_ADMIN_FLAG === false) {
+              $messageStack->add('checkout_shipping', WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+            } else {
+              $messageStack->add_session(WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+            }
           }
+          continue;
         }
         $this->enabled = TRUE;
         $this->notify('NOTIFY_SHIPPING_MODULE_ENABLE', $include_modules[$i]['class'], $include_modules[$i]['class']);
@@ -68,8 +71,8 @@ class shipping extends base {
           if ($enabled == FALSE ) unset($GLOBALS[$include_modules[$i]['class']]);
         }
       }
-    }
   }
+
   function check_enabled($class)
   {
     $enabled = $class->enabled;
@@ -85,10 +88,11 @@ class shipping extends base {
     $this->notify('NOTIFY_SHIPPING_CHECK_ENABLED', array(), $class, $enabled);
     return $enabled;
   }
+
   function calculate_boxes_weight_and_tare() {
     global $total_weight, $shipping_weight, $shipping_quoted, $shipping_num_boxes;
 
-    $this->abort_legacy_calculations = FALSE;
+    $this->abort_legacy_calculations = false;
     $this->notify('NOTIFY_SHIPPING_MODULE_PRE_CALCULATE_BOXES_AND_TARE', array(), $total_weight, $shipping_weight, $shipping_quoted, $shipping_num_boxes);
     if ($this->abort_legacy_calculations) return;
 
@@ -97,13 +101,13 @@ class shipping extends base {
       $shipping_num_boxes = 1;
       $shipping_weight = $total_weight;
 
-      $za_tare_array = preg_split("/[:,]/" , str_replace(' ', '', SHIPPING_BOX_WEIGHT));
-      $zc_tare_percent= $za_tare_array[0];
-      $zc_tare_weight= $za_tare_array[1];
+      $za_tare_array = preg_split("/[:,]/" , str_replace(' ', '', !empty(SHIPPING_BOX_WEIGHT) ? SHIPPING_BOX_WEIGHT : '0:0'));
+      $zc_tare_percent= (float)$za_tare_array[0];
+      $zc_tare_weight= (float)$za_tare_array[1];
 
-      $za_large_array = preg_split("/[:,]/" , str_replace(' ', '', SHIPPING_BOX_PADDING));
-      $zc_large_percent= $za_large_array[0];
-      $zc_large_weight= $za_large_array[1];
+      $za_large_array = preg_split("/[:,]/" , str_replace(' ', '', !empty(SHIPPING_BOX_PADDING) ? SHIPPING_BOX_PADDING : '0:0'));
+      $zc_large_percent= (float)$za_large_array[0];
+      $zc_large_weight= (float)$za_large_array[1];
 
       // SHIPPING_BOX_WEIGHT = tare
       // SHIPPING_BOX_PADDING = Large Box % increase
@@ -151,8 +155,7 @@ class shipping extends base {
     if (is_array($this->modules)) {
       $include_quotes = array();
 
-      reset($this->modules);
-      while (list(, $value) = each($this->modules)) {
+      foreach($this->modules as $value) {
         $class = substr($value, 0, strrpos($value, '.'));
         if (zen_not_null($module)) {
           if ( ($module == $class) && (isset($GLOBALS[$class]) && $GLOBALS[$class]->enabled) ) {
@@ -169,6 +172,7 @@ class shipping extends base {
         if (FALSE == $GLOBALS[$include_quotes[$i]]->enabled) continue;
         $save_shipping_weight = $shipping_weight;
         $quotes = $GLOBALS[$include_quotes[$i]]->quote($method);
+        if (!isset($quotes['tax'])) $quotes['tax'] = 0;
         $shipping_weight = $save_shipping_weight;
         if (is_array($quotes)) $quotes_array[] = $quotes;
       }
@@ -178,17 +182,18 @@ class shipping extends base {
   }
 
   function cheapest() {
-    if (is_array($this->modules)) {
+    if (!is_array($this->modules)) return false;
       $rates = array();
 
-      reset($this->modules);
-      while (list(, $value) = each($this->modules)) {
+      foreach($this->modules as $value) {
         $class = substr($value, 0, strrpos($value, '.'));
-        if ($GLOBALS[$class]->enabled) {
-          $quotes = $GLOBALS[$class]->quotes;
+        if (isset($GLOBALS[$class]) && is_object($GLOBALS[$class]) && $GLOBALS[$class]->enabled) {
+          $quotes = isset($GLOBALS[$class]->quotes) ? $GLOBALS[$class]->quotes : null;
+          if (empty($quotes['methods'])) {
+            continue;
+          }
           $size = sizeof($quotes['methods']);
           for ($i=0; $i<$size; $i++) {
-            //              if ($quotes['methods'][$i]['cost']) {
             if (isset($quotes['methods'][$i]['cost'])){
               $rates[] = array('id' => $quotes['id'] . '_' . $quotes['methods'][$i]['id'],
                                'title' => $quotes['module'] . ' (' . $quotes['methods'][$i]['title'] . ')',
@@ -216,6 +221,5 @@ class shipping extends base {
       }
       $this->notify('NOTIFY_SHIPPING_MODULE_CALCULATE_CHEAPEST', $cheapest, $cheapest, $rates);
       return $cheapest;
-    }
   }
 }

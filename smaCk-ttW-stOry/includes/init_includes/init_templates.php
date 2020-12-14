@@ -1,17 +1,16 @@
 <?php
 /**
- * @package admin
- * @copyright Copyright 2003-2010 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: init_templates.php 15995 2010-04-19 17:41:54Z drbyte $
+ * @version $Id: Scott C Wilson 2020 Apr 12 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
 }
 // Set theme related directories
 if (!isset($template_dir) || $template_dir == '') {
-  $template_query = $db->Execute("select template_dir from " . TABLE_TEMPLATE_SELECT . " where template_language in (" . (int)$_SESSION['languages_id'] . ', 0' . ") order by template_language DESC");
+  $template_query = $db->Execute("SELECT template_dir FROM " . TABLE_TEMPLATE_SELECT . " WHERE template_language in (" . (int)$_SESSION['languages_id'] . ', 0' . ") order by template_language DESC");
   $template_dir = $template_query->fields['template_dir'];
 }
   define('DIR_WS_TEMPLATE', DIR_WS_TEMPLATES . $template_dir . '/');
@@ -27,3 +26,21 @@ if (!isset($template_dir) || $template_dir == '') {
  */
   header("Content-Type: text/html; charset=" . CHARSET);
 
+/**
+ * set HTML <title> tag for admin pages
+ */
+$pagename = '';
+if ($pagename == '') {
+  $pagename = preg_replace('/\.php$/', '', basename($PHP_SELF));
+}
+if ($pagename == 'configuration') {
+  $pagename .= " ". zen_get_configuration_group_value($_GET['gID']);
+}
+$pagename = str_replace('_', ' ', $pagename);
+if ($pagename == 'index') $pagename = HEADER_TITLE_TOP; // Admin home page/dashboard
+$pagename = ucwords($pagename);
+if ($pagename == '') {
+  $pagename = STORE_NAME;
+}
+$title = TEXT_ADMIN_TAB_PREFIX . ' ' . $pagename;
+define('TITLE', $title);

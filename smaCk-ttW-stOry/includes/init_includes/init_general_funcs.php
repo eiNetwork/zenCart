@@ -1,10 +1,9 @@
 <?php
 /**
- * @package admin
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sat Jan 9 23:02:19 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: Scott C Wilson 2019 Jul 25 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -12,19 +11,19 @@ if (!defined('IS_ADMIN_FLAG')) {
 /**
  * load the system wide functions
  *
- * @package admin
 **/
 // customization for the design layout
   define('BOX_WIDTH', 125); // how wide the boxes should be in pixels (default: 125)
 
 // include the database functions
-  require(DIR_WS_FUNCTIONS . 'database.php');
+  require(DIR_FS_CATALOG . DIR_WS_FUNCTIONS . 'database.php');
 
 // define our general functions used application-wide
   require(DIR_WS_FUNCTIONS . 'general.php');
+  require(DIR_FS_CATALOG . DIR_WS_FUNCTIONS . 'functions_general_shared.php');
   require(DIR_WS_FUNCTIONS . 'functions_prices.php');
   require(DIR_WS_FUNCTIONS . 'html_output.php');
-  require(DIR_WS_FUNCTIONS . 'functions_customers.php'); // partial copy of catalog functions customers for now
+  require(DIR_FS_CATALOG . DIR_WS_FUNCTIONS . 'functions_customers.php');
   require(DIR_FS_CATALOG . DIR_WS_FUNCTIONS . 'functions_email.php');
 
 /**
@@ -59,7 +58,7 @@ $e = (substr(HTTP_SERVER, 0, 5) == 'https') ? '1' : '0';
 if (SSLPWSTATUSCHECK == '') {
   $sql = "UPDATE " . TABLE_CONFIGURATION . " set configuration_value = '".$e.':'.$e."', last_modified = now() where configuration_key = 'SSLPWSTATUSCHECK'";
   $db->Execute($sql);
-  die('One-time auto-configuration completed. Please refresh the page.');
+  die('<meta http-equiv="Refresh" content="0">One-time auto-configuration completed. Please refresh the page.');
 }
 list($a, $c) = explode(':', SSLPWSTATUSCHECK); $a = (int)$a; $c = (int)$c;
 if ($a == 0) {

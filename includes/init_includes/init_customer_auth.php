@@ -3,11 +3,10 @@
  * customer authorisation based on DOWN_FOR_MAINTENANCE and CUSTOMERS_APPROVAL_AUTHORIZATION settings
  * see {@link  http://www.zen-cart.com/wiki/index.php/Developers_API_Tutorials#InitSystem wikitutorials} for more details.
  *
- * @package initSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sun Oct 18 23:45:35 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 May 19 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -15,7 +14,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 /**
  * Check if customer's session contains a valid customer_id. If not, then it could be that the administrator has deleted the customer (managing spam etc) so we'll log them out.
  */
-if (isset($_SESSION['customer_id'])) {
+if (zen_is_logged_in()) {
   $sql = "select customers_id from " . TABLE_CUSTOMERS . " where customers_id = " . (int)$_SESSION['customer_id'];
   $result = $db->Execute($sql);
   if ($result->RecordCount() == 0) {
@@ -29,7 +28,7 @@ $down_for_maint_flag = false;
 /**
  * do not let people get to down for maintenance page if not turned on unless is admin in IP list
  */
-if (DOWN_FOR_MAINTENANCE=='false' and $_GET['main_page'] == DOWN_FOR_MAINTENANCE_FILENAME && !strstr(EXCLUDE_ADMIN_IP_FOR_MAINTENANCE, $_SERVER['REMOTE_ADDR'])){
+if (DOWN_FOR_MAINTENANCE=='false' and $_GET['main_page'] == DOWN_FOR_MAINTENANCE_FILENAME && !zen_is_whitelisted_admin_ip()){
   zen_redirect(zen_href_link(FILENAME_DEFAULT));
 }
 /**
@@ -40,14 +39,14 @@ if (!defined('DOWN_FOR_MAINTENANCE_TYPE')) define('DOWN_FOR_MAINTENANCE_TYPE', '
  * check to see if site is DFM, and set a flag for use later
  */
 if (DOWN_FOR_MAINTENANCE == 'true') {
-  if (!strstr(EXCLUDE_ADMIN_IP_FOR_MAINTENANCE, $_SERVER['REMOTE_ADDR'])){
+  if (!zen_is_whitelisted_admin_ip()){
     if ($_GET['main_page'] != DOWN_FOR_MAINTENANCE_FILENAME) $down_for_maint_flag = true;
   }
 }
 /**
  * recheck customer status for authorization
  */
-if ((int)$_SESSION['customer_id'] > 0) {
+if (zen_is_logged_in()) {
   $check_customer_query = "select customers_id, customers_authorization
                              from " . TABLE_CUSTOMERS . "
                              where customers_id = " . (int)$_SESSION['customer_id'];
@@ -110,7 +109,7 @@ switch (true) {
 /**
  * if not down for maintenance check login status
  */
-  case (CUSTOMERS_APPROVAL == '1' and (int)$_SESSION['customer_id'] == 0):
+  case (CUSTOMERS_APPROVAL == '1' && !zen_is_logged_in()):
   /**
    * customer must be logged in to browse
    */
@@ -122,7 +121,7 @@ switch (true) {
     zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
   }
   break;
-  case (CUSTOMERS_APPROVAL == '2' and (int)$_SESSION['customer_id'] == 0):
+  case (CUSTOMERS_APPROVAL == '2' && !zen_is_logged_in()):
   /**
    * customer may browse but no prices
    */
@@ -148,7 +147,7 @@ switch (true) {
   case (STORE_STATUS != 0):
     break;
 
-  case (CUSTOMERS_APPROVAL_AUTHORIZATION == '1' and (int)$_SESSION['customer_id'] == 0):
+  case (CUSTOMERS_APPROVAL_AUTHORIZATION == '1' && !zen_is_logged_in()):
   /**
    * customer must be logged in to browse
    */
@@ -160,7 +159,7 @@ switch (true) {
     zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
   }
   break;
-  case (CUSTOMERS_APPROVAL_AUTHORIZATION == '2' and (int)$_SESSION['customer_id'] == 0):
+  case (CUSTOMERS_APPROVAL_AUTHORIZATION == '2' && !zen_is_logged_in()):
   /**
    * customer may browse but no prices unless Authorized
    */
@@ -174,7 +173,7 @@ switch (true) {
   }
   */
   break;
-  case ((CUSTOMERS_APPROVAL_AUTHORIZATION == '1' and $_SESSION['customers_authorization'] != '0') || (int)$_SESSION['customers_authorization'] == 1):
+  case (isset($_SESSION['customers_authorization']) && ((CUSTOMERS_APPROVAL_AUTHORIZATION == '1' && $_SESSION['customers_authorization'] != '0') || (int)$_SESSION['customers_authorization'] == 1)):
   /**
    * customer is pending approval
    * customer must be logged in to browse
@@ -196,4 +195,16 @@ switch (true) {
    * proceed normally
    */
   break;
+}
+
+// -----
+// If an admin is currently logged into the customer's account, let that admin know who s/he is shopping for.
+//
+if (isset($_SESSION['emp_admin_id'])) {
+    $shopping_for_name = $_SESSION['customer_first_name'] . ' ' . $_SESSION['customer_last_name'];
+    $severity = EMP_SHOPPING_FOR_MESSAGE_SEVERITY;
+    if (!in_array($severity, array('success', 'caution', 'warning', 'error'))) {
+        $severity = 'success';
+    }
+    $messageStack->add('header', sprintf(EMP_SHOPPING_FOR_MESSAGE, $shopping_for_name, $_SESSION['emp_customer_email_address']), $severity);
 }

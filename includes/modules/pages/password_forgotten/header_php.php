@@ -2,11 +2,10 @@
 /**
  * Password Forgotten
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sat Oct 17 21:54:07 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: lat9 2019 Aug 22 Modified in v1.5.7 $
  */
 
 // This should be first line of the script:
@@ -20,19 +19,17 @@ $_SESSION['navigation']->remove_current_page();
 
 if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
 // Slam prevention:
-  if ($_SESSION['login_attempt'] > 9)
-  {
+  if (isset($_SESSION['login_attempt']) && $_SESSION['login_attempt'] > 9) {
     header('HTTP/1.1 406 Not Acceptable');
     exit(0);
   }
   // BEGIN SLAM PREVENTION
-  if ($_POST['email_address'] != '')
-  {
+  if (!empty($_POST['email_address'])) {
     if (! isset($_SESSION['login_attempt'])) $_SESSION['login_attempt'] = 0;
     $_SESSION['login_attempt'] ++;
   } // END SLAM PREVENTION
 
-  $email_address = zen_db_prepare_input($_POST['email_address']);
+  $email_address = zen_db_prepare_input(trim($_POST['email_address']));
 
   $check_customer_query = "SELECT customers_firstname, customers_lastname, customers_password, customers_id
                            FROM " . TABLE_CUSTOMERS . "

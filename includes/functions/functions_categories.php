@@ -2,57 +2,48 @@
 /**
  * functions_categories.php
  *
- * @package functions
- * @copyright Copyright 2003-2009 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: functions_categories.php 14141 2009-08-10 19:34:47Z wilt $
+ * @version $Id: DrByte 2020 Jan 20 Modified in v1.5.7 $
  */
 
-////
-// Generate a path to categories
-  function zen_get_path($current_category_id = '') {
-    global $cPath_array, $db;
+/**
+ * Generate a cPath string from current category conditions
+ */
+function zen_get_path($current_category_id = '') {
+  global $cPath_array, $db;
 
-    if (zen_not_null($current_category_id)) {
-      $cp_size = sizeof($cPath_array);
-      if ($cp_size == 0) {
-        $cPath_new = $current_category_id;
-      } else {
-        $cPath_new = '';
-        $last_category_query = "select parent_id
-                                from " . TABLE_CATEGORIES . "
-                                where categories_id = '" . (int)$cPath_array[($cp_size-1)] . "'";
-
-        $last_category = $db->Execute($last_category_query);
-
-        $current_category_query = "select parent_id
-                                   from " . TABLE_CATEGORIES . "
-                                   where categories_id = '" . (int)$current_category_id . "'";
-
-        $current_category = $db->Execute($current_category_query);
-
-        if ($last_category->fields['parent_id'] == $current_category->fields['parent_id']) {
-          for ($i=0; $i<($cp_size-1); $i++) {
-            $cPath_new .= '_' . $cPath_array[$i];
-          }
-        } else {
-          for ($i=0; $i<$cp_size; $i++) {
-            $cPath_new .= '_' . $cPath_array[$i];
-          }
-        }
-        $cPath_new .= '_' . $current_category_id;
-
-        if (substr($cPath_new, 0, 1) == '_') {
-          $cPath_new = substr($cPath_new, 1);
-        }
-      }
-    } else {
-      $cPath_new = implode('_', $cPath_array);
-    }
-
-    return 'cPath=' . $cPath_new;
+  if ($current_category_id === '' || empty($cPath_array)) {
+    return 'cPath=' . (!empty($cPath_array) ? implode('_', $cPath_array) : $current_category_id);
   }
+
+  // make copy so we can manipulate it later
+  $cPath_categories = $cPath_array;
+
+  $last_category_query = "SELECT parent_id
+                            FROM " . TABLE_CATEGORIES . "
+                            WHERE categories_id = " . (int)$cPath_categories[count($cPath_categories)-1];
+  $last_category = $db->Execute($last_category_query);
+
+  $current_category_query = "SELECT parent_id
+                               FROM " . TABLE_CATEGORIES . "
+                               WHERE categories_id = " . (int)$current_category_id;
+  $current_category = $db->Execute($current_category_query);
+
+  // Eject last category from array if not found or same as current
+  if (!isset($last_category->fields['parent_id'], $current_category->fields['parent_id'])) {
+    array_pop($cPath_categories);
+  } elseif ($last_category->fields['parent_id'] == $current_category->fields['parent_id']) {
+    array_pop($cPath_categories);
+  }
+
+  $cPath_new = implode('_', $cPath_categories) . '_' . $current_category_id;
+
+  unset($cPath_categories);
+  return 'cPath=' . trim($cPath_new, '_');
+}
+
 
 ////
 // Return the number of products in a category
@@ -112,40 +103,40 @@
   }
 
 ////
-  function zen_get_categories($categories_array = '', $parent_id = '0', $indent = '', $status_setting = '') {
-    global $db;
+function zen_get_categories($categories_array = array(), $parent_id = '0', $indent = '', $status_setting = '')
+{
+  global $db;
 
-    if (!is_array($categories_array)) $categories_array = array();
-
-    // show based on status
-    if ($status_setting != '') {
-      $zc_status = " c.categories_status='" . (int)$status_setting . "' and ";
-    } else {
-      $zc_status = '';
-    }
-
-    $categories_query = "select c.categories_id, cd.categories_name, c.categories_status
-                         from " . TABLE_CATEGORIES . " c, " . TABLE_CATEGORIES_DESCRIPTION . " cd
-                         where " . $zc_status . "
-                         parent_id = '" . (int)$parent_id . "'
-                         and c.categories_id = cd.categories_id
-                         and cd.language_id = '" . (int)$_SESSION['languages_id'] . "'
-                         order by sort_order, cd.categories_name";
-
-    $categories = $db->Execute($categories_query);
-
-    while (!$categories->EOF) {
-      $categories_array[] = array('id' => $categories->fields['categories_id'],
-                                  'text' => $indent . $categories->fields['categories_name']);
-
-      if ($categories->fields['categories_id'] != $parent_id) {
-        $categories_array = zen_get_categories($categories_array, $categories->fields['categories_id'], $indent . '&nbsp;&nbsp;', '1');
-      }
-      $categories->MoveNext();
-    }
-
-    return $categories_array;
+  if (!is_array($categories_array)) {
+    $categories_array = array();
   }
+
+  // show based on status
+  if ($status_setting != '') {
+    $zc_status = " c.categories_status=" . (int)$status_setting . " AND ";
+  } else {
+    $zc_status = '';
+  }
+  $categories_query = "SELECT c.categories_id, cd.categories_name, c.categories_status, c.sort_order
+                         FROM " . TABLE_CATEGORIES . " c, " . TABLE_CATEGORIES_DESCRIPTION . " cd
+                         WHERE " . $zc_status . "
+                         parent_id = " . (int)$parent_id . "
+                         AND c.categories_id = cd.categories_id
+                         AND cd.language_id = " . (int)$_SESSION['languages_id'] . "
+                         ORDER BY c.sort_order, cd.categories_name";
+  $results = $db->Execute($categories_query);
+
+  foreach ($results as $result) {
+    $categories_array[] = [
+        'id' => $result['categories_id'],
+        'text' => $indent . $result['categories_name'],
+    ];
+    if ($result['categories_id'] != $parent_id) {
+      $categories_array = zen_get_categories($categories_array, $result['categories_id'], $indent . '&nbsp;&nbsp;', '1');
+    }
+  }
+  return $categories_array;
+}
 
 ////
 // Return all subcategory IDs
@@ -268,7 +259,8 @@
 
   function zen_product_in_parent_category($product_id, $cat_id, $parent_cat_id) {
     global $db;
-//echo $cat_id . '#' . $parent_cat_id;
+
+    $in_cat = false;
     if ($cat_id == $parent_cat_id) {
       $in_cat = true;
     } else {
@@ -481,6 +473,11 @@
   function zen_get_categories_products_list($categories_id, $include_deactivated = false, $include_child = true, $parent_category = '0', $display_limit = '') {
     global $db;
     global $categories_products_id_list;
+
+    if (!isset($categories_products_id_list) || !is_array($categories_products_id_list)) {
+      $categories_products_id_list = array();
+    }
+
     $childCatID = str_replace('_', '', substr($categories_id, strrpos($categories_id, '_')));
 
     $current_cPath = ($parent_category != '0' ? $parent_category . '_' : '') . $categories_id;
@@ -514,7 +511,7 @@
   }
 
 //// bof: manage master_categories_id vs cPath
-  function zen_generate_category_path($id, $from = 'category', $categories_array = '', $index = 0) {
+  function zen_generate_category_path($id, $from = 'category', $categories_array = array(), $index = 0) {
     global $db;
 
     if (!is_array($categories_array)) $categories_array = array();

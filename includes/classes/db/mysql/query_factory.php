@@ -3,12 +3,11 @@
  * MySQL query_factory Class.
  * Class used for database abstraction to MySQL via mysqli
  *
- * @package classes
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @copyright Portions adapted from http://www.data-diggers.com/
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwuilt Fri Apr 15 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Jan 21 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -79,7 +78,7 @@ class queryFactory extends base {
         if (!defined('DISABLE_MYSQL_TZ_SET')) {
           mysqli_query($this->link, "SET time_zone = '" . substr_replace(date("O"),":",-2,0) . "'");
         }
-        // Set MySQL mode, if one is defined before execution. Ref: https://dev.mysql.com/doc/refman/5.6/en/sql-mode.html (must be only A-Z or _ or , characters)
+        // Set MySQL mode, if one is defined before execution. Ref: https://dev.mysql.com/doc/refman/5.7/en/sql-mode.html (must be only A-Z or _ or , characters)
         if (defined('DB_MYSQL_MODE') && DB_MYSQL_MODE != '') {
           mysqli_query($this->link, "SET SESSION sql_mode = '" . preg_replace('/[^A-Z_,]/', '', DB_MYSQL_MODE) . "'");
         }
@@ -132,6 +131,10 @@ class queryFactory extends base {
     unset($this->link);
   }
 
+  function __destruct() {
+    $this->close();
+  }
+
   function set_error($zp_err_num, $zp_err_text, $dieOnErrors = true) {
     $this->error_number = $zp_err_num;
     $this->error_text = $zp_err_text;
@@ -171,12 +174,23 @@ class queryFactory extends base {
 
   function Execute($zf_sql, $zf_limit = false, $zf_cache = false, $zf_cachetime=0, $remove_from_queryCache = false) {
     // bof: collect database queries
-    if (defined('STORE_DB_TRANSACTIONS') && STORE_DB_TRANSACTIONS=='true') {
+    if (defined('STORE_DB_TRANSACTIONS') && STORE_DB_TRANSACTIONS != 'false') {
       global $PHP_SELF, $box_id, $current_page_base;
       if (strtoupper(substr($zf_sql,0,6))=='SELECT' /*&& strstr($zf_sql,'products_id')*/) {
         $f=@fopen(DIR_FS_LOGS.'/query_selects_' . $current_page_base . '_' . time() . '.txt','a');
         if ($f) {
-          fwrite($f,  "\n\n" . 'I AM HERE ' . $current_page_base . /*zen_get_all_get_params() .*/ "\n" . 'sidebox: ' . $box_id . "\n\n" . "Explain \n" . $zf_sql.";\n\n");
+          $backtrace = '';
+
+          if (STORE_DB_TRANSACTIONS == 'backtrace') {
+            ob_start();
+            debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            $backtrace = ob_get_contents();
+            ob_end_clean();
+            $backtrace = preg_replace('/^#0\s+' . __FUNCTION__ . '[^\n]*\n/', '', $backtrace, 1);
+            $backtrace = 'query trace: ' . "\n" . $backtrace . "\n";
+          }
+
+          fwrite($f,  "\n\n" . 'I AM HERE ' . $current_page_base . /*zen_get_all_get_params() .*/ "\n" . $backtrace . 'sidebox: ' . $box_id . "\n\n" . "Explain \n" . $zf_sql.";\n\n");
           fclose($f);
         }
         unset($f);
@@ -197,9 +211,7 @@ class queryFactory extends base {
       $obj->result = $zp_result_array;
       if (sizeof($zp_result_array) > 0 ) {
         $obj->EOF = false;
-        while (list($key, $value) = each($zp_result_array[0])) {
-          $obj->fields[$key] = $value;
-        }
+        $obj->fields = array_replace($obj->fields, $zp_result_array[0]);
       }
     } elseif ($zf_cache) {
       $zc_cache->sql_cache_expire_now($zf_sql);
@@ -218,28 +230,19 @@ class queryFactory extends base {
         if ($zp_rows > 0) {
           $zp_ii = 0;
           while ($zp_ii < $zp_rows) {
-            $zp_result_array = mysqli_fetch_array($zp_db_resource);
-            if ($zp_result_array) {
-              $obj->result[$zp_ii] = array();
-              while (list($key, $value) = each($zp_result_array)) {
-                if (!preg_match('/^[0-9]/', $key)) {
-                  $obj->result[$zp_ii][$key] = $value;
-                }
-              }
-            } else {
+            $obj->result[$zp_ii] = array();
+            $obj->result[$zp_ii] = mysqli_fetch_assoc($zp_db_resource);
+            if (!($obj->result[$zp_ii])) {
+              unset($obj->result[$zp_ii]);
               $obj->limit = $zp_ii;
               break;
             }
             $zp_ii++;
           }
-          while (list($key, $value) = each($obj->result[$obj->cursor])) {
-            if (!preg_match('/^[0-9]/', $key)) {
-              $obj->fields[$key] = $value;
-            }
-          }
+          $obj->fields = array_replace($obj->fields, $obj->result[$obj->cursor]);
           $obj->EOF = false;
         }
-        unset($zp_ii, $zp_result_array, $key, $value);
+        unset($zp_ii);
       }
       $zc_cache->sql_cache_store($zf_sql, $obj->result);
       $obj->is_cached = true;
@@ -267,13 +270,9 @@ class queryFactory extends base {
       } else {
         $obj->resource = $zp_db_resource;
         if ($obj->RecordCount() > 0) {
-          $zp_result_array = mysqli_fetch_array($zp_db_resource);
+          $zp_result_array = mysqli_fetch_assoc($zp_db_resource);
           if ($zp_result_array) {
-            while (list($key, $value) = each($zp_result_array)) {
-              if (!preg_match('/^[0-9]/', $key)) {
-                $obj->fields[$key] = $value;
-              }
-            }
+            $obj->fields = array_replace($obj->fields, $zp_result_array);
             $obj->EOF = false;
           }
         }
@@ -286,6 +285,14 @@ class queryFactory extends base {
     }
     return($obj);
   }
+    // -----
+    // Use this form of the Execute method to ensure that any SELECT result is pulled from the
+    // database, bypassing the cache.
+    //
+    function ExecuteNoCache ($zf_sql)
+    {
+        return $this->Execute ($zf_sql, false, false, 0, true);
+    }
 
   function ExecuteRandomMulti($zf_sql, $zf_limit = 0, $zf_cache = false, $zf_cachetime=0, $remove_from_queryCache = false) {
     $this->zf_sql = $zf_sql;
@@ -312,19 +319,16 @@ class queryFactory extends base {
         mysqli_data_seek($zp_db_resource, $zp_start_row);
         $zp_ii = 0;
         while ($zp_ii < $zf_limit) {
-          $zp_result_array = @mysqli_fetch_array($zp_db_resource);
-          if ($zp_result_array) {
-            $obj->result[$zp_ii] = array();
-            while (list($key, $value) = each($zp_result_array)) {
-              $obj->result[$zp_ii][$key] = $value;
-            }
-          } else {
+          $obj->result[$zp_ii] = array();
+          $obj->result[$zp_ii] = @mysqli_fetch_assoc($zp_db_resource);
+          if (!$obj->result[$zp_ii]) {
+            unset($obj->result[$zp_ii]);
             $obj->limit = $zp_ii;
             break;
           }
           $zp_ii++;
         }
-        unset($zp_ii, $zp_result_array, $key, $value);
+        unset($zp_ii);
         $obj->EOF = false;
 
         $obj->result_random = array_rand($obj->result, count($obj->result));
@@ -345,6 +349,22 @@ class queryFactory extends base {
     $this->count_queries++;
     return($obj);
   }
+    // -----
+    // Use this ExecuteRandomMulti method to ensure that any SELECT result is pulled from the
+    // database, bypassing the cache.
+    //
+    function ExecuteRandomMultiNoCache ($zf_sql)
+    {
+        return $this->ExecuteRandomMulti ($zf_sql, 0, false, 0, true);
+    }
+
+    // -----
+    // This function returns the number of rows affected by the last INSERT, UPDATE, REPLACE or DELETE query.
+    //
+    public function affectedRows()
+    {
+        return ($this->link) ? $this->link->affected_rows : 0;
+    }
 
   function insert_ID() {
     return @mysqli_insert_id($this->link);
@@ -390,7 +410,6 @@ class queryFactory extends base {
         $insertString .= $value['fieldName'] . ", ";
       }
       $insertString = substr($insertString, 0, strlen($insertString)-2) . ') VALUES (';
-      reset($tableData);
       foreach ($tableData as $key => $value) {
         $bindVarValue = $this->getBindVarValue($value['value'], $value['type']);
         $insertString .= $bindVarValue . ", ";
@@ -427,6 +446,18 @@ class queryFactory extends base {
     $typeArray = explode(':',$type);
     $type = $typeArray[0];
     switch ($type) {
+        case 'inConstructInteger':
+            $list = explode(',', $value);
+            $newList = array_map(function ($value) { return (int) $value; }, $list);
+            $value = implode(',', $newList);
+
+            return $value;
+        case 'inConstructString':
+            $list = explode(',', $value);
+            $newList = array_map(function ($value) { return '\'' . $this->prepare_input($value) . '\''; }, $list);
+            $value = implode(',', $newList);
+
+            return $value;
       case 'csv':
         return $value;
       break;
@@ -434,7 +465,7 @@ class queryFactory extends base {
         return $value;
       break;
       case 'float':
-        return (!zen_not_null($value) || $value=='' || $value == 0) ? 0 : $value;
+        return (!zen_not_null($value) || $value=='' || $value == 0) ? 0 : (float)$value;
       break;
       case 'integer':
         return (int)$value;
@@ -468,14 +499,13 @@ class queryFactory extends base {
         }
         return $this->prepare_input($value);
       default:
-      die('var-type undefined: ' . $type . '('.$value.')');
+        trigger_error ("var-type undefined: $type ($value).", E_USER_ERROR);
     }
   }
 /**
  * method to do bind variables to a query
 **/
-  function bindVars($sql, $bindVarString, $bindVarValue, $bindVarType, $debug = false) {
-    $bindVarTypeArray = explode(':', $bindVarType);
+  function bindVars($sql, $bindVarString, $bindVarValue, $bindVarType) {
     $sqlNew = $this->getBindVarValue($bindVarValue, $bindVarType);
     $sqlNew = str_replace($bindVarString, $sqlNew, $sql);
     return $sqlNew;
@@ -506,7 +536,7 @@ class queryFactoryResult implements Countable, Iterator {
    *
    * @var array of field => value pairs
    */
-  public $fields;
+  public $fields = array();
 
   /**
    * Indicates if the result is cached.
@@ -588,20 +618,14 @@ class queryFactoryResult implements Countable, Iterator {
       if ($this->cursor >= sizeof($this->result)) {
         $this->EOF = true;
       } else {
-        while(list($key, $value) = each($this->result[$this->cursor])) {
-          $this->fields[$key] = $value;
-        }
+        $this->fields = array_replace($this->fields, $this->result[$this->cursor]);
       }
     } else {
-      $zp_result_array = @mysqli_fetch_array($this->resource);
+      $zp_result_array = @mysqli_fetch_assoc($this->resource);
+      $this->fields = array_replace($this->fields, $zp_result_array);
       if (!$zp_result_array) {
         $this->EOF = true;
-      } else {
-        while (list($key, $value) = each($zp_result_array)) {
-          if (!preg_match('/^[0-9]/', $key)) {
-            $this->fields[$key] = $value;
-          }
-        }
+        unset($this->fields);
       }
     }
   }
@@ -612,12 +636,7 @@ class queryFactoryResult implements Countable, Iterator {
   public function MoveNextRandom() {
     $this->cursor++;
     if ($this->cursor < $this->limit) {
-      $zp_result_array = $this->result[$this->result_random[$this->cursor]];
-      while (list($key, $value) = each($zp_result_array)) {
-        if (!preg_match('/^[0-9]/', $key)) {
-          $this->fields[$key] = $value;
-        }
-      }
+      $this->fields = array_replace($this->fields, $this->result[$this->result_random[$this->cursor]]);
     } else {
       $this->EOF = true;
     }
@@ -668,28 +687,21 @@ class queryFactoryResult implements Countable, Iterator {
    * @param int $zp_row the row to move to
    */
   public function Move($zp_row) {
-    global $db;
     if ($this->is_cached) {
       if($zp_row >= sizeof($this->result)) {
         $this->cursor = sizeof($this->result);
         $this->EOF = true;
       } else {
-        while(list($key, $value) = each($this->result[$zp_row])) {
-          $this->fields[$key] = $value;
-        }
+        $this->fields = array_replace($this->fields, $this->result[$zp_row]);
         $this->cursor = $zp_row;
         $this->EOF = false;
       }
     } else if (@mysqli_data_seek($this->resource, $zp_row)) {
-      $zp_result_array = @mysqli_fetch_array($this->resource);
-      while (list($key, $value) = each($zp_result_array)) {
-        $this->fields[$key] = $value;
-      }
+      $this->fields = array_replace($this->fields, @mysqli_fetch_assoc($this->resource));
       $this->cursor = $zp_row;
       $this->EOF = false;
     } else {
       $this->EOF = true;
-      $db->set_error(mysqli_errno($this->link), mysqli_error($this->link), $db->dieOnErrors);
     }
   }
 }

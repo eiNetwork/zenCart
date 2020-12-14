@@ -2,10 +2,9 @@
 /**
  * autoloader array for paypal
  *
- * @package initSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sat Oct 17 21:54:07 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: lat9 2019 Dec 15 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
  die('Illegal Access');
@@ -14,8 +13,6 @@ if (!defined('IS_ADMIN_FLAG')) {
   $autoLoadConfig[0][] = array('autoType'=>'include',
                                'loadFile'=> DIR_WS_INCLUDES . 'version.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
-                               'loadFile'=>'class.base.php');
-  $autoLoadConfig[0][] = array('autoType'=>'class',
                                'loadFile'=>'class.notifier.php');
   $autoLoadConfig[0][] = array('autoType'=>'classInstantiate',
                                'className'=>'notifier',
@@ -23,13 +20,9 @@ if (!defined('IS_ADMIN_FLAG')) {
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=> 'class.phpmailer.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
-                                'loadFile'=> 'class.smtp.php');
-  $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'template_func.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'language.php');
-  $autoLoadConfig[0][] = array('autoType'=>'class',
-                                'loadFile'=>'cache.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'sniffer.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
@@ -42,17 +35,6 @@ if (!defined('IS_ADMIN_FLAG')) {
                                 'loadFile'=>'message_stack.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'breadcrumb.php');
-/**
- * Breakpoint 10.
- *
- * require('includes/init_includes/init_file_db_names.php');
- * require('includes/init_includes/init_database.php');
- *
- */
-  $autoLoadConfig[10][] = array('autoType'=>'init_script',
-                                'loadFile'=> 'init_file_db_names.php');
-  $autoLoadConfig[10][] = array('autoType'=>'init_script',
-                                'loadFile'=>'init_database.php');
 /**
  * Breakpoint 30.
  *
@@ -89,6 +71,8 @@ if (!defined('IS_ADMIN_FLAG')) {
  * require('includes/init_includes/init_tlds.php');
  *
  */
+  $autoLoadConfig[60][] = array('autoType' => 'require',
+                                'loadFile' => DIR_WS_FUNCTIONS . 'functions_osh_update.php');
   $autoLoadConfig[60][] = array('autoType'=>'init_script',
                                 'loadFile'=> 'init_general_funcs.php');
   $autoLoadConfig[60][] = array('autoType'=>'init_script',

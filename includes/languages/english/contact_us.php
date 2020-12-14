@@ -1,10 +1,9 @@
 <?php
 /**
- * @package languageDefines
- * @copyright Copyright 2003-2011 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: contact_us.php 18695 2011-05-04 05:24:19Z drbyte $
+ * @version $Id: Scott C Wilson 2019 Jul 22 Modified in v1.5.7 $
  */
 
 define('HEADING_TITLE', 'Contact Us');
@@ -14,6 +13,7 @@ define('EMAIL_SUBJECT', 'Website Inquiry from ' . STORE_NAME);
 
 define('ENTRY_NAME', 'Full Name:');
 define('ENTRY_EMAIL', 'Email Address:');
+define('ENTRY_TELEPHONE', 'Telephone Number:');
 define('ENTRY_ENQUIRY', 'Message:');
 
 define('SEND_TO_TEXT','Send Email To:');

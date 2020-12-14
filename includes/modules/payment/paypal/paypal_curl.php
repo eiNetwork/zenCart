@@ -2,15 +2,15 @@
 /**
  * paypal_curl.php communications class for PayPal Express Checkout / Website Payments Pro / Payflow Pro payment methods
  *
- * @package paymentMethod
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Wed Mar 16 16:12:21 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 June 23 Modified in v1.5.7 $
  */
 
 /**
  * PayPal NVP (v124.0) and Payflow Pro (v4 HTTP API) implementation via cURL.
  */
+if (!defined('PAYPAL_DEV_MODE')) define('PAYPAL_DEV_MODE', 'false');
 class paypal_curl extends base {
 
   /**
@@ -251,14 +251,14 @@ class paypal_curl extends base {
       $values['ORIGID'] = $txnID;
       $values['TENDER'] = 'C';
       $values['TRXTYPE'] = 'C';
-      $values['AMT'] = number_format((float)$amount, 2);
+      $values['AMT'] = round((float)$amount, 2);
       if ($note != '') $values['COMMENT2'] = $note;
     } elseif ($this->_mode == 'nvp') {
       $values['TRANSACTIONID'] = $txnID;
       if ($amount != 'Full' && (float)$amount > 0) {
         $values['REFUNDTYPE'] = 'Partial';
         $values['CURRENCYCODE'] = $curCode;
-        $values['AMT'] = number_format((float)$amount, 2);
+        $values['AMT'] = round((float)$amount, 2);
       } else {
         $values['REFUNDTYPE'] = 'Full';
       }
@@ -291,7 +291,7 @@ class paypal_curl extends base {
    */
   function DoAuthorization($txnID, $amount = 0, $currency = 'USD', $entity = 'Order') {
     $values['TRANSACTIONID'] = $txnID;
-    $values['AMT'] = number_format($amount, 2, '.', ',');
+    $values['AMT'] = round((float)$amount, 2);
     $values['TRANSACTIONENTITY'] = $entity;
     $values['CURRENCYCODE'] = $currency;
     return $this->_request($values, 'DoAuthorization');
@@ -304,7 +304,7 @@ class paypal_curl extends base {
    */
   function DoReauthorization($txnID, $amount = 0, $currency = 'USD') {
     $values['AUTHORIZATIONID'] = $txnID;
-    $values['AMT'] = number_format($amount, 2, '.', ',');
+    $values['AMT'] = round((float)$amount, 2);
     $values['CURRENCYCODE'] = $currency;
     return $this->_request($values, 'DoReauthorization');
   }
@@ -325,7 +325,7 @@ class paypal_curl extends base {
     } elseif ($this->_mode == 'nvp') {
       $values['AUTHORIZATIONID'] = $txnID;
       $values['COMPLETETYPE'] = $captureType;
-      $values['AMT'] = number_format((float)$amount, 2);
+      $values['AMT'] = round((float)$amount, 2);
       $values['CURRENCYCODE'] = $currency;
       if ($invNum != '') $values['INVNUM'] = $invNum;
       if ($note != '') $values['NOTE'] = $note;
@@ -365,7 +365,7 @@ class paypal_curl extends base {
    *
    * Used to read data from PayPal for specified transaction criteria
    */
-  function TransactionSearch($startdate, $txnID = '', $email = '', $options) {
+  function TransactionSearch($startdate, $txnID = '', $email = '', $options = null) {
     if ($this->_mode == 'payflow') {
       $values['CUSTREF'] = $txnID;
       $values['TENDER'] = 'C';
@@ -437,7 +437,7 @@ class paypal_curl extends base {
     } elseif ($this->_mode == 'nvp') {
       $headers[] = 'X-VPS-VIT-Integration-Product: PHP::Zen Cart(R) - PayPal/NVP';
     }
-    $headers[] = 'X-VPS-VIT-Integration-Version: 1.5.5';
+    $headers[] = 'X-VPS-VIT-Integration-Version: 1.5.7';
     $this->lastHeaders = $headers;
 
     $ch = curl_init();
@@ -516,7 +516,8 @@ class paypal_curl extends base {
 
     // Adjustments if Micropayments account profile details have been set
     if (defined('MODULE_PAYMENT_PAYPALWPP_MICROPAY_THRESHOLD') && MODULE_PAYMENT_PAYPALWPP_MICROPAY_THRESHOLD != ''
-        && (($pairs['AMT'] > 0 && $pairs['AMT'] < strval(MODULE_PAYMENT_PAYPALWPP_MICROPAY_THRESHOLD) )
+        && ((($pairs['AMT'] > 0 && $pairs['AMT'] < strval(MODULE_PAYMENT_PAYPALWPP_MICROPAY_THRESHOLD) )
+                || ($pairs['PAYMENTREQUEST_0_AMT'] > 0 && $pairs['PAYMENTREQUEST_0_AMT'] < strval(MODULE_PAYMENT_PAYPALWPP_MICROPAY_THRESHOLD)))
            || ($pairs['METHOD'] == 'GetExpressCheckoutDetails' && isset($_SESSION['using_micropayments']) && $_SESSION['using_micropayments'] == TRUE))
         && defined('MODULE_PAYMENT_PAYPALWPP_MICROPAY_APIUSERNAME') && MODULE_PAYMENT_PAYPALWPP_MICROPAY_APIUSERNAME != ''
         && defined('MODULE_PAYMENT_PAYPALWPP_MICROPAY_APIPASSWORD') && MODULE_PAYMENT_PAYPALWPP_MICROPAY_APIPASSWORD != ''
@@ -659,7 +660,7 @@ class paypal_curl extends base {
     if ($tokenHash == '') $tokenHash = '_' . zen_create_random_value(4);
     $this->outputDestination = 'File';
     $this->notify('PAYPAL_CURL_LOG', $token, $tokenHash);
-    if ($token == '') $token = $_SESSION['paypal_ec_token'];
+    if ($token == '' && !empty($_SESSION['paypal_ec_token'])) $token = $_SESSION['paypal_ec_token'];
     if ($token == '') $token = time();
     $token .= $tokenHash;
     if ($this->outputDestination == 'File') {

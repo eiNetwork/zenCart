@@ -2,11 +2,10 @@
 /**
  * ipn_main_handler.php callback handler for PayPal IPN notifications
  *
- * @package paymentMethod
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Tue Oct 13 15:33:13 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Jul 11 Modified in v1.5.7a $
  */
 if (!defined('TEXT_RESELECT_SHIPPING')) define('TEXT_RESELECT_SHIPPING', 'You have changed the items in your cart since shipping was last calculated, and costs may have changed. Please verify/re-select your shipping method.');
 
@@ -73,12 +72,12 @@ if (isset($_GET['type']) && $_GET['type'] == 'ec') {
       // We have not gone to PayPal's website yet in order to grab
       // a token at this time.  This will send the customer over to PayPal's
       // website to login and return a token
-      $$paypalwpp_module->ec_step1();
+      ${$paypalwpp_module}->ec_step1();
     } else {
       // This will push on the second step of the paypal ec payment
       // module, as we already have a PayPal express checkout token
       // at this point.
-      $$paypalwpp_module->ec_step2();
+      ${$paypalwpp_module}->ec_step2();
     }
   }
 ?>
@@ -104,7 +103,7 @@ Processing...
    * detect type of transaction
    */
   $isECtransaction = ((isset($_POST['txn_type']) && $_POST['txn_type']=='express_checkout') || (isset($_POST['custom']) && in_array(substr($_POST['custom'], 0, 3), array('EC-', 'DP-', 'WPP')))); /*|| $_POST['txn_type']=='cart'*/
-  $isDPtransaction = (isset($_POST['custom']) && in_array(substr($_POST['custom'], 0, 3), array('DP-', 'WPP')));
+  $isDPtransaction = (isset($_POST['custom']) && in_array(substr($_POST['custom'], 0, 3), array('DP-', 'WPP', 'PF-')));
   /**
    * set paypal-specific application_top parameters
    */
@@ -126,7 +125,7 @@ Processing...
     @ini_set('log_errors_max_len', 0);
     @ini_set('display_errors', 0); // do not output errors to screen/browser/client (only to log file)
     @ini_set('error_log', DIR_FS_CATALOG . $debug_logfile_path);
-    error_reporting(version_compare(PHP_VERSION, 5.3, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE : version_compare(PHP_VERSION, 5.4, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_STRICT : E_ALL & ~E_NOTICE);
+    error_reporting(version_compare(PHP_VERSION, 5.3, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE : (version_compare(PHP_VERSION, 5.4, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_STRICT : E_ALL & ~E_NOTICE));
   }
 
   ipn_debug_email('Breakpoint: Flag Status:' . "\nisECtransaction = " . (int)$isECtransaction . "\nisDPtransaction = " . (int)$isDPtransaction);
@@ -180,6 +179,12 @@ Processing...
   $parentLookup = $txn_type;
 
   ipn_debug_email('Breakpoint: 4 - ' . 'Details:  txn_type=' . $txn_type . '    ordersID = '. $ordersID . '  IPN_id=' . $paypalipnID . "\n\n" . '   Relevant data from POST:' . "\n     " . 'txn_type = ' . $txn_type . "\n     " . 'parent_txn_id = ' . ($_POST['parent_txn_id'] =='' ? 'None' : $_POST['parent_txn_id']) . "\n     " . 'txn_id = ' . $_POST['txn_id']);
+
+  // ignore auth_status == 'Expired'
+  if ($_POST['auth_status'] === 'Expired' && $_POST['txn_type'] === 'web_accept') {
+    ipn_debug_email('NOTICE :: IPN Processing Aborted -- we do not need to do anything with an "Expired" auth notification.');
+    die();
+  }
 
   if (!$isECtransaction && !isset($_POST['parent_txn_id']) && $txn_type != 'cleared-echeck') {
     if (defined('MODULE_PAYMENT_PAYPAL_PDTTOKEN') && MODULE_PAYMENT_PAYPAL_PDTTOKEN != '') {
@@ -324,30 +329,22 @@ Processing...
         ipn_debug_email('Breakpoint: 5e - PP hist_data:' . print_r($sql_data_array, true));
         zen_db_perform(TABLE_PAYPAL_PAYMENT_STATUS_HISTORY, $sql_data_array);
         ipn_debug_email('Breakpoint: 5f - PP hist saved');
-        $new_status = MODULE_PAYMENT_PAYPAL_ORDER_STATUS_ID;
+        $new_status = (int)MODULE_PAYMENT_PAYPAL_ORDER_STATUS_ID;
         ipn_debug_email('Breakpoint: 5g - new status code: ' . $new_status);
         if ($_POST['payment_status'] =='Pending') {
           $new_status = (defined('MODULE_PAYMENT_PAYPAL_PROCESSING_STATUS_ID') && (int)MODULE_PAYMENT_PAYPAL_PROCESSING_STATUS_ID > 0 ? (int)MODULE_PAYMENT_PAYPAL_PROCESSING_STATUS_ID : 2);
           ipn_debug_email('Breakpoint: 5h - newer status code: ' . (int)$new_status);
-          $sql = "UPDATE " . TABLE_ORDERS  . "
-                  SET orders_status = " . (int)$new_status . "
-                  WHERE orders_id = '" . (int)$insert_id . "'";
-          $db->Execute($sql);
-          ipn_debug_email('Breakpoint: 5i - order table updated');
         }
-        $sql_data_array = array('orders_id' => (int)$insert_id,
-                                'orders_status_id' => (int)$new_status,
-                                'date_added' => 'now()',
-                                'comments' => 'PayPal status: ' . $_POST['payment_status'] . ' ' . $_POST['pending_reason']. ' @ '.$_POST['payment_date'] . (($_POST['parent_txn_id'] !='') ? "\n" . ' Parent Trans ID:' . $_POST['parent_txn_id'] : '') . "\n" . ' Trans ID:' . $_POST['txn_id'] . "\n" . ' Amount: ' . $_POST['mc_gross'] . ' ' . $_POST['mc_currency'],
-                                'customer_notified' => 0
-                                );
-        ipn_debug_email('Breakpoint: 5j - order stat hist update:' . print_r($sql_data_array, true));
-        zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
+        
+        $comments = 'PayPal status: ' . $_POST['payment_status'] . ' ' . $_POST['pending_reason']. ' @ '.$_POST['payment_date'] . (($_POST['parent_txn_id'] !='') ? "\n" . ' Parent Trans ID:' . $_POST['parent_txn_id'] : '') . "\n" . ' Trans ID:' . $_POST['txn_id'] . "\n" . ' Amount: ' . $_POST['mc_gross'] . ' ' . $_POST['mc_currency'];
+        zen_update_orders_history($insert_id, $comments, null, $new_status, 0);
+        ipn_debug_email("Breakpoint: 5j - order stat hist update: order-id: $insert_id, status-id: $new_status, comments: $comments");
+
         if (MODULE_PAYMENT_PAYPAL_ADDRESS_OVERRIDE == '1') {
-          $sql_data_array['comments'] = '**** ADDRESS OVERRIDE ALERT!!! **** CHECK PAYPAL ORDER DETAILS FOR ACTUAL ADDRESS SELECTED BY CUSTOMER!!';
-          $sql_data_array['customer_notified'] = -1;
-          zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
+            $comments = '**** ADDRESS OVERRIDE ALERT!!! **** CHECK PAYPAL ORDER DETAILS FOR ACTUAL ADDRESS SELECTED BY CUSTOMER!!';
+            zen_update_orders_history($insert_id, $comments, null, -1, -1);
         }
+        
         ipn_debug_email('Breakpoint: 5k - OSH update done');
         $order->create_add_products($insert_id, 2);
         ipn_debug_email('Breakpoint: 5L - adding products');
@@ -437,7 +434,7 @@ Processing...
         case 'voided':
         case ($_POST['payment_status'] == 'Refunded' || $_POST['payment_status'] == 'Reversed' || $_POST['payment_status'] == 'Voided'):
           //payment_status=Refunded or payment_status=Voided
-          $new_status = MODULE_PAYMENT_PAYPALWPP_REFUNDED_STATUS_ID;
+          $new_status = defined('MODULE_PAYMENT_PAYPALWPP_REFUNDED_STATUS_ID') ? MODULE_PAYMENT_PAYPALWPP_REFUNDED_STATUS_ID : 1;
           if (defined('MODULE_PAYMENT_PAYPAL_REFUND_ORDER_STATUS_ID') && (int)MODULE_PAYMENT_PAYPAL_REFUND_ORDER_STATUS_ID > 0 && !$isECtransaction) $new_status = MODULE_PAYMENT_PAYPAL_REFUND_ORDER_STATUS_ID;
           break;
         case 'echeck-denied':

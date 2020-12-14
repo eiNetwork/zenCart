@@ -2,11 +2,10 @@
 /**
  * Navigation_history Class.
  *
- * @package classes
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Mon Oct 19 00:50:19 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: Scott C Wilson 2019 Sep 16 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -15,7 +14,6 @@ if (!defined('IS_ADMIN_FLAG')) {
  * Navigation_history Class.
  * This class is used to manage navigation snapshots
  *
- * @package classes
  */
 class navigationHistory extends base {
   var $path, $snapshot;
@@ -34,11 +32,10 @@ class navigationHistory extends base {
     if (preg_match('|ajax\.php$|', $_SERVER['SCRIPT_NAME']) && $_GET['act'] != '') return;
 
     global $request_type, $cPath;
-    $get_vars = "";
+    $get_vars = array();
 
     if (is_array($_GET)) {
-      reset($_GET);
-      while (list($key, $value) = each($_GET)) {
+      foreach ($_GET as $key => $value) {
         if ($key != 'main_page') {
           $get_vars[$key] = $value;
         }
@@ -96,7 +93,7 @@ class navigationHistory extends base {
   function remove_current_page() {
 
     $last_entry_position = sizeof($this->path) - 1;
-    if ($this->path[$last_entry_position]['page'] == $_GET['main_page']) {
+    if (isset($this->path[$last_entry_position]['page']) && $this->path[$last_entry_position]['page'] == $_GET['main_page']) {
       unset($this->path[$last_entry_position]);
     }
   }
@@ -110,8 +107,7 @@ class navigationHistory extends base {
                               'get' => $page['get'],
                               'post' => $page['post']);
     } else {
-      reset($_GET);
-      while (list($key, $value) = each($_GET)) {
+      foreach ($_GET as $key => $value) {
         if ($key != 'main_page') {
           $get_vars[$key] = $value;
         }
@@ -143,12 +139,12 @@ class navigationHistory extends base {
   function debug() {
     for ($i=0, $n=sizeof($this->path); $i<$n; $i++) {
       echo $this->path[$i]['page'] . '?';
-      while (list($key, $value) = each($this->path[$i]['get'])) {
+      foreach($this->path[$i]['get'] as $key => $value) {
         echo $key . '=' . $value . '&';
       }
       if (sizeof($this->path[$i]['post']) > 0) {
         echo '<br />';
-        while (list($key, $value) = each($this->path[$i]['post'])) {
+        foreach($this->path[$i]['post'] as $key => $value) {
           echo '&nbsp;&nbsp;<strong>' . $key . '=' . $value . '</strong><br />';
         }
       }
@@ -163,7 +159,7 @@ class navigationHistory extends base {
   }
 
   function unserialize($broken) {
-    for(reset($broken);$kv=each($broken);) {
+    foreach($broken as $kv) {
       $key=$kv['key'];
       if (gettype($this->$key)!="user function")
       $this->$key=$kv['value'];

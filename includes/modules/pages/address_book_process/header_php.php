@@ -2,16 +2,15 @@
 /**
  * Header code file for the Address Book Process page
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt Fri Apr 15 Modified in v1.5.5 $
+ * @version $Id: lat9 2019 Nov 16 Modified in v1.5.7 $
  */
 // This should be first line of the script:
 $zco_notifier->notify('NOTIFY_HEADER_START_ADDRESS_BOOK_PROCESS');
 
-if (!$_SESSION['customer_id']) {
+if (!zen_is_logged_in()) {
   $_SESSION['navigation']->set_snapshot();
   zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
 }
@@ -76,7 +75,6 @@ if (isset($_POST['action']) && (($_POST['action'] == 'process') || ($_POST['acti
     }
   }
   $country = zen_db_prepare_input($_POST['zone_country_id']);
-  //echo ' I SEE: country=' . $country . '&nbsp;&nbsp;&nbsp;state=' . $state . '&nbsp;&nbsp;&nbsp;zone_id=' . $zone_id;
 
   if (ACCOUNT_GENDER == 'true') {
     if ( ($gender != 'm') && ($gender != 'f') ) {
@@ -164,6 +162,12 @@ if (isset($_POST['action']) && (($_POST['action'] == 'process') || ($_POST['acti
     $error = true;
     $messageStack->add('addressbook', ENTRY_COUNTRY_ERROR);
   }
+
+  // -----
+  // Give an observer the opportunity to check the data submitted and identify
+  // an additional error.
+  //
+  $zco_notifier->notify('NOTIFY_ADDRESS_BOOK_PROCESS_VALIDATION', array(), $error);
 
   if ($error == false) {
     $sql_data_array= array(array('fieldName'=>'entry_firstname', 'value'=>$firstname, 'type'=>'stringIgnoreNull'),
@@ -300,10 +304,22 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 
   $entry_query = $db->bindVars($entry_query, ':customersID', $_SESSION['customer_id'], 'integer');
   $entry = $db->Execute($entry_query);
+  
+  $entry->fields['entry_gender'] = 'm';
+  $entry->fields['entry_firstname'] = '';
+  $entry->fields['entry_lastname'] = '';
+  $entry->fields['entry_company'] = '';
+  $entry->fields['entry_street_address'] = '';
+  $entry->fields['entry_suburb'] = '';
+  $entry->fields['entry_city'] = '';
+  $entry->fields['entry_state'] = '';
+  $entry->fields['entry_zone_id'] = 0;
+  $entry->fields['entry_postcode'] = '';
 }
 /*
  * Set flags for template use:
  */
+if (!isset($_GET['delete'])) {
   if ($process == false) {
     $selected_country = $entry->fields['entry_country_id'];
   } else {
@@ -313,7 +329,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
   $flag_show_pulldown_states = ((($process == true || $entry_state_has_zones == true) && $zone_name == '') || ACCOUNT_STATE_DRAW_INITIAL_DROPDOWN == 'true' || $error_state_input) ? true : false;
   $state = ($flag_show_pulldown_states && $state != FALSE) ? $state : $zone_name;
   $state_field_label = ($flag_show_pulldown_states) ? '' : ENTRY_STATE;
-
+}
 
 
 if (!isset($_GET['delete']) && !isset($_GET['edit'])) {

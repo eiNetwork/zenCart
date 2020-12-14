@@ -2,11 +2,10 @@
 /**
  * Checkout Shipping Page
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Mon Dec 7 14:40:03 2015 -0500 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Oct 29 Modified in v1.5.7a $
  */
 // This should be first line of the script:
   $zco_notifier->notify('NOTIFY_HEADER_START_CHECKOUT_SHIPPING');
@@ -18,7 +17,7 @@
   }
 
 // if the customer is not logged on, redirect them to the login page
-  if (!isset($_SESSION['customer_id']) || !$_SESSION['customer_id']) {
+  if (!zen_is_logged_in()) {
     $_SESSION['navigation']->set_snapshot();
     zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
   } else {
@@ -47,11 +46,11 @@
           zen_redirect(zen_href_link(FILENAME_SHOPPING_CART));
           break;
         }
-      }
     }
+  }
 
 // if no shipping destination address was selected, use the customers own address as default
-  if (!$_SESSION['sendto']) {
+  if (empty($_SESSION['sendto'])) {
     $_SESSION['sendto'] = $_SESSION['customer_default_address_id'];
   } else {
 // verify the selected shipping address
@@ -102,6 +101,7 @@ if (isset($_SESSION['cart']->cartID)) {
   $shipping_modules = new shipping;
 
   $pass = true;
+  $free_shipping = false;
   if ( defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') && (MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING == 'true') ) {
     $pass = false;
 
@@ -121,12 +121,9 @@ if (isset($_SESSION['cart']->cartID)) {
         break;
     }
 
-    $free_shipping = false;
     if ( ($pass == true) && ($_SESSION['cart']->show_total() >= MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER) ) {
       $free_shipping = true;
     }
-  } else {
-    $free_shipping = false;
   }
 
   require(DIR_WS_MODULES . zen_get_module_directory('require_languages.php'));
@@ -138,10 +135,10 @@ if (isset($_SESSION['cart']->cartID)) {
 
 // process the selected shipping method
   if ( isset($_POST['action']) && ($_POST['action'] == 'process') ) {
-    if (zen_not_null($_POST['comments'])) {
-      $_SESSION['comments'] = zen_output_string_protected($_POST['comments']);
+    if (isset($_POST['comments'])) {
+      $_SESSION['comments'] = $_POST['comments'];
     }
-    $comments = $_SESSION['comments'];
+    $comments = isset($_SESSION['comments']) ? $_SESSION['comments'] : '';
     $quote = array();
 
     if ( (zen_count_shipping_modules() > 0) || ($free_shipping == true) ) {
@@ -153,7 +150,7 @@ if (isset($_SESSION['cart']->cartID)) {
           $quote['error'] = 'Invalid input. Please make another selection.';
         }
         list($module, $method) = explode('_', $_POST['shipping']);
-        if ( is_object($$module) || ($_POST['shipping'] == 'free_free') ) {
+        if ( (isset($$module) && is_object($$module)) || ($_POST['shipping'] == 'free_free') ) {
           if ($_POST['shipping'] == 'free_free') {
             $quote[0]['methods'][0]['title'] = FREE_SHIPPING_TITLE;
             $quote[0]['methods'][0]['cost'] = '0';
@@ -187,10 +184,10 @@ if (isset($_SESSION['cart']->cartID)) {
   $quotes = $shipping_modules->quote();
 
   // check that the currently selected shipping method is still valid (in case a zone restriction has disabled it, etc)
-  if (isset($_SESSION['shipping'])) {
+  if (isset($_SESSION['shipping']['id'])) {
     $checklist = array();
     foreach ($quotes as $key=>$val) {
-      if ($val['methods'] != '') {
+      if (!empty($val['methods'])) {
         foreach($val['methods'] as $key2=>$method) {
           $checklist[] = $val['id'] . '_' . $method['id'];
         }
@@ -199,8 +196,9 @@ if (isset($_SESSION['cart']->cartID)) {
       }
     }
     $checkval = $_SESSION['shipping']['id'];
-    if (!in_array($checkval, $checklist) && $_SESSION['shipping']['id'] != 'free_free') {
+    if (!in_array($checkval, $checklist)) {
       $messageStack->add('checkout_shipping', ERROR_PLEASE_RESELECT_SHIPPING_METHOD, 'error');
+      unset($_SESSION['shipping']); // Prepare $_SESSION to determine lowest available price/force a default selection mc12345678 2018-04-03
     }
   }
 
@@ -215,7 +213,7 @@ if (isset($_SESSION['cart']->cartID)) {
 
   // if shipping-edit button should be overridden, do so
   $editShippingButtonLink = zen_href_link(FILENAME_CHECKOUT_SHIPPING_ADDRESS, '', 'SSL');
-  if (isset($_SESSION['payment']) && method_exists(${$_SESSION['payment']}, 'alterShippingEditButton')) {
+  if (isset($_SESSION['payment']) && isset(${$_SESSION['payment']}) && method_exists(${$_SESSION['payment']}, 'alterShippingEditButton')) {
     $theLink = ${$_SESSION['payment']}->alterShippingEditButton();
     if ($theLink) {
       $editShippingButtonLink = $theLink;

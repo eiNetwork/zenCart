@@ -1,10 +1,9 @@
 <?php
 /**
- * @package admin
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sun Mar 13 2016  Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 May 19 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -24,18 +23,16 @@ if (!defined('IS_ADMIN_FLAG')) {
     $messageStack->add(WARNING_FILE_UPLOADS_DISABLED, 'warning');
   }
 
-// set demo message
-  if (zen_get_configuration_key_value('ADMIN_DEMO')=='1') {
-    if (zen_admin_demo()) {
-      $messageStack->add(ADMIN_DEMO_ACTIVE, 'warning');
-    } else {
-      $messageStack->add(ADMIN_DEMO_ACTIVE_EXCLUSION, 'warning');
-    }
-  }
-
   // check if email subsystem has been disabled
   if (SEND_EMAILS != 'true') {
     $messageStack->add(WARNING_EMAIL_SYSTEM_DISABLED, 'error');
+  }
+// check if email sending has been disabled by developer switch
+  if (defined('DEVELOPER_OVERRIDE_EMAIL_STATUS') && DEVELOPER_OVERRIDE_EMAIL_STATUS == 'false') {
+      $messageStack->add(WARNING_EMAIL_SYSTEM_DEVELOPER_OVERRIDE, 'info');
+// check if email destinations have been diverted by developer switch
+  } elseif (defined('DEVELOPER_OVERRIDE_EMAIL_ADDRESS') && DEVELOPER_OVERRIDE_EMAIL_ADDRESS != '') {
+      $messageStack->add(sprintf(zen_output_string_protected(WARNING_EMAIL_SYSTEM_DEVELOPER_EMAIL), DEVELOPER_OVERRIDE_EMAIL_ADDRESS), 'info');
   }
 
   // this will let the admin know that the website is DOWN FOR MAINTENANCE to the public
@@ -49,27 +46,27 @@ if (!defined('IS_ADMIN_FLAG')) {
 /**
  * should a message be displayed if install directory exists
  */
-define('WARN_INSTALL_EXISTENCE', 'true');
+if (!defined('WARN_INSTALL_EXISTENCE')) define('WARN_INSTALL_EXISTENCE', 'true');
 /**
  * should a message be displayed if  config directory is writeable
  */
-define('WARN_CONFIG_WRITEABLE', 'true');
+if (!defined('WARN_CONFIG_WRITEABLE')) define('WARN_CONFIG_WRITEABLE', 'true');
 /**
  * should a message be displayed if sql cache directory not writeable
  */
-define('WARN_SQL_CACHE_DIRECTORY_NOT_WRITEABLE', 'true');
+if (!defined('WARN_SQL_CACHE_DIRECTORY_NOT_WRITEABLE')) define('WARN_SQL_CACHE_DIRECTORY_NOT_WRITEABLE', 'true');
 /**
  * should a message be displayed if session.autostart is on in php.ini
  */
-define('WARN_SESSION_AUTO_START', 'true');
+if (!defined('WARN_SESSION_AUTO_START')) define('WARN_SESSION_AUTO_START', 'true');
 /**
  * should a message be displayed if download directory not readable
  */
-define('WARN_DOWNLOAD_DIRECTORY_NOT_READABLE', 'true');
+if (!defined('WARN_DOWNLOAD_DIRECTORY_NOT_READABLE')) define('WARN_DOWNLOAD_DIRECTORY_NOT_READABLE', 'true');
 /**
  * should a message be displayed if system detects version problem with the database
  */
-define('WARN_DATABASE_VERSION_PROBLEM','true');
+if (!defined('WARN_DATABASE_VERSION_PROBLEM')) define('WARN_DATABASE_VERSION_PROBLEM','true');
 // check if the installer directory exists, and warn of its existence
 if (WARN_INSTALL_EXISTENCE == 'true') {
   $check_path = realpath(DIR_FS_CATALOG . '/zc_install');
@@ -125,7 +122,7 @@ if (WARN_DATABASE_VERSION_PROBLEM != 'false') {
 // include the password crypto functions
   require_once(DIR_FS_CATALOG . DIR_WS_FUNCTIONS . 'password_funcs.php');
   $admin_security = false;
-  $demo_check = $db->Execute("select * from " . TABLE_ADMIN . " where admin_name='demo' or admin_name='Admin'");
+  $demo_check = $db->Execute("SELECT * FROM " . TABLE_ADMIN . " WHERE admin_name='demo' OR admin_name='Admin'");
   if (!$demo_check->EOF) {
 
     $cnt_admin= 0;
@@ -158,7 +155,7 @@ if (WARN_DATABASE_VERSION_PROBLEM != 'false') {
 
 // if welcome email coupon is set and <= 21 days warn shop owner
     if (NEW_SIGNUP_DISCOUNT_COUPON > 0) {
-      $zc_welcome_check = $db->Execute("SELECT coupon_expire_date from " . TABLE_COUPONS . " WHERE coupon_id=" . (int)NEW_SIGNUP_DISCOUNT_COUPON);
+      $zc_welcome_check = $db->Execute("SELECT coupon_expire_date FROM " . TABLE_COUPONS . " WHERE coupon_id=" . (int)NEW_SIGNUP_DISCOUNT_COUPON);
       $zc_current_date = date('Y-m-d');
       $zc_days_to_expire = zen_date_diff($zc_current_date, $zc_welcome_check->fields['coupon_expire_date']);
       if ($zc_days_to_expire <= 21) {
@@ -168,18 +165,18 @@ if (WARN_DATABASE_VERSION_PROBLEM != 'false') {
     }
 
 // Alerts for EZ-Pages
-  if (EZPAGES_STATUS_HEADER == '2' and strstr(EXCLUDE_ADMIN_IP_FOR_MAINTENANCE, $_SERVER['REMOTE_ADDR'])) {
+  if (EZPAGES_STATUS_HEADER == '2' && zen_is_whitelisted_admin_ip()) {
     $messageStack->add(TEXT_EZPAGES_STATUS_HEADER_ADMIN, 'caution');
   }
-  if (EZPAGES_STATUS_FOOTER == '2' and strstr(EXCLUDE_ADMIN_IP_FOR_MAINTENANCE, $_SERVER['REMOTE_ADDR'])) {
+  if (EZPAGES_STATUS_FOOTER == '2' && zen_is_whitelisted_admin_ip()) {
     $messageStack->add(TEXT_EZPAGES_STATUS_FOOTER_ADMIN, 'caution');
   }
-  if (EZPAGES_STATUS_SIDEBOX == '2' and strstr(EXCLUDE_ADMIN_IP_FOR_MAINTENANCE, $_SERVER['REMOTE_ADDR'])) {
+  if (EZPAGES_STATUS_SIDEBOX == '2' && zen_is_whitelisted_admin_ip()) {
     $messageStack->add(TEXT_EZPAGES_STATUS_SIDEBOX_ADMIN, 'caution');
   }
 
 // Editor alerts
-  if (HTML_EDITOR_PREFERENCE != 'NONE' && !is_dir(DIR_FS_CATALOG . 'editors')) {
+  if (HTML_EDITOR_PREFERENCE != 'NONE' && !is_dir(DIR_FS_CATALOG . DIR_WS_EDITORS)) {
     $messageStack->add(ERROR_EDITORS_FOLDER_NOT_FOUND, 'caution');
   }
 
@@ -187,7 +184,7 @@ if (WARN_DATABASE_VERSION_PROBLEM != 'false') {
   if (basename($PHP_SELF) == FILENAME_DEFAULT . '.php') {
     $show_admin_activity_log_link = false;
 
-    $chk_admin_log = $db->Execute("select count(log_id) as counter from " . TABLE_ADMIN_ACTIVITY_LOG);
+    $chk_admin_log = $db->Execute("SELECT count(log_id) AS counter FROM " . TABLE_ADMIN_ACTIVITY_LOG);
     if ($chk_admin_log->fields['counter'] > 0) {
       if ($chk_admin_log->fields['counter'] > 50000) {
         $show_admin_activity_log_link = true;
@@ -195,11 +192,11 @@ if (WARN_DATABASE_VERSION_PROBLEM != 'false') {
         $messageStack->add(WARNING_ADMIN_ACTIVITY_LOG_RECORDS . $chk_admin_log->fields['counter'], 'caution');
       }
 
-      $chk_admin_log = $db->Execute("select min(access_date) as access_date from " . TABLE_ADMIN_ACTIVITY_LOG . " where access_date < DATE_SUB(CURDATE(),INTERVAL 60 DAY)");
+      $chk_admin_log = $db->Execute("SELECT MIN(access_date) AS access_date FROM " . TABLE_ADMIN_ACTIVITY_LOG . " WHERE access_date < DATE_SUB(CURDATE(),INTERVAL 60 DAY)");
       if (!empty($chk_admin_log->fields['access_date'])) {
         $show_admin_activity_log_link = true;
         $_SESSION['reset_admin_activity_log'] = true;
-        $messageStack->add(WARNING_ADMIN_ACTIVITY_LOG_DATE . date('m-d-Y', strtotime($chk_admin_log->fields['access_date'])), 'caution');
+        $messageStack->add(WARNING_ADMIN_ACTIVITY_LOG_DATE . date(DATE_FORMAT, strtotime($chk_admin_log->fields['access_date'])), 'caution');
       }
     }
   }

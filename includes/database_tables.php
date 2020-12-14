@@ -3,11 +3,10 @@
  * database_tables.php
  * Defines the database table names used in the project
  *
- * @package initSystem
- * @copyright Copyright 2003-2010 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: database_tables.php 16976 2010-07-24 23:33:45Z kuroi $
+ * @version $Id: DrByte 2020 May 17 Modified in v1.5.7 $
  * @private
  */
 
@@ -15,6 +14,7 @@ if (!defined('DB_PREFIX')) define('DB_PREFIX', '');
 define('TABLE_ADDRESS_BOOK', DB_PREFIX . 'address_book');
 define('TABLE_ADDRESS_FORMAT', DB_PREFIX . 'address_format');
 define('TABLE_ADMIN', DB_PREFIX . 'admin');
+define('TABLE_ADMIN_NOTIFICATIONS', DB_PREFIX . 'admin_notifications');
 define('TABLE_ADMIN_ACTIVITY_LOG', DB_PREFIX . 'admin_activity_log');
 define('TABLE_ADMIN_MENUS', DB_PREFIX . 'admin_menus');
 define('TABLE_ADMIN_PAGES', DB_PREFIX . 'admin_pages');
@@ -29,6 +29,7 @@ define('TABLE_CONFIGURATION', DB_PREFIX . 'configuration');
 define('TABLE_CONFIGURATION_GROUP', DB_PREFIX . 'configuration_group');
 define('TABLE_COUNTER', DB_PREFIX . 'counter');
 define('TABLE_COUNTER_HISTORY', DB_PREFIX . 'counter_history');
+define('TABLE_COUNT_PRODUCT_VIEWS', DB_PREFIX . 'count_product_views');
 define('TABLE_COUNTRIES', DB_PREFIX . 'countries');
 define('TABLE_COUPON_GV_QUEUE', DB_PREFIX . 'coupon_gv_queue');
 define('TABLE_COUPON_GV_CUSTOMER', DB_PREFIX . 'coupon_gv_customer');
@@ -45,6 +46,7 @@ define('TABLE_CUSTOMERS_INFO', DB_PREFIX . 'customers_info');
 define('TABLE_DB_CACHE', DB_PREFIX . 'db_cache');
 define('TABLE_EMAIL_ARCHIVE', DB_PREFIX . 'email_archive');
 define('TABLE_EZPAGES', DB_PREFIX . 'ezpages');
+define('TABLE_EZPAGES_CONTENT', DB_PREFIX . 'ezpages_content');
 define('TABLE_FEATURED', DB_PREFIX . 'featured');
 define('TABLE_FILES_UPLOADED', DB_PREFIX . 'files_uploaded');
 define('TABLE_GROUP_PRICING', DB_PREFIX . 'group_pricing');
@@ -68,6 +70,10 @@ define('TABLE_PAYPAL', DB_PREFIX . 'paypal');
 define('TABLE_PAYPAL_SESSION', DB_PREFIX . 'paypal_session');
 define('TABLE_PAYPAL_PAYMENT_STATUS', DB_PREFIX . 'paypal_payment_status');
 define('TABLE_PAYPAL_PAYMENT_STATUS_HISTORY', DB_PREFIX . 'paypal_payment_status_history');
+define('TABLE_PLUGIN_CONTROL', DB_PREFIX . 'plugin_control');
+define('TABLE_PLUGIN_CONTROL_VERSIONS', DB_PREFIX . 'plugin_control_versions');
+define('TABLE_PLUGIN_GROUPS', DB_PREFIX . 'plugin_groups');
+define('TABLE_PLUGIN_GROUPS_DESCRIPTION', DB_PREFIX . 'plugin_groups_description');
 define('TABLE_PRODUCTS', DB_PREFIX . 'products');
 define('TABLE_PRODUCT_TYPES', DB_PREFIX . 'product_types');
 define('TABLE_PRODUCT_TYPE_LAYOUT', DB_PREFIX . 'product_type_layout');

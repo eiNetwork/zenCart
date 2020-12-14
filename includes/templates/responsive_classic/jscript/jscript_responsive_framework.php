@@ -1,13 +1,12 @@
 <?php
 /**
- * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: rbarbour zcadditions.com Wed Mar 16 19:21:17 2016 -0500 New in v1.5.5 $
+ * @version $Id: rbarbour zcadditions.com 2019 Jun 03 Modified in v1.5.7 $
  */
 ?>
 
-<script type="text/javascript"><!--//
+<script type="text/javascript">
 
 (function($) {
 $(document).ready(function() {
@@ -63,7 +62,8 @@ $('input#email-address').clone().attr('type','email').insertAfter('input#email-a
 $('input#searchHeader').clone().attr('type','search').insertAfter('input#searchHeader').prev().remove();
 $('input#mailChimp').clone().attr('type','email').insertAfter('input#mailChimp').prev().remove();
 $('input#login-email-address').clone().attr('type','email').insertAfter('input#login-email-address').prev().remove();
-$('input#postcode').clone().attr('type','number').insertAfter('input#postcode').prev().remove();
+// The following turns the postcode into a number-only field, which probably only suits USA addresses:
+//$('input#postcode').clone().attr('type','number').insertAfter('input#postcode').prev().remove();
 $('input#telephone').clone().attr('type','tel').insertAfter('input#telephone').prev().remove();
 $('input#dob').clone().attr('type','date').insertAfter('input#dob').prev().remove();
 $('input#fax').clone().attr('type','tel').insertAfter('input#fax').prev().remove();
@@ -141,4 +141,4 @@ $('.no-fouc').removeClass('no-fouc');
 
 }) (jQuery);
 
-//--></script>
+</script>

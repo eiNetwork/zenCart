@@ -2,11 +2,10 @@
 /**
  * pop up image additional
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt  Fri Sep 11 15:51:04 2015 +0100 Modified in v1.5.5 $
+ * @version $Id: mc12345678 2020 Jan 21 Modified in v1.5.7 $
  */
 // This should be first line of the script:
   $zco_notifier->notify('NOTIFY_HEADER_START_POPUP_IMAGES_ADDITIONAL');
@@ -27,8 +26,11 @@
   $products_values = $db->Execute($products_values_query);
 
 
-  $products_image = $products_values->fields['products_image'];
-
+  $products_image = '';
+  
+  if (!$products_values->EOF) {
+    $products_image = $products_values->fields['products_image'];
+  }
   $products_image_extension = substr($products_image, strrpos($products_image, '.'));
   $products_image_base = preg_replace('|'.$products_image_extension.'$|', '', $products_image);
   $products_image_medium = $products_image_base . IMAGE_SUFFIX_MEDIUM . $products_image_extension;

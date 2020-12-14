@@ -3,11 +3,10 @@
  * html_output.php
  * HTML-generating functions used throughout the core
  *
- * @package functions
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Fri Feb 26 20:52:53 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Oct 29 Modified in v1.5.7a $
  */
 
 /*
@@ -20,6 +19,8 @@
     if($link !== null) return $link;
 
     if (!zen_not_null($page)) {
+      trigger_error("zen_href_link($page, $parameters, $connection), unable to determine the page link.",
+            E_USER_ERROR);
       die('</td></tr></table></td></tr></table><br /><br /><strong class="note">Error!<br /><br />Unable to determine the page link!</strong><br /><br /><!--' . $page . '<br />' . $parameters . ' -->');
     }
 
@@ -32,6 +33,7 @@
         $link = HTTP_SERVER;
       }
     } else {
+      trigger_error("zen_href_link($page, $parameters, $connection), Unable to determine connection method on a link! Known methods: NONSSL SSL", E_USER_ERROR);
       die('</td></tr></table></td></tr></table><br /><br /><strong class="note">Error!<br /><br />Unable to determine connection method on a link!<br /><br />Known methods: NONSSL SSL</strong><br /><br />');
     }
 
@@ -59,13 +61,12 @@
 
     $separator = '&';
 
-    while ( (substr($link, -1) == '&') || (substr($link, -1) == '?') ) $link = substr($link, 0, -1);
+    while (substr($link, -1) == '&' || substr($link, -1) == '?') $link = substr($link, 0, -1);
 // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
-    if ( ($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False') ) {
+    if ($add_session_id == true && $session_started == true && SESSION_FORCE_COOKIE_USE == 'False') {
       if (defined('SID') && zen_not_null(constant('SID'))) {
         $sid = constant('SID');
-//      } elseif ( ( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL_ADMIN == 'true') ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') ) ) {
-      } elseif ( ( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL == 'true') ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') ) ) {
+      } elseif ( ($request_type == 'NONSSL' && $connection == 'SSL' && ENABLE_SSL == 'true') || ($request_type == 'SSL' && $connection == 'NONSSL') ) {
         if ($http_domain != $https_domain) {
           $sid = zen_session_name() . '=' . zen_session_id();
         }
@@ -76,7 +77,7 @@
     while (strstr($link, '&&')) $link = str_replace('&&', '&', $link);
     while (strstr($link, '&amp;&amp;')) $link = str_replace('&amp;&amp;', '&amp;', $link);
 
-    if ( (SEARCH_ENGINE_FRIENDLY_URLS == 'true') && ($search_engine_safe == true) ) {
+    if (SEARCH_ENGINE_FRIENDLY_URLS == 'true' && $search_engine_safe == true) {
       while (strstr($link, '&&')) $link = str_replace('&&', '&', $link);
 
       $link = str_replace('&amp;', '/', $link);
@@ -98,6 +99,15 @@
     return $link;
   }
 
+/*
+ * This function, added to the storefront in zc1.5.6, provides a common method for
+ * plugins that span the admin and storefront to create a storefront (a.k.a catalog)
+ * link.
+ */
+function zen_catalog_href_link($page = '', $parameters = '', $connection = 'NONSSL')
+{
+    return zen_href_link($page, $parameters, $connection, false);
+}
 
 /*
  * The HTML image wrapper function for non-proportional images
@@ -111,7 +121,7 @@
       $src = DIR_WS_IMAGES . PRODUCTS_IMAGE_NO_IMAGE;
     }
 
-    if ( (empty($src) || ($src == DIR_WS_IMAGES)) && (IMAGE_REQUIRED == 'false') ) {
+    if ( (empty($src) || $src == DIR_WS_IMAGES) && (IMAGE_REQUIRED == 'false') ) {
       return false;
     }
 
@@ -125,10 +135,10 @@
     $image = '<img src="' . zen_output_string($src) . '" alt="' . zen_output_string($alt) . '"';
 
     if (zen_not_null($alt)) {
-      $image .= ' title=" ' . zen_output_string($alt) . ' "';
+      $image .= ' title="' . zen_output_string($alt) . '"';
     }
 
-    if ( (CONFIG_CALCULATE_IMAGE_SIZE == 'true') && (empty($width) || empty($height)) ) {
+    if (CONFIG_CALCULATE_IMAGE_SIZE == 'true' && (empty($width) || empty($height)) ) {
       if ($image_size = @getimagesize($src)) {
         if (empty($width) && zen_not_null($height)) {
           $ratio = $height / $image_size[1];
@@ -167,7 +177,7 @@
     $alt = zen_clean_html($alt);
 
     // use old method on template images
-    if (strstr($src, 'includes/templates') or strstr($src, 'includes/languages') or PROPORTIONAL_IMAGES_STATUS == '0') {
+    if (strstr($src, 'includes/templates') || strstr($src, 'includes/languages') || PROPORTIONAL_IMAGES_STATUS == '0') {
       return zen_image_OLD($src, $alt, $width, $height, $parameters);
     }
 
@@ -176,7 +186,7 @@
       $src = DIR_WS_IMAGES . PRODUCTS_IMAGE_NO_IMAGE;
     }
 
-    if ( (empty($src) || ($src == DIR_WS_IMAGES)) && (IMAGE_REQUIRED == 'false') ) {
+    if ( (empty($src) || ($src == DIR_WS_IMAGES)) && IMAGE_REQUIRED == 'false') {
       return false;
     }
 
@@ -192,20 +202,22 @@
       $zco_notifier->notify('NOTIFY_HANDLE_IMAGE', array($newimg));
     }
 
+    $zco_notifier->notify('NOTIFY_OPTIMIZE_IMAGE', $template_dir, $src, $alt, $width, $height, $parameters);
+
     // Convert width/height to int for proper validation.
     // intval() used to support compatibility with plugins like image-handler
-    $width = empty($width) ? $width : intval($width);
-    $height = empty($height) ? $height : intval($height);
+    $width = empty($width) ? $width : (int)$width;
+    $height = empty($height) ? $height : (int)$height;
 
 // alt is added to the img tag even if it is null to prevent browsers from outputting
 // the image filename as default
     $image = '<img src="' . zen_output_string($src) . '" alt="' . zen_output_string($alt) . '"';
 
     if (zen_not_null($alt)) {
-      $image .= ' title=" ' . zen_output_string($alt) . ' "';
+      $image .= ' title="' . zen_output_string($alt) . '"';
     }
 
-    if ( ((CONFIG_CALCULATE_IMAGE_SIZE == 'true') && (empty($width) || empty($height))) ) {
+    if (CONFIG_CALCULATE_IMAGE_SIZE == 'true' && (empty($width) || empty($height))) {
       if ($image_size = @getimagesize($src)) {
         if (empty($width) && zen_not_null($height)) {
           $ratio = $height / $image_size[1];
@@ -223,8 +235,7 @@
     }
 
 
-    if (zen_not_null($width) && zen_not_null($height) and file_exists($src)) {
-//      $image .= ' width="' . zen_output_string($width) . '" height="' . zen_output_string($height) . '"';
+    if (zen_not_null($width) && zen_not_null($height) && file_exists($src)) {
 // proportional images
       $image_size = @getimagesize($src);
       // fix division by zero error
@@ -237,7 +248,7 @@
       }
 // only use proportional image when image is larger than proportional size
       if ($image_size[0] < $width and $image_size[1] < $height) {
-        $image .= ' width="' . $image_size[0] . '" height="' . intval($image_size[1]) . '"';
+        $image .= ' width="' . $image_size[0] . '" height="' . (int)$image_size[1] . '"';
       } else {
         $image .= ' width="' . round($width) . '" height="' . round($height) . '"';
       }
@@ -246,7 +257,7 @@
       if (IMAGE_REQUIRED == 'false') {
         return false;
       } else if (substr($src, 0, 4) != 'http') {
-        $image .= ' width="' . intval(SMALL_IMAGE_WIDTH) . '" height="' . intval(SMALL_IMAGE_HEIGHT) . '"';
+        $image .= ' width="' . (int)SMALL_IMAGE_WIDTH . '" height="' . (int)SMALL_IMAGE_HEIGHT . '"';
       }
     }
 
@@ -273,7 +284,7 @@
 
     $image_submit = '<input type="image" src="' . zen_output_string($template->get_template_dir($image, DIR_WS_TEMPLATE, $current_page_base, 'buttons/' . $_SESSION['language'] . '/') . $image) . '" alt="' . zen_output_string($alt) . '"';
 
-    if (zen_not_null($alt)) $image_submit .= ' title=" ' . zen_output_string($alt) . ' "';
+    if (zen_not_null($alt)) $image_submit .= ' title="' . zen_output_string($alt) . '"';
 
     if (zen_not_null($parameters)) $image_submit .= ' ' . $parameters;
 
@@ -304,7 +315,7 @@
  * concept from contributions by Seb Rouleau and paulm, subsequently adapted to Zen Cart
  * note: any hard-coded buttons will not be able to use this function
 **/
-  function zenCssButton($image = '', $text, $type, $sec_class = '', $parameters = '') {
+  function zenCssButton($image = '', $text = '', $type = 'button', $sec_class = '', $parameters = '') {
    global $css_button_text, $css_button_opts, $template, $current_page_base, $language;
 
    $button_name = basename($image, '.gif');
@@ -319,7 +330,7 @@
     // (pure css hovers on non link elements do work work in every browser)
     $css_button_js =  'onmouseover="this.className=\''. $mouse_over_class . '\'" onmouseout="this.className=\'' . $mouse_out_class . '\'"';
 
-    if (CSS_BUTTON_POPUPS_IS_ARRAY == 'true') {
+    if (defined('CSS_BUTTON_POPUPS_IS_ARRAY') && CSS_BUTTON_POPUPS_IS_ARRAY == 'true') {
       $popuptext = (!empty($css_button_text[$button_name])) ? $css_button_text[$button_name] : ($button_name . CSSBUTTONS_CATALOG_POPUPS_SHOW_BUTTON_NAMES_TEXT);
       $tooltip = ' title="' . $popuptext . '"';
     } else {
@@ -340,12 +351,46 @@
         }
       }
 
-      $css_button = '<input class="' . $mouse_out_class . '" ' . $css_button_js . ' type="submit" value="' . $text . '"' . $tooltip . $parameters . ' />';
+      // -----
+      // Give an observer the chance to provide alternate formatting for the button (it's set to an empty
+      // string above).  If the value is still empty after the notification, create the standard-format
+      // of the button.
+      //
+      $GLOBALS['zco_notifier']->notify(
+            'NOTIFY_ZEN_CSS_BUTTON_SUBMIT',
+            array(
+                'button_name' => $button_name,
+                'text' => $text,
+                'sec_class' => $sec_class,
+                'parameters' => $parameters,
+            ),
+            $css_button
+      );
+      if ($css_button == '') {
+        $css_button = '<input class="' . $mouse_out_class . '" ' . $css_button_js . ' type="submit" value="' . $text . '"' . $tooltip . $parameters . ' />';
+      }
     }
 
-    if ($type=='button'){
+    if ($type=='button') {
       // link button
-      $css_button = '<span class="' . $mouse_out_class . '" ' . $css_button_js . $tooltip . $parameters . '>&nbsp;' . $text . '&nbsp;</span>';
+      // -----
+      // Give an observer the chance to provide alternate formatting for the button (it's set to an empty string
+      // above).  If the value is still empty after the notification, create the standard-format
+      // of the button.
+      //
+      $GLOBALS['zco_notifier']->notify(
+            'NOTIFY_ZEN_CSS_BUTTON_BUTTON',
+            array(
+                'button_name' => $button_name,
+                'text' => $text,
+                'sec_class' => $sec_class,
+                'parameters' => $parameters,
+            ),
+            $css_button
+      );
+      if ($css_button == '') {
+        $css_button = '<span class="' . $mouse_out_class . '" ' . $css_button_js . $tooltip . $parameters . '>&nbsp;' . $text . '&nbsp;</span>';
+      }
     }
     return $css_button;
   }
@@ -383,9 +428,29 @@
 /*
  *  Output a form input field
  */
-  function zen_draw_input_field($name, $value = '', $parameters = '', $type = 'text', $reinsert_value = true) {
+  function zen_draw_input_field($name, $value = '', $parameters = '', $type = 'text', $reinsert_value = true, $required = false) {
+    // -----
+    // Give an observer the opportunity to **totally** override this function's operation.
+    //
+    $field = false;
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_INPUT_FIELD_OVERRIDE',
+        array(
+            'name' => $name,
+            'value' => $value,
+            'parameters' => $parameters,
+            'type' => $type,
+            'reinsert_value' => $reinsert_value,
+            'required' => $required,
+        ),
+        $field
+    );
+    if ($field !== false) {
+        return $field;
+    }
+
     $field = '<input type="' . zen_output_string($type) . '" name="' . zen_sanitize_string(zen_output_string($name)) . '"';
-    if ( (isset($GLOBALS[$name]) && is_string($GLOBALS[$name])) && ($reinsert_value == true) ) {
+    if (isset($GLOBALS[$name]) && is_string($GLOBALS[$name]) && $reinsert_value == true) {
       $field .= ' value="' . zen_output_string(stripslashes($GLOBALS[$name])) . '"';
     } elseif (zen_not_null($value)) {
       $field .= ' value="' . zen_output_string($value) . '"';
@@ -394,6 +459,26 @@
     if (zen_not_null($parameters)) $field .= ' ' . $parameters;
 
     $field .= ' />';
+
+    // -----
+    // Give an observer the opportunity to modify the just-rendered field.
+    //
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_INPUT_FIELD',
+        array(
+            'name' => $name,
+            'value' => $value,
+            'parameters' => $parameters,
+            'type' => $type,
+            'reinsert_value' => $reinsert_value,
+            'required' => $required,
+        ),
+        $field
+    );
+
+    if ($required == true && !empty(TEXT_FIELD_REQUIRED)) {
+      $field .= TEXT_FIELD_REQUIRED;
+    }
 
     return $field;
   }
@@ -409,11 +494,35 @@
  *  Output a selection field - alias function for zen_draw_checkbox_field() and zen_draw_radio_field()
  */
   function zen_draw_selection_field($name, $type, $value = '', $checked = false, $parameters = '') {
+    // -----
+    // Give an observer the opportunity to **totally** override this function's operation.
+    //
+    $selection = false;
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_SELECTION_FIELD_OVERRIDE',
+        array(
+            'name' => $name,
+            'value' => $value,
+            'parameters' => $parameters,
+            'type' => $type,
+            'checked' => $checked
+        ),
+        $selection
+    );
+    if ($selection !== false) {
+        return $selection;
+    }
+
     $selection = '<input type="' . zen_output_string($type) . '" name="' . zen_output_string($name) . '"';
 
     if (zen_not_null($value)) $selection .= ' value="' . zen_output_string($value) . '"';
 
-    if ( ($checked == true) || ( isset($GLOBALS[$name]) && is_string($GLOBALS[$name]) && ( ($GLOBALS[$name] == 'on') || (isset($value) && (stripslashes($GLOBALS[$name]) == $value)) ) ) ) {
+    if (
+        ($checked == true) ||
+        (isset($GLOBALS[$name]) && is_string($GLOBALS[$name]) &&
+            ($GLOBALS[$name] == 'on' || (isset($value) && stripslashes($GLOBALS[$name]) == $value))
+        )
+    ) {
       $selection .= ' checked="checked"';
     }
 
@@ -421,6 +530,20 @@
 
     $selection .= ' />';
 
+    // -----
+    // Give an observer the opportunity to modify the just-rendered field.
+    //
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_SELECTION_FIELD',
+        array(
+            'name' => $name,
+            'value' => $value,
+            'parameters' => $parameters,
+            'type' => $type,
+            'checked' => $checked
+        ),
+        $selection
+    );
     return $selection;
   }
 
@@ -442,6 +565,26 @@
  *  Output a form textarea field
  */
   function zen_draw_textarea_field($name, $width, $height, $text = '~*~*#', $parameters = '', $reinsert_value = true) {
+    // -----
+    // Give an observer the opportunity to **totally** override this function's operation.
+    //
+    $field = false;
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_TEXTAREA_FIELD_OVERRIDE',
+        array(
+            'name' => $name,
+            'width' => $width,
+            'height' => $height,
+            'text' => $text,
+            'parameters' => $parameters,
+            'reinsert_value' => $reinsert_value,
+        ),
+        $field
+    );
+    if ($field !== false) {
+        return $field;
+    }
+
     $field = '<textarea name="' . zen_output_string($name) . '" cols="' . zen_output_string($width) . '" rows="' . zen_output_string($height) . '"';
 
     if (zen_not_null($parameters)) $field .= ' ' . $parameters;
@@ -456,6 +599,21 @@
 
     $field .= '</textarea>';
 
+    // -----
+    // Give an observer the opportunity to modify the just-rendered field.
+    //
+    $GLOBALS['zco_notifier']->notify(
+        'NOTIFY_ZEN_DRAW_TEXTAREA_FIELD',
+        array(
+            'name' => $name,
+            'width' => $width,
+            'height' => $height,
+            'text' => $text,
+            'parameters' => $parameters,
+            'reinsert_value' => $reinsert_value,
+        ),
+        $field
+    );
     return $field;
   }
 
@@ -480,9 +638,12 @@
 
 /*
  * Output a form file-field
+ * @param string $name name
+ * @param boolean $required required
+ * @return string
  */
   function zen_draw_file_field($name, $required = false) {
-    $field = zen_draw_input_field($name, '', ' size="50" ', 'file');
+    $field = zen_draw_input_field($name, '', ' size="50" ', 'file', false, $required);
 
     return $field;
   }
@@ -495,42 +656,89 @@
   function zen_hide_session_id() {
     global $session_started;
 
-    if ( ($session_started == true) && defined('SID') && zen_not_null(SID) ) {
+    if ($session_started == true && defined('SID') && zen_not_null(SID) ) {
       return zen_draw_hidden_field(zen_session_name(), zen_session_id());
     }
   }
 
-/*
+  /**
  *  Output a form pull down menu
  *  Pulls values from a passed array, with the indicated option pre-selected
+ * @param string $name name
+ * @param array $values values
+ * @param string $default default value
+ * @param string $parameters parameters
+ * @param boolean $required required
+ * @return string
  */
-  function zen_draw_pull_down_menu($name, $values, $default = '', $parameters = '', $required = false) {
-    $field = '<select';
-
-    if (!strstr($parameters, 'id=')) $field .= ' id="select-'.zen_output_string($name).'"';
-
-    $field .= ' name="' . zen_output_string($name) . '"';
-
-    if (zen_not_null($parameters)) $field .= ' ' . $parameters;
-
-    $field .= '>' . "\n";
-
-    if (empty($default) && isset($GLOBALS[$name]) && is_string($GLOBALS[$name]) ) $default = stripslashes($GLOBALS[$name]);
-
-    for ($i=0, $n=sizeof($values); $i<$n; $i++) {
-      $field .= '  <option value="' . zen_output_string($values[$i]['id']) . '"';
-      if ($default == $values[$i]['id']) {
-        $field .= ' selected="selected"';
-      }
-
-      $field .= '>' . zen_output_string($values[$i]['text'], array('"' => '&quot;', '\'' => '&#039;', '<' => '&lt;', '>' => '&gt;')) . '</option>' . "\n";
-    }
-    $field .= '</select>' . "\n";
-
-    if ($required == true) $field .= TEXT_FIELD_REQUIRED;
-
+function zen_draw_pull_down_menu($name, $values, $default = '', $parameters = '', $required = false)
+{
+  // -----
+  // Give an observer the opportunity to **totally** override this function's operation.
+  //
+  $field = false;
+  $GLOBALS['zco_notifier']->notify(
+      'NOTIFY_ZEN_DRAW_PULL_DOWN_MENU_OVERRIDE',
+      array(
+        'name' => $name,
+        'values' => $values,
+        'default' => $default,
+        'parameters' => $parameters,
+        'required' => $required,
+      ),
+      $field
+  );
+  if ($field !== false) {
     return $field;
   }
+
+  $field = '<select rel="dropdown"';
+
+  if (strpos($parameters, 'id=') === false) {
+    $field .= ' id="select-' . zen_output_string($name) . '"';
+  }
+
+  $field .= ' name="' . zen_output_string($name) . '"';
+
+  if (zen_not_null($parameters)) {
+    $field .= ' ' . $parameters;
+  }
+
+  $field .= '>' . "\n";
+
+  if (empty($default) && isset($GLOBALS[$name]) && is_string($GLOBALS[$name])) {
+    $default = stripslashes($GLOBALS[$name]);
+  }
+
+  foreach ($values as $value) {
+    $field .= '  <option value="' . zen_output_string($value['id']) . '"';
+    if ($default == $value['id']) {
+      $field .= ' selected="selected"';
+    }
+
+    $field .= '>' . zen_output_string($value['text'], array('"' => '&quot;', '\'' => '&#039;', '<' => '&lt;', '>' => '&gt;')) . '</option>' . "\n";
+  }
+  $field .= '</select>' . "\n";
+
+  if ($required == true) {
+     $field .= TEXT_FIELD_REQUIRED;
+   }
+  // -----
+  // Give an observer the chance to make modifications to the just-rendered field.
+  //
+  $GLOBALS['zco_notifier']->notify(
+      'NOTIFY_ZEN_DRAW_PULL_DOWN_MENU',
+      array(
+        'name' => $name,
+        'values' => $values,
+        'default' => $default,
+        'parameters' => $parameters,
+        'required' => $required,
+      ),
+      $field
+  );
+  return $field;
+}
 
 /*
  * Creates a pull-down list of countries
@@ -545,22 +753,24 @@
     $countriesAtTopOfList[] = STORE_COUNTRY;
     // IF YOU WANT TO ADD MORE DEFAULTS TO THE TOP OF THIS LIST, SIMPLY ENTER THEIR NUMBERS HERE.
     // Duplicate more lines as needed
-    // Example: Canada is 108, so use 108 as shown:
-    //$countriesAtTopOfList[] = 108;
+    // Example: Canada is 38, so use 38 as shown:
+    //$countriesAtTopOfList[] = 38;
+    // United Kingdom is 222, so would use 222 as shown:
+    //$countriesAtTopOfList[] = 222;
 
     //process array of top-of-list entries:
     foreach ($countriesAtTopOfList as $key=>$val) {
       $countries_array[] = array('id' => $val, 'text' => zen_get_country_name($val));
     }
     // now add anything not in the defaults list:
-    for ($i=0, $n=sizeof($countries); $i<$n; $i++) {
+    for ($i=0, $n=count($countries); $i<$n; $i++) {
       $alreadyInList = FALSE;
       foreach($countriesAtTopOfList as $key=>$val) {
         if ($countries[$i]['countries_id'] == $val)
         {
           // If you don't want to exclude entries already at the top of the list, comment out this next line:
           $alreadyInList = TRUE;
-          continue;
+          break; // found the duplicate, no further need to process this loop
         }
       }
       if (!$alreadyInList) $countries_array[] = array('id' => $countries[$i]['countries_id'], 'text' => $countries[$i]['countries_name']);
@@ -583,7 +793,14 @@
   }
 ////
 // output label for input fields
-  function zen_draw_label($text, $for, $parameters = ''){
-    $label = '<label for="' . $for . '" ' . $parameters . '>' . $text . '</label>';
+/**
+ * @param string $text
+ * @param string $for
+ * @param string $parameters
+ * @return string
+ */
+function zen_draw_label($text, $for, $parameters = '')
+{
+    $label = '<label for="' . $for . '"' . (!empty($parameters) ? ' ' . $parameters : '') . '>' . $text . '</label>';
     return $label;
-  }
+}

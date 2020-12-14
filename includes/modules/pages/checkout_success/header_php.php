@@ -2,18 +2,17 @@
 /**
  * checkout_success header_php.php
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt  Sat Jan 2 18:06:28 2016 +0000 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Jan 20 Modified in v1.5.7 $
  */
 
 // This should be first line of the script:
 $zco_notifier->notify('NOTIFY_HEADER_START_CHECKOUT_SUCCESS');
 
 // if the customer is not logged on, redirect them to the shopping cart page
-if (!$_SESSION['customer_id']) {
+if (!zen_is_logged_in()) {
   zen_redirect(zen_href_link(FILENAME_TIME_OUT));
 }
 
@@ -22,7 +21,7 @@ if (!isset($_GET['action']) || (isset($_GET['action']) && $_GET['action'] != 'co
 $notify_string='';
 if (isset($_GET['action']) && ($_GET['action'] == 'update')) {
   $notify_string = 'action=notify&';
-  $notify = $_POST['notify'];
+  $notify = isset($_POST['notify']) ? $_POST['notify'] : null;
 
   if (is_array($notify)) {
     for ($i=0, $n=sizeof($notify); $i<$n; $i++) {
@@ -54,9 +53,8 @@ $orders_id = $orders->fields['orders_id'];
 // Needs reworking in future checkout-rewrite
 $zv_orders_id = (isset($_SESSION['order_number_created']) && $_SESSION['order_number_created'] >= 1) ? $_SESSION['order_number_created'] : $orders_id;
 $_GET['order_id'] = $orders_id = $zv_orders_id;
-$order_summary = $_SESSION['order_summary'];
-unset($_SESSION['order_summary']);
-unset($_SESSION['order_number_created']);
+$order_summary = !empty($_SESSION['order_summary']) ? $_SESSION['order_summary'] : array();
+unset($_SESSION['order_summary'], $_SESSION['order_number_created']);
 
 $additional_payment_messages = '';
 if (isset($_SESSION['payment_method_messages']) && $_SESSION['payment_method_messages'] != '') {
@@ -64,6 +62,7 @@ if (isset($_SESSION['payment_method_messages']) && $_SESSION['payment_method_mes
   unset($_SESSION['payment_method_messages']);
 }
 
+$statusArray = array();
 $statuses_query = "SELECT os.orders_status_name, osh.date_added, osh.comments
                    FROM   " . TABLE_ORDERS_STATUS . " os, " . TABLE_ORDERS_STATUS_HISTORY . " osh
                    WHERE      osh.orders_id = :ordersID
@@ -85,6 +84,7 @@ $order = new order($orders_id);
 
 
 // prepare list of product-notifications for this customer
+$notificationsArray = array();
 $global_query = "SELECT global_product_notifications
                  FROM " . TABLE_CUSTOMERS_INFO . "
                  WHERE customers_info_id = :customersID";
@@ -94,7 +94,6 @@ $global = $db->Execute($global_query);
 $flag_global_notifications = $global->fields['global_product_notifications'];
 
 if ($flag_global_notifications != '1') {
-  $products_array = array();
   $counter = 0;
   $products_query = "SELECT DISTINCT products_id, products_name
                      FROM " . TABLE_ORDERS_PRODUCTS . "
@@ -132,7 +131,6 @@ $define_page = zen_get_file_directory(DIR_WS_LANGUAGES . $_SESSION['language'] .
 } else {
   echo '<html><head>';
   echo '<script type="text/javascript">
-<!--
 theTimer = 0;
 timeOut = 12;
 
@@ -156,12 +154,10 @@ function continueClick()
 }
 
 submit_form();
-//-->
 </script>' . "\n" . '</head>';
   echo '<body style="text-align: center; min-width: 600px;">' . "\n" . '<div style="text-align: center;  width: 600px;  margin-left: auto;  margin-right: auto; margin-top:20%;"><p>This page will automatically redirect you back to ' . STORE_NAME . ' for your order confirmation details.<br />If you are not redirected within 5 seconds, please click the button below to continue.</p>';
   echo "\n" . '<form action="' . zen_href_link(FILENAME_CHECKOUT_SUCCESS, zen_get_all_get_params(array('action')), 'SSL', false) . '" method="post" name="formpost" />' . "\n";
-  reset($_POST);
-  while (list($key, $value) = each($_POST)) {
+  foreach($_POST as $key => $value) {
     if (!is_array($_POST[$key])) {
       echo zen_draw_hidden_field($key, htmlspecialchars(stripslashes($value), ENT_COMPAT, CHARSET, TRUE)) . "\n";
     }

@@ -2,21 +2,20 @@
 /**
  * jscript_main
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Wed Jan 6 12:47:43 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Sep 19 Modified in v1.5.7a $
  */
 ?>
-<script type="text/javascript"><!--
+<script type="text/javascript">
 var submitter = null;
 function popupWindow(url) {
-  window.open(url,'popupWindow','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=450,height=320,screenX=150,screenY=150,top=150,left=150')
+  window.open(url,'popupWindow','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=450,height=320,screenX=150,screenY=150,top=150,left=150,noreferrer')
 }
 
 function couponpopupWindow(url) {
-  window.open(url,'couponpopupWindow','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=450,height=320,screenX=150,screenY=150,top=150,left=150')
+  window.open(url,'couponpopupWindow','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=450,height=320,screenX=150,screenY=150,top=150,left=150,noreferrer')
 }
 
 function submitFunction($gv,$total) {
@@ -25,18 +24,4 @@ function submitFunction($gv,$total) {
    }
 }
 
-function submitonce()
-{
-  var button = document.getElementById("btn_submit");
-  button.style.cursor="wait";
-  button.disabled = true;
-  setTimeout('button_timeout()', 4000);
-  return false;
-}
-function button_timeout() {
-  var button = document.getElementById("btn_submit");
-  button.style.cursor="pointer";
-  button.disabled = false;
-}
-
-//--></script>
+</script>

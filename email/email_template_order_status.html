@@ -22,7 +22,7 @@ $EMAIL_COMMON_CSS
 
   <!-- Content Section -->
   <div class="content">
-    <div>Dear $EMAIL_CUSTOMERS_NAME,</div>
+    <div>$EMAIL_SALUTATION $EMAIL_CUSTOMERS_NAME,</div>
     <div>$EMAIL_TEXT_ORDER_NUMBER</div>
     <div>$EMAIL_TEXT_INVOICE_URL</div>
     <div>$EMAIL_TEXT_DATE_ORDERED</div>
@@ -33,16 +33,16 @@ $EMAIL_COMMON_CSS
     <div>$EMAIL_STORE_NAME</div>
   </div>
 
+  <div class="order_message">
+    <div class="order_message">$EMAIL_ORDER_UPDATE_MESSAGE</div>
+  </div>
+
 
   <!-- Footer Section -->
   <div class="footer">
     <div class="copyright">$EMAIL_FOOTER_COPYRIGHT</div>
   </div>
 
-</div>
-<div class="disclaimer">
-  <div class="disclaimer1">$EMAIL_DISCLAIMER</div>
-  <div class="disclaimer2">$EMAIL_SPAM_DISCLAIMER</div>
 </div>
 </body>
 </html>

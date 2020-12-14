@@ -2,11 +2,10 @@
 /**
  * banner functions
  *
- * @package functions
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sun Oct 18 03:43:51 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 May 16 Modified in v1.5.7 $
  */
 
   /**
@@ -18,9 +17,9 @@
   function zen_set_banner_status($banners_id, $status) {
     if ($status != 0 && $status != 1) return -1;
     global $db;
-    $sql = "update " . TABLE_BANNERS;
-    $sql .= ($status == '1') ? " set status = 1, date_scheduled = NULL" : " set status = 0";
-    $sql .= ", date_status_change = now() where banners_id = '" . (int)$banners_id . "'";
+    $sql = "UPDATE " . TABLE_BANNERS;
+    $sql .= ($status == 1) ? " SET status = 1, date_scheduled = NULL" : " SET status = 0";
+    $sql .= ", date_status_change = now() WHERE banners_id = '" . (int)$banners_id . "'";
     return $db->Execute($sql);
   }
 
@@ -29,9 +28,9 @@
    */
   function zen_activate_banners() {
     global $db;
-    $banners_query = "select banners_id, date_scheduled
-                      from " . TABLE_BANNERS . "
-                      where date_scheduled IS NOT NULL";
+    $banners_query = "SELECT banners_id, date_scheduled
+                      FROM " . TABLE_BANNERS . "
+                      WHERE date_scheduled IS NOT NULL";
     $banners = $db->Execute($banners_query);
 
     if ($banners->RecordCount() > 0) {
@@ -50,12 +49,12 @@
  */
   function zen_expire_banners() {
     global $db;
-    $banners_query = "select b.banners_id, b.expires_date, b.expires_impressions,
+    $banners_query = "SELECT b.banners_id, b.expires_date, b.expires_impressions,
                              sum(bh.banners_shown) as banners_shown
-                      from " . TABLE_BANNERS . " b, " . TABLE_BANNERS_HISTORY . " bh
-                      where b.status = 1
-                      and b.banners_id = bh.banners_id
-                      group by b.banners_id, b.expires_date, b.expires_impressions";
+                      FROM " . TABLE_BANNERS . " b, " . TABLE_BANNERS_HISTORY . " bh
+                      WHERE b.status = 1
+                      AND b.banners_id = bh.banners_id
+                      GROUP BY b.banners_id, b.expires_date, b.expires_impressions";
 
     $banners = $db->Execute($banners_query);
 
@@ -98,18 +97,18 @@
     if ($action == 'dynamic') {
       $new_banner_search = zen_build_banners_group($identifier);
 
-      $banners_query = "select count(*) as count
-                        from " . TABLE_BANNERS . "
-                           where status = '1' " .
+      $banners_query = "SELECT count(*) as count
+                        FROM " . TABLE_BANNERS . "
+                           WHERE status = '1' " .
                            $new_banner_search . $my_banner_filter;
 
       $banners = $db->Execute($banners_query);
 
       if ($banners->fields['count'] > 0) {
-        $banner = $db->Execute("select banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
-                               from " . TABLE_BANNERS . "
-                               where status = 1 " .
-                               $new_banner_search . $my_banner_filter . " order by rand()");
+        $banner = $db->Execute("SELECT banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
+                               FROM " . TABLE_BANNERS . "
+                               WHERE status = 1 " .
+                               $new_banner_search . $my_banner_filter . " ORDER BY rand()");
 
       } else {
         return '<p class="alert">ZEN ERROR! (zen_display_banner(' . $action . ', ' . $identifier . ') -> No banners with group \'' . $identifier . '\' found!</p>';
@@ -118,10 +117,10 @@
       if (is_object($identifier)) {
         $banner = $identifier;
       } else {
-        $banner_query = "select banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
-                         from " . TABLE_BANNERS . "
-                         where status = 1
-                         and banners_id = '" . (int)$identifier . "'" . $my_banner_filter;
+        $banner_query = "SELECT banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
+                         FROM " . TABLE_BANNERS . "
+                         WHERE status = 1
+                         AND banners_id = '" . (int)$identifier . "'" . $my_banner_filter;
 
         $banner = $db->Execute($banner_query);
 
@@ -145,7 +144,7 @@
       } else {
         $target = '';
         if ($banner->fields['banners_open_new_windows'] == '1') {
-          $target = ' target="_blank"';
+          $target = ' rel="noopener" target="_blank"';
         }
         $banner_string = '<a href="' . zen_href_link(FILENAME_REDIRECT, 'action=banner&goto=' . $banner->fields['banners_id']) . '"' . $target . '>' . zen_image(DIR_WS_IMAGES . $banner->fields['banners_image'], $banner->fields['banners_title']) . '</a>';
       }
@@ -168,7 +167,7 @@
 
     switch ($request_type) {
       case ('SSL'):
-        $my_banner_filter = " and banners_on_ssl= 1 ";
+        $my_banner_filter = " AND banners_on_ssl= 1 ";
         break;
       case ('NONSSL'):
         $my_banner_filter = '';
@@ -177,16 +176,16 @@
 
     if ($action == 'dynamic') {
       $new_banner_search = zen_build_banners_group($identifier);
-      $sql = "select banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
-                           from " . TABLE_BANNERS . "
-                               where status = 1 " .
-                               $new_banner_search . $my_banner_filter . " order by rand()";
+      $sql = "SELECT banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
+                           FROM " . TABLE_BANNERS . "
+                               WHERE status = 1 " .
+                               $new_banner_search . $my_banner_filter . " ORDER BY rand()";
       $result = $db->Execute($sql);
     } elseif ($action == 'static') {
-      $sql = "select banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
-                       from " . TABLE_BANNERS . "
-                       where status = 1
-                       and banners_id = '" . (int)$identifier . "'" . $my_banner_filter;
+      $sql = "SELECT banners_id, banners_title, banners_image, banners_html_text, banners_open_new_windows, banners_url
+                       FROM " . TABLE_BANNERS . "
+                       WHERE status = 1
+                       AND banners_id = '" . (int)$identifier . "'" . $my_banner_filter;
       $result = $db->Execute($sql);
     } else {
       return false;
@@ -211,16 +210,16 @@
       $db->Execute(sprintf(SQL_BANNER_CHECK_UPDATE, (int)$banner_id));
 
     } else {
-      $sql = "insert into " . TABLE_BANNERS_HISTORY . "
+      $sql = "INSERT INTO " . TABLE_BANNERS_HISTORY . "
                      (banners_id, banners_shown, banners_history_date)
-              values (" . (int)$banner_id . ", 1, now())";
+              VALUES (" . (int)$banner_id . ", 1, now())";
       $db->Execute($sql);
     }
   }
 
 /**
  * Update banner click statistics
- * @param unknown $banner_id
+ * @param int $banner_id
  */
   function zen_update_banner_click_count($banner_id) {
     global $db;
@@ -236,6 +235,7 @@
     global $db;
     $selected_banners = explode(':', $selected_banners);
     $size = sizeof($selected_banners);
+    $new_banner_search = '';
     if ($size == 1) {
       $new_banner_search = " banners_group = '" . $db->prepare_input($selected_banners[0]) . "'";
     } else {

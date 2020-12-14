@@ -2,10 +2,9 @@
 /**
  * paypal EC button display template
  *
- * @package paymentMethod
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Wed Dec 30 13:42:03 2015 -0500 Modified in v1.5.5 $
+ * @version $Id: lat9 2019 Dec 16 Modified in v1.5.7 $
  */
 
 $paypalec_enabled = (defined('MODULE_PAYMENT_PAYPALWPP_STATUS') && MODULE_PAYMENT_PAYPALWPP_STATUS == 'True');
@@ -14,7 +13,7 @@ if ($ecs_off) $paypalec_enabled = FALSE;
 
 if ($paypalec_enabled) {
   // check if logged-in customer's address is in an acceptable zone
-  if ((int)MODULE_PAYMENT_PAYPALWPP_ZONE > 0 && isset($_SESSION['customer_id']) && (int)$_SESSION['customer_id'] > 0) {
+  if ((int)MODULE_PAYMENT_PAYPALWPP_ZONE > 0 && zen_is_logged_in()) {
     $custCountryCheck = (isset($order)) ? $order->billing['country']['id'] : $_SESSION['customer_country_id'];
     $custZoneCheck = (isset($order)) ? $order->billing['zone_id'] : $_SESSION['customer_zone_id'];
     $check_flag = false;
@@ -56,6 +55,7 @@ if ($paypalec_enabled) {
     unset($_SESSION['paypal_ec_token']);
     unset($_SESSION['paypal_ec_payer_id']);
     unset($_SESSION['paypal_ec_payer_info']);
+    unset($_SESSION['paypal_ec_markflow']);
 
     include zen_get_file_directory(DIR_FS_CATALOG . DIR_WS_LANGUAGES . $_SESSION['language'] . '/modules/payment/','paypalwpp.php', 'false');
 ?>

@@ -2,11 +2,10 @@
 /**
  *  document_product_info main_template_vars.php
  *
- * @package productTypes
- * @copyright Copyright 2003-2012 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version GIT: $Id: Author: DrByte  Fri Jul 6 11:57:44 2012 -0400 Modified in v1.5.1 $
+ * @version $Id: DrByte 2020 Oct 22 Modified in v1.5.7a $
  */
 /*
  * Extracts and constructs the data to be used in the product-type template tpl_TYPEHANDLER_info_display.php
@@ -15,59 +14,34 @@
   // This should be first line of the script:
   $zco_notifier->notify('NOTIFY_MAIN_TEMPLATE_VARS_START_DOCUMENT_PRODUCT_INFO');
 
-  $module_show_categories = DOCUMENT_PRODUCT_INFO_CATEGORIES;
+  if (!isset($product_info->EOF, $product_info->fields['products_id'], $product_info->fields['products_status']) || $product_info->fields['products_id'] !== (int)$_GET['products_id']) {
+    $product_info = zen_get_product_details($_GET['products_id']);
+  }
 
-  $sql = "select count(*) as total
-          from " . TABLE_PRODUCTS . " p, " .
-                   TABLE_PRODUCTS_DESCRIPTION . " pd
-          where    p.products_status = '1'
-          and      p.products_id = '" . (int)$_GET['products_id'] . "'
-          and      pd.products_id = p.products_id
-          and      pd.language_id = '" . (int)$_SESSION['languages_id'] . "'";
+  $product_not_found = $product_info->EOF;
 
+  if (!defined('DISABLED_PRODUCTS_TRIGGER_HTTP200') || DISABLED_PRODUCTS_TRIGGER_HTTP200 !== 'true') {
+    if (!$product_not_found && $product_info->fields['products_status'] != 1) {
+      $product_not_found = true;
+    }
+  }
 
-  $res = $db->Execute($sql);
-
-  if ( $res->fields['total'] < 1 ) {
-
+  if ($product_not_found) {
     $tpl_page_body = '/tpl_product_info_noproduct.php';
-
   } else {
 
     $tpl_page_body = '/tpl_document_product_info_display.php';
 
     $zco_notifier->notify('NOTIFY_PRODUCT_VIEWS_HIT_INCREMENTOR', (int)$_GET['products_id']);
 
-    $sql = "select p.products_id, pd.products_name,
-                  pd.products_description, p.products_model,
-                  p.products_quantity, p.products_image,
-                  pd.products_url, p.products_price,
-                  p.products_tax_class_id, p.products_date_added,
-                  p.products_date_available, p.manufacturers_id, p.products_quantity,
-                  p.products_weight, p.products_priced_by_attribute, p.product_is_free,
-                  p.products_qty_box_status,
-                  p.products_quantity_order_max,
-                  p.products_discount_type, p.products_discount_type_from, p.products_sort_order, p.products_price_sorter
-           from   " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd
-           where  p.products_status = '1'
-           and    p.products_id = '" . (int)$_GET['products_id'] . "'
-           and    pd.products_id = p.products_id
-           and    pd.language_id = '" . (int)$_SESSION['languages_id'] . "'";
-
-    $product_info = $db->Execute($sql);
-
     $products_price_sorter = $product_info->fields['products_price_sorter'];
 
-    $products_price = $currencies->display_price($product_info->fields['products_price'],
-                      zen_get_tax_rate($product_info->fields['products_tax_class_id']));
+    $products_price = $currencies->display_price($product_info->fields['products_price'], zen_get_tax_rate($product_info->fields['products_tax_class_id']));
 
     $manufacturers_name= zen_get_products_manufacturers_name((int)$_GET['products_id']);
 
     if ($new_price = zen_get_products_special_price($product_info->fields['products_id'])) {
-
-      $specials_price = $currencies->display_price($new_price,
-                        zen_get_tax_rate($product_info->fields['products_tax_class_id']));
-
+      $specials_price = $currencies->display_price($new_price, zen_get_tax_rate($product_info->fields['products_tax_class_id']));
     }
 
 // set flag for attributes module usage:
@@ -76,40 +50,37 @@
     require(DIR_WS_MODULES . zen_get_module_directory(FILENAME_ATTRIBUTES));
 
 // if review must be approved or disabled do not show review
-    $review_status = " and r.status = '1'";
+    $review_status = " AND r.status = 1";
 
-    $reviews_query = "select count(*) as count from " . TABLE_REVIEWS . " r, "
+    $reviews_query = "SELECT count(*) AS count FROM " . TABLE_REVIEWS . " r, "
                                                        . TABLE_REVIEWS_DESCRIPTION . " rd
-                       where r.products_id = '" . (int)$_GET['products_id'] . "'
-                       and r.reviews_id = rd.reviews_id
-                       and rd.languages_id = '" . (int)$_SESSION['languages_id'] . "'" .
+                       WHERE r.products_id = " . (int)$_GET['products_id'] . "
+                       AND r.reviews_id = rd.reviews_id
+                       AND rd.languages_id = " . (int)$_SESSION['languages_id'] .
                        $review_status;
 
     $reviews = $db->Execute($reviews_query);
 
-  }
-
-  require(DIR_WS_MODULES . zen_get_module_directory('product_prev_next.php'));
-
   $products_name = $product_info->fields['products_name'];
   $products_model = $product_info->fields['products_model'];
-  $products_description = $product_info->fields['products_description'];
+  // if no common markup tags in description, add line breaks for readability:
+  $products_description = (!preg_match('/(<br|<p|<div|<dd|<li|<span)/i', $product_info->fields['products_description']) ? nl2br($product_info->fields['products_description']) : $product_info->fields['products_description']);
 
-  if ($product_info->fields['products_image'] == '' and PRODUCTS_IMAGE_NO_IMAGE_STATUS == '1') {
-    $products_image = PRODUCTS_IMAGE_NO_IMAGE;
-  } else {
+  $products_image = (($product_not_found || $product_info->fields['products_image'] == '') && PRODUCTS_IMAGE_NO_IMAGE_STATUS == '1') ? PRODUCTS_IMAGE_NO_IMAGE : '';
+  if ($product_info->fields['products_image'] != '' || PRODUCTS_IMAGE_NO_IMAGE_STATUS != '1') {
     $products_image = $product_info->fields['products_image'];
   }
 
   $products_url = $product_info->fields['products_url'];
   $products_date_available = $product_info->fields['products_date_available'];
   $products_date_added = $product_info->fields['products_date_added'];
-  $products_manufacturer = $product_info->fields['manufacturers_name'];
+  $products_manufacturer = $manufacturers_name;
   $products_weight = $product_info->fields['products_weight'];
   $products_quantity = $product_info->fields['products_quantity'];
 
   $products_qty_box_status = $product_info->fields['products_qty_box_status'];
   $products_quantity_order_max = $product_info->fields['products_quantity_order_max'];
+  $products_get_buy_now_qty = zen_get_buy_now_qty($_GET['products_id']);
 
   $products_base_price = $currencies->display_price(zen_get_products_base_price((int)$_GET['products_id']),
                       zen_get_tax_rate($product_info->fields['products_tax_class_id']));
@@ -118,12 +89,16 @@
 
   $products_tax_class_id = $product_info->fields['products_tax_class_id'];
 
+    $products_discount_type = $product_info->fields['products_discount_type'];
+    $products_discount_type_from = $product_info->fields['products_discount_type_from'];
+  }
+
+  require(DIR_WS_MODULES . zen_get_module_directory('product_prev_next.php'));
+
   $module_show_categories = PRODUCT_INFO_CATEGORIES;
   $module_next_previous = PRODUCT_INFO_PREVIOUS_NEXT;
 
   $products_id_current = (int)$_GET['products_id'];
-  $products_discount_type = $product_info->fields['products_discount_type'];
-  $products_discount_type_from = $product_info->fields['products_discount_type_from'];
 
 /**
  * Load product-type-specific main_template_vars
@@ -169,6 +144,7 @@
   $flag_show_product_info_url = zen_get_show_product_switch($_GET['products_id'], 'url');
   $flag_show_product_info_additional_images = zen_get_show_product_switch($_GET['products_id'], 'additional_images');
   $flag_show_product_info_free_shipping = zen_get_show_product_switch($_GET['products_id'], 'always_free_shipping_image_switch');
+  $flag_show_ask_a_question = !empty(zen_get_show_product_switch($_GET['products_id'], 'ask_a_question'));
   require(DIR_WS_MODULES . zen_get_module_directory(FILENAME_PRODUCTS_QUANTITY_DISCOUNTS));
 
   $zco_notifier->notify('NOTIFY_MAIN_TEMPLATE_VARS_EXTRA_DOCUMENT_PRODUCT_INFO');

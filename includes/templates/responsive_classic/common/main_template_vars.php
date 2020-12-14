@@ -9,11 +9,14 @@
  * Placing a file in the includes/modules/pages/some_page/ directory called main_template_vars.php<br />
  * allows you to override this page and choose the template that loads.<br />
  *
- * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sat Jan 9 13:13:41 2016 -0500 New in v1.5.5 $
+ * @version $Id: DrByte 2020 Jan 09 Modified in v1.5.7 $
  */
+
+if (!defined('IS_ADMIN_FLAG')) {
+    die('Illegal Access');
+}
 
   $zco_notifier->notify('NOTIFY_MAIN_TEMPLATE_VARS_START', $template_dir);
 
@@ -23,6 +26,20 @@
   if (!isset($layoutType)) $layoutType = 'legacy';
   if (!isset($max_display_page_links)) $max_display_page_links = ($layoutType == 'mobile' ? MAX_DISPLAY_PAGE_LINKS_MOBILE : MAX_DISPLAY_PAGE_LINKS);
   if (!isset($paginateAsUL)) $paginateAsUL = $layoutType == 'mobile' || (isset($isMobile) && $isMobile) || (isset($isTablet) && $isTablet);
+  if (!isset($flag_disable_left)) {
+    $flag_disable_left = false;
+  }
+  if (!isset($flag_disable_right)) {
+    $flag_disable_right = false;
+  }
+
+  if (!class_exists('Mobile_Detect')) {
+    include_once(DIR_WS_CLASSES . 'Mobile_Detect.php');
+  }
+  if (!isset($detect)) $detect = new Mobile_Detect;
+  if (!isset($_SESSION['layoutType'])) $_SESSION['layoutType'] = 'legacy';
+
+  $display_as_mobile = ($detect->isMobile() || $detect->isTablet() || $_SESSION['layoutType'] == 'mobile' || $_SESSION['layoutType'] == 'tablet');
 
 /**
  * load page-specific main_template_vars if present, or jump directly to template file

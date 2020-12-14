@@ -3,18 +3,14 @@
  * functions_general.php
  * General functions used throughout Zen Cart
  *
- * @package functions
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt  Fri Apr 22 22:16:43 2015 +0000 Modified in v1.5.5 $
+ * @version $Id: lat9 2020 Oct 27 Modified in v1.5.7a $
  */
-if (!defined('IS_ADMIN_FLAG')) {
-  die('Illegal Access');
-}
 /**
- * Stop from parsing any further PHP code
-*/
+ * Stop execution completely
+ */
   function zen_exit() {
    session_write_close();
    exit();
@@ -62,75 +58,6 @@ if (!defined('IS_ADMIN_FLAG')) {
     return strtr(trim($data), $parse);
   }
 
-/**
- * Returns a string with conversions for security.
- * @param string The string to be parsed
- * @param string contains a string to be translated, otherwise just quote is translated
- * @param boolean Do we run htmlspecialchars over the string
-*/
-  function zen_output_string($string, $translate = false, $protected = false) {
-    if ($protected == true) {
-      return htmlspecialchars($string, ENT_COMPAT, CHARSET, TRUE);
-    } else {
-      if ($translate == false) {
-        return zen_parse_input_field_data($string, array('"' => '&quot;'));
-      } else {
-        return zen_parse_input_field_data($string, $translate);
-      }
-    }
-  }
-
-/**
- * Returns a string with conversions for security.
- *
- * Simply calls the zen_ouput_string function
- * with parameters that run htmlspecialchars over the string
- * and converts quotes to html entities
- *
- * @param string The string to be parsed
-*/
-  function zen_output_string_protected($string) {
-    return zen_output_string($string, false, true);
-  }
-
-/**
- * Returns a string with conversions for security.
- *
- * @param string The string to be parsed
-*/
-
-  function zen_sanitize_string($string) {
-    $string = preg_replace('/ +/', ' ', $string);
-    return preg_replace("/[<>]/", '_', $string);
-  }
-
-
-/**
- * Break a word in a string if it is longer than a specified length ($len)
- *
- * @param string The string to be broken up
- * @param int The maximum length allowed
- * @param string The character to use at the end of the broken line
-*/
-  function zen_break_string($string, $len, $break_char = '-') {
-    $l = 0;
-    $output = '';
-    for ($i=0, $n=strlen($string); $i<$n; $i++) {
-      $char = substr($string, $i, 1);
-      if ($char != ' ') {
-        $l++;
-      } else {
-        $l = 0;
-      }
-      if ($l > $len) {
-        $l = 1;
-        $output .= $break_char;
-      }
-      $output .= $char;
-    }
-
-    return $output;
-  }
 
 /**
  * Return all HTTP GET variables, except those passed as a parameter
@@ -139,20 +66,23 @@ if (!defined('IS_ADMIN_FLAG')) {
  *
  * @param mixed either a single or array of parameter names to be excluded from output
 */
-  function zen_get_all_get_params($exclude_array = array(), $search_engine_safe = true) {
+  function zen_get_all_get_params($exclude_array = array()) {
     if (!is_array($exclude_array)) $exclude_array = array();
-    $exclude_array = array_merge($exclude_array, array(zen_session_name(), 'main_page', 'error', 'x', 'y'));
+    $exclude_array = array_merge($exclude_array, array('main_page', 'error', 'x', 'y'));
+    if (function_exists('zen_session_name')) {
+      $exclude_array[] = zen_session_name();
+    }
     $get_url = '';
-    if (is_array($_GET) && (sizeof($_GET) > 0)) {
-      reset($_GET);
-      while (list($key, $value) = each($_GET)) {
+    if (is_array($_GET) && (count($_GET) > 0)) {
+      foreach($_GET as $key => $value) {
         if (!in_array($key, $exclude_array)) {
           if (!is_array($value)) {
             if (strlen($value) > 0) {
               $get_url .= zen_sanitize_string($key) . '=' . rawurlencode(stripslashes($value)) . '&';
             }
           } else {
-            foreach(array_filter($value) as $arr){
+            foreach (array_filter($value) as $arr){
+              if (is_array($arr)) continue;
               $get_url .= zen_sanitize_string($key) . '[]=' . rawurlencode(stripslashes($arr)) . '&';
             }
           }
@@ -176,8 +106,7 @@ if (!defined('IS_ADMIN_FLAG')) {
     $exclude_array = array_merge($exclude_array, array(zen_session_name(), 'error', 'x', 'y'));
     $fields = '';
     if (is_array($_GET) && (sizeof($_GET) > 0)) {
-      reset($_GET);
-      while (list($key, $value) = each($_GET)) {
+      foreach($_GET as $key => $value) {
         if (!in_array($key, $exclude_array)) {
           if (!is_array($value)) {
             if (strlen($value) > 0) {
@@ -188,7 +117,8 @@ if (!defined('IS_ADMIN_FLAG')) {
               }
             }
           } else {
-            foreach(array_filter($value) as $arr){
+            foreach (array_filter($value) as $arr){
+              if (is_array($arr)) continue;
               if ($hidden) {
                 $fields .= zen_draw_hidden_field($key . '[]', $arr);
               } else {
@@ -205,18 +135,8 @@ if (!defined('IS_ADMIN_FLAG')) {
 ////
 // Returns the clients browser
   function zen_browser_detect($component) {
-    global $HTTP_USER_AGENT;
-
-    return stristr($HTTP_USER_AGENT, $component);
-  }
-
-
-////
-// Wrapper function for round()
-  function zen_round($value, $precision) {
-    $value =  round($value *pow(10,$precision),0);
-    $value = $value/pow(10,$precision);
-    return $value;
+    if (!isset($_SERVER['HTTP_USER_AGENT'])) return '';
+    return stristr($_SERVER['HTTP_USER_AGENT'], $component);
   }
 
 
@@ -232,7 +152,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 // Output a raw date string in the selected locale date format
 // $raw_date needs to be in this format: YYYY-MM-DD HH:MM:SS
   function zen_date_long($raw_date) {
-    if ( ($raw_date == '0001-01-01 00:00:00') || ($raw_date == '') ) return false;
+    if ($raw_date <= '0001-01-01 00:00:00' || $raw_date == '') return false;
 
     $year = (int)substr($raw_date, 0, 4);
     $month = (int)substr($raw_date, 5, 2);
@@ -241,7 +161,9 @@ if (!defined('IS_ADMIN_FLAG')) {
     $minute = (int)substr($raw_date, 14, 2);
     $second = (int)substr($raw_date, 17, 2);
 
-    return strftime(DATE_FORMAT_LONG, mktime($hour,$minute,$second,$month,$day,$year));
+    $retVal = strftime(DATE_FORMAT_LONG, mktime($hour, $minute, $second, $month, $day, $year));
+    if (stristr(PHP_OS, 'win')) return utf8_encode($retVal);
+    return $retVal;
   }
 
 
@@ -250,7 +172,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 // $raw_date needs to be in this format: YYYY-MM-DD HH:MM:SS
 // NOTE: Includes a workaround for dates before 01/01/1970 that fail on windows servers
   function zen_date_short($raw_date) {
-    if ( ($raw_date == '0001-01-01 00:00:00') || empty($raw_date) ) return false;
+    if ($raw_date <= '0001-01-01 00:00:00' || empty($raw_date)) return false;
 
     $year = substr($raw_date, 0, 4);
     $month = (int)substr($raw_date, 5, 2);
@@ -268,8 +190,8 @@ if (!defined('IS_ADMIN_FLAG')) {
   }
 
 ////
-// Parse search string into indivual objects
-  function zen_parse_search_string($search_str = '', &$objects) {
+// Parse search string into individual objects
+  function zen_parse_search_string($search_str = '', &$objects = array()) {
     $search_str = trim(strtolower($search_str));
 
 // Break up $search_str on whitespace; quoted string will be reconstructed later
@@ -304,7 +226,7 @@ if (!defined('IS_ADMIN_FLAG')) {
       if ( (substr($pieces[$k], -1) != '"') && (substr($pieces[$k], 0, 1) != '"') ) {
         $objects[] = trim($pieces[$k]);
 
-        for ($j=0; $j<count($post_objects); $j++) {
+        for ($j=0, $n=count($post_objects); $j<$n; $j++) {
           $objects[] = $post_objects[$j];
         }
       } else {
@@ -323,7 +245,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 
           $objects[] = trim($pieces[$k]);
 
-          for ($j=0; $j<count($post_objects); $j++) {
+          for ($j=0, $n=count($post_objects); $j<$n; $j++) {
             $objects[] = $post_objects[$j];
           }
 
@@ -369,7 +291,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 // Push the $tmpstring onto the array of stuff to search for
             $objects[] = trim($tmpstring);
 
-            for ($j=0; $j<count($post_objects); $j++) {
+            for ($j=0, $n=count($post_objects); $j<$n; $j++) {
               $objects[] = $post_objects[$j];
             }
 
@@ -553,58 +475,6 @@ if (!defined('IS_ADMIN_FLAG')) {
 
 
 ////
-// Return a product ID with attributes
-/*
-  function zen_get_uprid_OLD($prid, $params) {
-    $uprid = $prid;
-    if ( (is_array($params)) && (!strstr($prid, '{')) ) {
-      while (list($option, $value) = each($params)) {
-        $uprid = $uprid . '{' . $option . '}' . $value;
-      }
-    }
-
-    return $uprid;
-  }
-*/
-
-
-////
-// Return a product ID with attributes
-  function zen_get_uprid($prid, $params) {
-//print_r($params);
-    $uprid = $prid;
-    if ( (is_array($params)) && (!strstr($prid, ':')) ) {
-      while (list($option, $value) = each($params)) {
-        if (is_array($value)) {
-          while (list($opt, $val) = each($value)) {
-            $uprid = $uprid . '{' . $option . '}' . trim($opt);
-          }
-        } else {
-        //CLR 030714 Add processing around $value. This is needed for text attributes.
-            $uprid = $uprid . '{' . $option . '}' . trim($value);
-        }
-      }      //CLR 030228 Add else stmt to process product ids passed in by other routines.
-      $md_uprid = '';
-
-      $md_uprid = md5($uprid);
-      return $prid . ':' . $md_uprid;
-    } else {
-      return $prid;
-    }
-  }
-
-
-////
-// Return a product ID from a product ID with attributes
-  function zen_get_prid($uprid) {
-    $pieces = explode(':', $uprid);
-
-    return $pieces[0];
-  }
-
-
-
-////
 // Get the number of times a word/character is present in a string
   function zen_word_count($string, $needle) {
     $temp_array = preg_split('/'.$needle.'/', $string);
@@ -630,7 +500,6 @@ if (!defined('IS_ADMIN_FLAG')) {
         }
       }
     }
-
     return $count;
   }
 
@@ -651,7 +520,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 
     $get_string = '';
     if (sizeof($array) > 0) {
-      while (list($key, $value) = each($array)) {
+      foreach($array as $key => $value) {
         if ( (!in_array($key, $exclude)) && ($key != 'x') && ($key != 'y') ) {
           $get_string .= $key . $equals . $value . $separator;
         }
@@ -663,29 +532,6 @@ if (!defined('IS_ADMIN_FLAG')) {
     return $get_string;
   }
 
-////
-  function zen_not_null($value) {
-    if (is_array($value)) {
-      if (sizeof($value) > 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } elseif( is_a( $value, 'queryFactoryResult' ) ) {
-      if (sizeof($value->result) > 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      if ($value != '' && $value != 'NULL' && strlen(trim($value)) > 0) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  }
-
 
 ////
 // Checks to see if the currency code exists as a currency
@@ -694,26 +540,20 @@ if (!defined('IS_ADMIN_FLAG')) {
     global $db;
     $code = zen_db_prepare_input($code);
 
-    $currency_code = "select code
-                      from " . TABLE_CURRENCIES . "
-                      where code = '" . zen_db_input($code) . "' LIMIT 1";
+    $currency_code = "SELECT code
+                      FROM " . TABLE_CURRENCIES . "
+                      WHERE code = '" . zen_db_input($code) . "' LIMIT 1";
 
-    $currency_first = "select code
-                      from " . TABLE_CURRENCIES . "
-                      order by value ASC LIMIT 1";
+    $currency_first = "SELECT code
+                      FROM " . TABLE_CURRENCIES . "
+                      ORDER BY value ASC LIMIT 1";
 
     $currency = $db->Execute(($getFirstDefault == false) ? $currency_code : $currency_first);
 
     if ($currency->RecordCount()) {
       return strtoupper($currency->fields['code']);
-    } else {
-      return false;
     }
-  }
-
-////
-  function zen_string_to_int($string) {
-    return (int)$string;
+    return false;
   }
 
 ////
@@ -735,38 +575,6 @@ if (!defined('IS_ADMIN_FLAG')) {
     } else {
       return mt_rand();
     }
-  }
-
-////
-  function zen_get_top_level_domain($url) {
-    if (strpos($url, '://')) {
-      $url = parse_url($url);
-      $url = $url['host'];
-    }
-//echo $url;
-
-    $domain_array = explode('.', $url);
-    $domain_size = sizeof($domain_array);
-    if ($domain_size > 1) {
-      if (SESSION_USE_FQDN == 'True') return $url;
-      if (is_numeric($domain_array[$domain_size-2]) && is_numeric($domain_array[$domain_size-1])) {
-        return false;
-      } else {
-        $tld = "";
-        foreach ($domain_array as $dPart)
-        {
-          if ($dPart != "www") $tld = $tld . "." . $dPart;
-        }
-        return substr($tld, 1);
-      }
-    } else {
-      return false;
-    }
-  }
-
-////
-  function zen_setcookie($name, $value = '', $expire = 0, $path = '/', $domain = '', $secure = 0) {
-    setcookie($name, $value, $expire, $path, $domain, $secure);
   }
 
   /**
@@ -809,12 +617,16 @@ if (!defined('IS_ADMIN_FLAG')) {
     /**
      * sanitize for validity as an IPv4 or IPv6 address
      */
-    $ip = preg_replace('~[^a-fA-F0-9.:%/,]~', '', $ip);
+    $original_ip = $ip;
+    $ip = filter_var((string)$ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 | FILTER_FLAG_IPV4);
 
     /**
-     *  if it's still blank, set to a single dot
+     *  If it's an invalid IP, set the value to a single dot and issue a notification.
      */
-    if (trim($ip) == '') $ip = '.';
+    if ($ip === false) {
+        $ip = '.';
+        $GLOBALS['zco_notifier']->notify('NOTIFY_ZEN_INVALID_IP_DETECTED', $original_ip);
+    }
 
     return $ip;
   }
@@ -828,13 +640,13 @@ if (!defined('IS_ADMIN_FLAG')) {
   function is_product_valid($product_id, $coupon_id) {
     global $db;
     $coupons_query = "SELECT * FROM " . TABLE_COUPON_RESTRICT . "
-                      WHERE coupon_id = '" . (int)$coupon_id . "'
+                      WHERE coupon_id = " . (int)$coupon_id . "
                       ORDER BY coupon_restrict ASC";
 
     $coupons = $db->Execute($coupons_query);
 
     $product_query = "SELECT products_model FROM " . TABLE_PRODUCTS . "
-                      WHERE products_id = '" . (int)$product_id . "'";
+                      WHERE products_id = " . (int)$product_id;
 
     $product = $db->Execute($product_query);
 
@@ -878,7 +690,6 @@ if (!defined('IS_ADMIN_FLAG')) {
   }
   function validate_for_category($product_id, $coupon_id) {
     global $db;
-    $retVal = 'none';
     $productCatPath = zen_get_product_path($product_id);
     $catPathArray = array_reverse(explode('_', $productCatPath));
     $sql = "SELECT count(*) AS total
@@ -915,115 +726,28 @@ if (!defined('IS_ADMIN_FLAG')) {
     }
   }
 
-////
-  function zen_db_input($string) {
-    global $db;
-    return $db->prepareInput($string);
-  }
-
-////
-  function zen_db_prepare_input($string) {
-    if (is_string($string)) {
-      return trim(zen_sanitize_string(stripslashes($string)));
-    } elseif (is_array($string)) {
-      reset($string);
-      while (list($key, $value) = each($string)) {
-        $string[$key] = zen_db_prepare_input($value);
-      }
-      return $string;
-    } else {
-      return $string;
-    }
-  }
-
-////
-  function zen_db_perform($table, $data, $action = 'insert', $parameters = '', $link = 'db_link') {
-    global $db;
-    reset($data);
-    if (strtolower($action) == 'insert') {
-      $query = 'INSERT INTO ' . $table . ' (';
-      while (list($columns, ) = each($data)) {
-        $query .= $columns . ', ';
-      }
-      $query = substr($query, 0, -2) . ') VALUES (';
-      reset($data);
-      while (list(, $value) = each($data)) {
-        switch ((string)$value) {
-          case 'now()':
-            $query .= 'now(), ';
-            break;
-          case 'NULL':
-            $query .= 'null, ';
-            break;
-          default:
-            $query .= '\'' . zen_db_input($value) . '\', ';
-            break;
-        }
-      }
-      $query = substr($query, 0, -2) . ')';
-    } elseif (strtolower($action) == 'update') {
-      $query = 'UPDATE ' . $table . ' SET ';
-      while (list($columns, $value) = each($data)) {
-        switch ((string)$value) {
-          case 'now()':
-            $query .= $columns . ' = now(), ';
-            break;
-          case 'NULL':
-            $query .= $columns . ' = null, ';
-            break;
-          default:
-            $query .= $columns . ' = \'' . zen_db_input($value) . '\', ';
-            break;
-        }
-      }
-      $query = substr($query, 0, -2) . ' WHERE ' . $parameters;
-    }
-
-    return $db->Execute($query);
-  }
-
-////
-  function zen_db_output($string) {
-    return htmlspecialchars($string);
-  }
-
-
-// function to return field type
-// uses $tbl = table name, $fld = field name
-
-  function zen_field_type($tbl, $fld) {
-    global $db;
-    $rs = $db->MetaColumns($tbl);
-    $type = $rs[strtoupper($fld)]->type;
-    return $type;
-  }
-
-// function to return field length
-// uses $tbl = table name, $fld = field name
-  function zen_field_length($tbl, $fld) {
-    global $db;
-    $rs = $db->MetaColumns($tbl);
-    $length = $rs[strtoupper($fld)]->max_length;
-    return $length;
-  }
-
-////
-// return the size and maxlength settings in the form size="blah" maxlength="blah" based on maximum size being 70
-// uses $tbl = table name, $fld = field name
-// example: zen_set_field_length(TABLE_CATEGORIES_DESCRIPTION, 'categories_name')
-  function zen_set_field_length($tbl, $fld, $max=70) {
-    $field_length= zen_field_length($tbl, $fld);
+/**
+ * return the size and maxlength settings in the form size="blah" maxlength="blah" based on maximum size being 70
+ * uses $tbl = table name, $fld = field name
+ * example: zen_set_field_length(TABLE_CATEGORIES_DESCRIPTION, 'categories_name')
+ * @param string $tbl
+ * @param string $fld
+ * @param int $max
+ * @return string
+ */
+function zen_set_field_length($tbl, $fld, $max = 70)
+{
+    $field_length = zen_field_length($tbl, $fld);
     switch (true) {
-      case ($field_length > $max):
-        $length= 'size = "' . ($max+1) . '" maxlength= "' . $field_length . '"';
-        break;
-      default:
-        $length= 'size = "' . ($field_length+1) . '" maxlength = "' . $field_length . '"';
-        break;
+        case ($field_length > $max):
+            $length = 'size="' . ($max + 1) . '" maxlength="' . $field_length . '"';
+            break;
+        default:
+            $length = 'size="' . ($field_length + 1) . '" maxlength="' . $field_length . '"';
+            break;
     }
     return $length;
-  }
-
+}
 
 ////
 // Set back button
@@ -1065,38 +789,6 @@ if (!defined('IS_ADMIN_FLAG')) {
 
 
 ////
-// Truncate a string
-  function zen_trunc_string($str = "", $len = 150, $more = 'true') {
-    if ($str == "") return $str;
-    if (is_array($str)) return $str;
-    $str = trim($str);
-    $len = (int)$len;
-    if ($len == 0) return '';
-    // if it's les than the size given, then return it
-    if (strlen($str) <= $len) return $str;
-    // else get that size of text
-    $str = substr($str, 0, $len);
-    // backtrack to the end of a word
-    if ($str != "") {
-      // check to see if there are any spaces left
-      if (!substr_count($str , " ")) {
-        if ($more == 'true') $str .= "...";
-        return $str;
-      }
-      // backtrack
-      while(strlen($str) && ($str[strlen($str)-1] != " ")) {
-        $str = substr($str, 0, -1);
-      }
-      $str = substr($str, 0, -1);
-      if ($more == 'true') $str .= "...";
-      if ($more != 'true' and $more != 'false') $str .= $more;
-    }
-    return $str;
-  }
-
-
-
-////
 // set current box id
   function zen_get_box_id($box_id) {
     $box_id = str_replace('_', '', $box_id);
@@ -1110,7 +802,7 @@ if (!defined('IS_ADMIN_FLAG')) {
   function zen_get_buy_now_button($product_id, $link, $additional_link = false) {
     global $db;
 
-// show case only superceeds all other settings
+// show case only supercedes all other settings
     if (STORE_STATUS != '0') {
       return '<a href="' . zen_href_link(FILENAME_CONTACT_US, '', 'SSL') . '">' .  TEXT_SHOWCASE_ONLY . '</a>';
     }
@@ -1120,12 +812,12 @@ if (!defined('IS_ADMIN_FLAG')) {
 // 2 = Can browse but no prices
     // verify display of prices
       switch (true) {
-        case (CUSTOMERS_APPROVAL == '1' and $_SESSION['customer_id'] == ''):
+        case (CUSTOMERS_APPROVAL == '1' && !zen_is_logged_in()):
         // customer must be logged in to browse
         $login_for_price = '<a href="' . zen_href_link(FILENAME_LOGIN, '', 'SSL') . '">' .  TEXT_LOGIN_FOR_PRICE_BUTTON_REPLACE . '</a>';
         return $login_for_price;
         break;
-        case (CUSTOMERS_APPROVAL == '2' and $_SESSION['customer_id'] == ''):
+        case (CUSTOMERS_APPROVAL == '2' && !zen_is_logged_in()):
         if (TEXT_LOGIN_FOR_PRICE_PRICE == '') {
           // show room only
           return TEXT_LOGIN_FOR_PRICE_BUTTON_REPLACE;
@@ -1140,22 +832,22 @@ if (!defined('IS_ADMIN_FLAG')) {
           $login_for_price = TEXT_LOGIN_FOR_PRICE_BUTTON_REPLACE_SHOWROOM;
           return $login_for_price;
         break;
-        case ((CUSTOMERS_APPROVAL_AUTHORIZATION != '0' and CUSTOMERS_APPROVAL_AUTHORIZATION != '3') and $_SESSION['customer_id'] == ''):
+        case (CUSTOMERS_APPROVAL_AUTHORIZATION != '0' && CUSTOMERS_APPROVAL_AUTHORIZATION != '3' && !zen_is_logged_in()):
         // customer must be logged in to browse
         $login_for_price = TEXT_AUTHORIZATION_PENDING_BUTTON_REPLACE;
         return $login_for_price;
         break;
-        case ((CUSTOMERS_APPROVAL_AUTHORIZATION == '3') and $_SESSION['customer_id'] == ''):
+        case (CUSTOMERS_APPROVAL_AUTHORIZATION == '3' && !zen_is_logged_in()):
         // customer must be logged in and approved to add to cart
         $login_for_price = '<a href="' . zen_href_link(FILENAME_LOGIN, '', 'SSL') . '">' .  TEXT_LOGIN_TO_SHOP_BUTTON_REPLACE . '</a>';
         return $login_for_price;
         break;
-        case (CUSTOMERS_APPROVAL_AUTHORIZATION != '0' and $_SESSION['customers_authorization'] > '0'):
+        case (CUSTOMERS_APPROVAL_AUTHORIZATION != '0' && isset($_SESSION['customers_authorization']) && (int)$_SESSION['customers_authorization'] > 0):
         // customer must be logged in to browse
         $login_for_price = TEXT_AUTHORIZATION_PENDING_BUTTON_REPLACE;
         return $login_for_price;
         break;
-        case ((int)$_SESSION['customers_authorization'] >= 2):
+        case (isset($_SESSION['customers_authorization']) && (int)$_SESSION['customers_authorization'] >= 2):
         // customer is logged in and was changed to must be approved to buy
         $login_for_price = TEXT_AUTHORIZATION_PENDING_BUTTON_REPLACE;
         return $login_for_price;
@@ -1165,7 +857,7 @@ if (!defined('IS_ADMIN_FLAG')) {
         break;
       }
 
-    $button_check = $db->Execute("select product_is_call, products_quantity from " . TABLE_PRODUCTS . " where products_id = '" . (int)$product_id . "'");
+    $button_check = $db->Execute("SELECT product_is_call, products_quantity FROM " . TABLE_PRODUCTS . " WHERE products_id = " . (int)$product_id);
     switch (true) {
 // cannot be added to the cart
     case (zen_get_products_allow_add_to_cart($product_id) == 'N'):
@@ -1326,40 +1018,40 @@ if (!defined('IS_ADMIN_FLAG')) {
     }
   }
 
-
-////
-// find template or default file
-  function zen_get_file_directory($check_directory, $check_file, $dir_only = 'false') {
+  function zen_get_module_sidebox_directory($check_file) { 
     global $template_dir;
 
     $zv_filename = $check_file;
     if (!strstr($zv_filename, '.php')) $zv_filename .= '.php';
 
-    if (file_exists($check_directory . $template_dir . '/' . $zv_filename)) {
-      $zv_directory = $check_directory . $template_dir . '/';
+    if (file_exists(DIR_WS_MODULES . 'sideboxes/' . $template_dir . '/' . $zv_filename)) {
+      $template_dir_select = 'sideboxes/' . $template_dir . '/';
     } else {
-      $zv_directory = $check_directory;
+      $template_dir_select = 'sideboxes/';
     }
 
-    if ($dir_only == 'true') {
-      return $zv_directory;
-    } else {
-      return $zv_directory . $zv_filename;
-    }
+    return $template_dir_select . $zv_filename;
   }
 
-// check to see if database stored GET terms are in the URL as $_GET parameters
+
+/**
+ * check to see if database stored GET terms are in the URL as $_GET parameters
+ * This is used to determine which filters should be applied
+ * @return bool
+ */
   function zen_check_url_get_terms() {
     global $db;
-    $zp_sql = "select * from " . TABLE_GET_TERMS_TO_FILTER;
-    $zp_filter_terms = $db->Execute($zp_sql);
-    $zp_result = false;
-    while (!$zp_filter_terms->EOF) {
-      if (isset($_GET[$zp_filter_terms->fields['get_term_name']]) && zen_not_null($_GET[$zp_filter_terms->fields['get_term_name']])) $zp_result = true;
-      $zp_filter_terms->MoveNext();
+    $sql = "SELECT * FROM " . TABLE_GET_TERMS_TO_FILTER;
+    $query_result = $db->Execute($sql);
+
+    foreach ($query_result as $row) {
+      if (isset($_GET[$row['get_term_name']]) && zen_not_null($_GET[$row['get_term_name']])) {
+        return true;
+      }
     }
-    return $zp_result;
+    return false;
   }
+
 
   // replacement for fmod to manage values < 1
   function fmod_round($x, $y) {
@@ -1377,7 +1069,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 
 ////
 // return truncated paragraph
-  function zen_truncate_paragraph($paragraph, $size = 100, $word = ' ') {
+  function zen_truncate_paragraph($paragraph, $size = 100) {
     $zv_paragraph = "";
     $word = explode(" ", $paragraph);
     $zv_total = count($word);
@@ -1393,21 +1085,22 @@ if (!defined('IS_ADMIN_FLAG')) {
   }
 
 
-
 /**
- * return an array with zones defined for the specified country
+ * returns a pulldown array with zones defined for the specified country
+ * used by zen_prepare_country_zones_pull_down()
+ *
+ * @param int $country_id
+ * @return array for pulldown
  */
   function zen_get_country_zones($country_id) {
     global $db;
     $zones_array = array();
-    $zones = $db->Execute("select zone_id, zone_name
-                           from " . TABLE_ZONES . "
-                           where zone_country_id = '" . (int)$country_id . "'
-                           order by zone_name");
-    while (!$zones->EOF) {
-      $zones_array[] = array('id' => $zones->fields['zone_id'],
-                             'text' => $zones->fields['zone_name']);
-      $zones->MoveNext();
+    $zones = $db->Execute("SELECT zone_id, zone_name
+                           FROM " . TABLE_ZONES . "
+                           WHERE zone_country_id = " . (int)$country_id . "
+                           ORDER BY zone_name");
+    foreach ($zones as $zone) {
+      $zones_array[] = array('id' => $zone['zone_id'], 'text' => $zone['zone_name']);
     }
 
     return $zones_array;
@@ -1449,9 +1142,9 @@ if (!defined('IS_ADMIN_FLAG')) {
  */
   function zen_js_zone_list($country, $form, $field) {
     global $db;
-    $countries = $db->Execute("select distinct zone_country_id
-                               from " . TABLE_ZONES . "
-                               order by zone_country_id");
+    $countries = $db->Execute("SELECT DISTINCT zone_country_id
+                               FROM " . TABLE_ZONES . "
+                               ORDER BY zone_country_id");
     $num_country = 1;
     $output_string = '';
     while (!$countries->EOF) {
@@ -1461,13 +1154,13 @@ if (!defined('IS_ADMIN_FLAG')) {
         $output_string .= '  } else if (' . $country . ' == "' . $countries->fields['zone_country_id'] . '") {' . "\n";
       }
 
-      $states = $db->Execute("select zone_name, zone_id
-                              from " . TABLE_ZONES . "
-                              where zone_country_id = '" . $countries->fields['zone_country_id'] . "'
+      $states = $db->Execute("SELECT zone_name, zone_id
+                              FROM " . TABLE_ZONES . "
+                              WHERE zone_country_id = '" . $countries->fields['zone_country_id'] . "'
                               order by zone_name");
       $num_state = 1;
       while (!$states->EOF) {
-        if ($num_state == '1') $output_string .= '    ' . $form . '.' . $field . '.options[0] = new Option("' . PLEASE_SELECT . '", "");' . "\n";
+        if ($num_state == 1) $output_string .= '    ' . $form . '.' . $field . '.options[0] = new Option("' . PLEASE_SELECT . '", "");' . "\n";
         $output_string .= '    ' . $form . '.' . $field . '.options[' . $num_state . '] = new Option("' . $states->fields['zone_name'] . '", "' . $states->fields['zone_id'] . '");' . "\n";
         $num_state++;
         $states->MoveNext();
@@ -1507,6 +1200,133 @@ if (!defined('IS_ADMIN_FLAG')) {
     return(round(($date2_set-$date1_set)/(60*60*24)));
   }
 
+/**
+ * function to evaluate two date spans and identify if they overlap or not.
+ * Returns true (overlap) if:
+ *  A datespan is provided as an array and that array does not have the key 'start' nor 'end' (warning log entry also made by trigger_error).
+ *  When seeking overlaps in the future:
+ *  -  If the date spans both never end, OR
+ *  -  If one date span never ends then if the maximum of the two start dates is less than the known to be future end
+ *       date where the start date for a forever in the past date range was set to the earliest of the current date or associated end date. OR
+ *  -  If the end dates are specified, then if the end dates occur in the future and the maximum start date is less
+ *       than the minimum end date where the start date for a forever in the past date range was set to the earliest of the current date or associated end date.
+ *  When seeking overlaps in the past:
+ *  -  If the date spans both never end and they both started before today, OR
+ *  -  If they both started forever in the past
+ *  -  If the end dates are specified, then if the start dates occur in the past and the maximum start date is less
+ *       than the minimum end date.
+ *  Otherwise when seeking the presence of overlap at all (and the basis for the above logic), then basically
+ *    if the maximum start date (last date range) is before the earliest end date, then that indicates that the
+ *    two were active at the same time.
+ *
+ * Returns false (no overlap) otherwise:
+ *
+ * Usage: zen_datetime_overlap(array('start'=>$startdate, 'end'=>$enddate), array('start'=>$startdate, 'end'=>$enddate));
+ *        zen_datetime_overlap(array('start'=>$startdate, 'end'=>$enddate), array('start'=>$startdate, 'end'=>$enddate), null, null, {default:true, false, 'past'});
+ *        (if dates provided where null is in line above, they will be disregarded because of the array in positions 1 and 2.)
+ *        zen_datetime_overlap($startdate1, array('start'=>$startdate, 'end'=>$enddate), $enddate1, null, {default:true, false, 'past'});
+ *        zen_datetime_overlap(array('start'=>$startdate, 'end'=>$enddate), $startdate2, null, $enddate2, {default:true, false, 'past'});
+ *        zen_datetime_overlap($startdate1, $startdate2, $enddate1, $enddate2, {default:true, false, 'past'});
+ *        Providing $future_only of true (or as default not providing anything), the dates are inspected for overlap
+ *
+ * $start1 array() with keys 'start' and 'end' or as a raw_datetime or raw_date, or if null then this datetime is considered as in place forever in the past.
+ * $start2 array() with keys 'start' and 'end' or as a raw_datetime or raw_date, or if null then this datetime is considered as in place forever in the past.
+ * $end1 raw_datetime, raw_date or effectively blank (if $start1 is array, the value here is replaced, otherwise this datetime is considered eternally effective)
+ * $end2 raw_datetime, raw_date or effectively blank (if $start2 is array, the value here is replaced, otherwise this datetime is considered eternally effective)
+ * $future_only boolean or string of 'past': values should be true, false, or 'past'
+ * returns a boolean true/false.  In error case of array provided without proper keys true returned and warning log also generated
+ **/
+
+  function zen_datetime_overlap($start1, $start2, $end1 = NULL, $end2 = NULL, $future_only = true) {
+    $cur_datetime = date("Y-m-d h:i:s", time());
+
+    // BOF if variable is provided as an array, validate properly setup and if so, assign and replace the other applicable values.
+    if (is_array($start1)) {
+      if (!array_key_exists('start', $start1) || !array_key_exists('end', $start1)) {
+        trigger_error('Missing date/time array key(s) start and/or end.', E_USER_WARNING);
+        // array is not properly defined to support further operation, therefore to prevent potential downstream issues fail safe and identify that an overlap has occurred.
+        return true;
+      } else {
+        $end1 = $start1['start'];
+        $start1 = $start1['end'];
+      }
+    }
+    if (is_array($start2)) {
+      if (!array_key_exists('start', $start2) || !array_key_exists('end', $start2)) {
+        trigger_error('Missing date/time array key(s) start and/or end.', E_USER_WARNING);
+        // array is not properly defined to support further operation, therefore to prevent potential downstream issues fail safe and identify that an overlap has occurred.
+        return true;
+      } else {
+        $end2 = $start2['start'];
+        $start2 = $start2['end'];
+      }
+    }
+    // EOF if variable is provided as an array, validate properly setup and if so, assign and replace the other applicable values.
+
+    // BOF ensure all variables have a non-null value
+    if (!isset($start1)) {
+      $start1 = '0001-01-01 00:00:00';
+    }
+    if (!isset($start2)) {
+      $start2 = '0001-01-01 00:00:00';
+    }
+    if (!isset($end1)) {
+      $end1 = '0001-01-01 00:00:00';
+    }
+    if (!isset($end2)) {
+      $end2 = '0001-01-01 00:00:00';
+    }
+    // EOF ensure all variables have a non-null value
+
+    // BOF check for and correct condition where known dates are provided but swapped as in start date happens after the end date.
+    if ($start1 > '0001-01-01 00:00:00' && $end1 > '0001-01-01 00:00:00' && $end1 < $start1) {
+      $swap = $end1;
+      $end1 = $start1;
+      $start1 = $swap;
+    }
+    if ($start2 > '0001-01-01 00:00:00' && $end2 > '0001-01-01 00:00:00' && $end2 < $start2) {
+      $swap = $end2;
+      $end2 = $start2;
+      $start2 = $swap;
+    }
+    // EOF check for and correct condition where known dates are provided but swapped as in start date happens after the end date.
+
+    // Consider how to use forever start dates with regards to $future only....
+    // Area of concern is for example a date span was entered in the past with an end date only.
+    //  If later a date span is entered also with an end date only, both spans could be evaluated as overlapping
+    //  in the past because they were "always" applicable.  But in regards to e-commerce, they could not be made
+    //  effective until they were in the database.  ZC typically considers this ever available in the past condition
+    //  for even initial entry and does not "require" that the date be entered of when it was first added and in
+    //  some cases will prevent that date from being stored if it results in the event being effective in the past.
+    if ($future_only === true && $start1 <= '0001-01-01 00:00:00') {
+      $start1 = min($end1, $cur_datetime);
+    }
+    if ($future_only === true && $start2 <= '0001-01-01 00:00:00') {
+      $start2 = min($end2, $cur_datetime);
+    }
+
+    // if either date ends in the forever future, evaluate the condition.
+    if ($end1 <= '0001-01-01 00:00:00' || $end2 <= '0001-01-01 00:00:00') {
+      if (($future_only !== 'past' || $start1 < $cur_datetime && $start2 < $cur_datetime) && $end1 <= '0001-01-01 00:00:00' && $end2 <= '0001-01-01 00:00:00') {
+        return true; // both dates extend out to the future and therefore do or will at some point overlap.
+      }
+
+      $end = max($end1, $end2); //one date extends out to the future, but overlap only occurs up to the point of the known date.
+      if ($future_only === true && $end <= $cur_datetime || $future_only === 'past' && min($start1, $start2) > $cur_datetime) {
+        return false; //dates may overlap in the past, but because not in the present when considering future_only do not overlap.
+      }
+      $overlap = max($start1, $start2) < $end; // if the latest starting date occurs before the earliest known date, then they overlap, if not, then they are disjointed.
+    } else {
+      if ($future_only === true && max($end1, $end2) <= $cur_datetime || $future_only === 'past' && min($start1, $start2) > $cur_datetime) {
+        return false; // with both end dates known, and both on or before today, then when considering future overlaps only an overlap in the future does not exist.
+      } else {
+        $overlap = max($start1, $start2) < min($end1, $end2); // if the latest starting date occurs before the earliest known date, then they overlap, if not, then they are disjointed.
+      }
+    }
+
+    return $overlap;
+  }
+
 
 /**
  * strip out accented characters to reasonable approximations of english equivalents
@@ -1521,28 +1341,6 @@ if (!defined('IS_ADMIN_FLAG')) {
     return $s;
   }
 
-/**
- * function to override PHP's is_writable() which can occasionally be unreliable due to O/S and F/S differences
- * attempts to open the specified file for writing. Returns true if successful, false if not.
- * if a directory is specified, uses PHP's is_writable() anyway
- *
- * @var string
- * @return boolean
- */
-  function is__writeable($filepath, $make_unwritable = true) {
-    if (is_dir($filepath)) return is_writable($filepath);
-    $fp = @fopen($filepath, 'a');
-    if ($fp) {
-      @fclose($fp);
-      if ($make_unwritable) set_unwritable($filepath);
-      $fp = @fopen($filepath, 'a');
-      if ($fp) {
-        @fclose($fp);
-        return true;
-      }
-    }
-    return false;
-  }
 /**
  * attempts to make the specified file read-only
  *
@@ -1570,7 +1368,7 @@ if (!defined('IS_ADMIN_FLAG')) {
  * @return string
  */
   function charsetClean($string) {
-    if (CHARSET == 'UTF-8') return $string;
+    if (preg_replace('/[^a-z0-9]/', '', strtolower(CHARSET)) == 'utf8') return $string;
     if (function_exists('iconv')) $string = iconv("Windows-1252", CHARSET . "//IGNORE", $string);
     $string = htmlentities($string, ENT_QUOTES, 'UTF-8');
     $string = html_entity_decode($string, ENT_QUOTES, CHARSET);
@@ -1612,7 +1410,7 @@ if (!defined('IS_ADMIN_FLAG')) {
   function zen_update_music_artist_clicked($artistId, $languageId)
   {
     global $db;
-    $sql = "UPDATE " . TABLE_RECORD_ARTISTS_INFO . " set url_clicked = url_clicked +1, date_last_click = NOW() WHERE artists_id = :artistId: AND languages_id = :languageId:";
+    $sql = "UPDATE " . TABLE_RECORD_ARTISTS_INFO . " SET url_clicked = url_clicked +1, date_last_click = NOW() WHERE artists_id = :artistId: AND languages_id = :languageId:";
     $sql = $db->bindVars($sql, ':artistId:', $artistId, 'integer');
     $sql = $db->bindVars($sql, ':languageId:', $languageId, 'integer');
     $db->execute($sql);
@@ -1620,25 +1418,10 @@ if (!defined('IS_ADMIN_FLAG')) {
   function zen_update_record_company_clicked($recordCompanyId, $languageId)
   {
     global $db;
-    $sql = "UPDATE " . TABLE_RECORD_COMPANY_INFO . " set url_clicked = url_clicked +1, date_last_click = NOW() WHERE record_company_id = :rcId: AND languages_id = :languageId:";
+    $sql = "UPDATE " . TABLE_RECORD_COMPANY_INFO . " SET url_clicked = url_clicked +1, date_last_click = NOW() WHERE record_company_id = :rcId: AND languages_id = :languageId:";
     $sql = $db->bindVars($sql, ':rcId:', $recordCompanyId, 'integer');
     $sql = $db->bindVars($sql, ':languageId:', $languageId, 'integer');
     $db->execute($sql);
-  }
-
-  /**
-   * function issetorArray
-   *
-   * returns an array[key] or default value if key does not exist
-   *
-   * @param array $array
-   * @param $key
-   * @param null $default
-   * @return mixed
-   */
-  function issetorArray(array $array, $key, $default = null)
-  {
-    return isset($array[$key]) ? $array[$key] : $default;
   }
 
   /////////////////////////////////////////////

@@ -3,11 +3,10 @@
  * load the system wide functions
  * see {@link  http://www.zen-cart.com/wiki/index.php/Developers_API_Tutorials#InitSystem wikitutorials} for more details.
  *
- * @package initSystem
- * @copyright Copyright 2003-2014 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version GIT: $Id: Author: DrByte  Tue Apr 1 15:45:22 2014 -0400 Modified in v1.5.3 $
+ * @version $Id: Scott C Wilson 2019 Jul 25 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -16,6 +15,16 @@ if (!defined('IS_ADMIN_FLAG')) {
  * General Functions
  */
 require(DIR_WS_FUNCTIONS . 'functions_general.php');
+require(DIR_WS_FUNCTIONS . 'functions_general_shared.php');
+/**
+ * Database 
+ */
+require(DIR_WS_FUNCTIONS . 'database.php');
+
+/**
+ * Product Functions
+ */
+require(DIR_WS_FUNCTIONS . 'functions_products.php');
 /**
  * html_output functions (href_links, input types etc)
  */

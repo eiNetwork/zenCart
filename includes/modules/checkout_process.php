@@ -2,11 +2,10 @@
 /**
  * module to process a completed checkout
  *
- * @package procedureCheckout
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Tue Oct 13 15:33:13 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Oct 23 Modified in v1.5.7a $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -16,7 +15,7 @@ $zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_BEGIN');
 require(DIR_WS_MODULES . zen_get_module_directory('require_languages.php'));
 
 // if the customer is not logged on, redirect them to the time out page
-  if (!$_SESSION['customer_id']) {
+  if (!zen_is_logged_in()) {
     zen_redirect(zen_href_link(FILENAME_TIME_OUT));
   } else {
     // validate customer
@@ -26,16 +25,12 @@ require(DIR_WS_MODULES . zen_get_module_directory('require_languages.php'));
     }
   }
 
-// confirm where link came from
-if (!strstr($_SERVER['HTTP_REFERER'], FILENAME_CHECKOUT_CONFIRMATION)) {
-  //    zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT,'','SSL'));
-}
-
 // BEGIN CC SLAM PREVENTION
+$slamming_threshold = 3;
 if (!isset($_SESSION['payment_attempt'])) $_SESSION['payment_attempt'] = 0;
 $_SESSION['payment_attempt']++;
-$zco_notifier->notify('NOTIFY_CHECKOUT_SLAMMING_ALERT');
-if ($_SESSION['payment_attempt'] > 3) {
+$zco_notifier->notify('NOTIFY_CHECKOUT_SLAMMING_ALERT', $_SESSION['payment_attempt'], $slamming_threshold);
+if ($_SESSION['payment_attempt'] > $slamming_threshold) {
   $zco_notifier->notify('NOTIFY_CHECKOUT_SLAMMING_LOCKOUT');
   $_SESSION['cart']->reset(TRUE);
   zen_session_destroy();
@@ -48,12 +43,13 @@ if (!isset($credit_covers)) $credit_covers = FALSE;
 // load selected payment module
 require(DIR_WS_CLASSES . 'payment.php');
 $payment_modules = new payment($_SESSION['payment']);
-// load the selected shipping module
-require(DIR_WS_CLASSES . 'shipping.php');
-$shipping_modules = new shipping($_SESSION['shipping']);
 
 require(DIR_WS_CLASSES . 'order.php');
 $order = new order;
+
+// load the selected shipping module
+require(DIR_WS_CLASSES . 'shipping.php');
+$shipping_modules = new shipping($_SESSION['shipping']);
 
 // prevent 0-entry orders from being generated/spoofed
 if (sizeof($order->products) < 1) {
@@ -62,6 +58,18 @@ if (sizeof($order->products) < 1) {
 
 require(DIR_WS_CLASSES . 'order_total.php');
 $order_total_modules = new order_total;
+
+// avoid hack attempts during the checkout procedure by checking the internal cartID
+if (isset($_SESSION['cart']->cartID) && $_SESSION['cartID']) {
+    if ($_SESSION['cart']->cartID != $_SESSION['cartID']) {
+        $payment_modules->clear_payment();
+        $order_total_modules->clear_posts();
+        unset($_SESSION['payment']);
+        unset($_SESSION['shipping']);
+
+        zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
+    }
+}
 
 $zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_BEFORE_ORDER_TOTALS_PRE_CONFIRMATION_CHECK');
 if (strpos($GLOBALS[$_SESSION['payment']]->code, 'paypal') !== 0) {
@@ -84,16 +92,16 @@ $payment_modules->before_process();
 $zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_PAYMENT_MODULES_BEFOREPROCESS');
 // create the order record
 $insert_id = $order->create($order_totals, 2);
-$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_ORDER_CREATE');
+$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_ORDER_CREATE', $insert_id);
 $payment_modules->after_order_create($insert_id);
-$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_PAYMENT_MODULES_AFTER_ORDER_CREATE');
+$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_PAYMENT_MODULES_AFTER_ORDER_CREATE', $insert_id);
 // store the product info to the order
 $order->create_add_products($insert_id);
 $_SESSION['order_number_created'] = $insert_id;
-$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_ORDER_CREATE_ADD_PRODUCTS');
+$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_ORDER_CREATE_ADD_PRODUCTS', $insert_id, $order);
 //send email notifications
 $order->send_order_email($insert_id, 2);
-$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_SEND_ORDER_EMAIL');
+$zco_notifier->notify('NOTIFY_CHECKOUT_PROCESS_AFTER_SEND_ORDER_EMAIL', $insert_id, $order);
 
 // clear slamming protection since payment was accepted
 if (isset($_SESSION['payment_attempt'])) unset($_SESSION['payment_attempt']);
@@ -102,10 +110,10 @@ if (isset($_SESSION['payment_attempt'])) unset($_SESSION['payment_attempt']);
  * Calculate order amount for display purposes on checkout-success page as well as adword campaigns etc
  * Takes the product subtotal and subtracts all credits from it
  */
-  $ototal = $order_subtotal = $credits_applied = 0;
+  $oshipping = $otax = $ototal = $order_subtotal = $credits_applied = 0;
   for ($i=0, $n=sizeof($order_totals); $i<$n; $i++) {
     if ($order_totals[$i]['code'] == 'ot_subtotal') $order_subtotal = $order_totals[$i]['value'];
-    if (${$order_totals[$i]['code']}->credit_class == true) $credits_applied += $order_totals[$i]['value'];
+    if (!empty(${$order_totals[$i]['code']}->credit_class)) $credits_applied += $order_totals[$i]['value'];
     if ($order_totals[$i]['code'] == 'ot_total') $ototal = $order_totals[$i]['value'];
     if ($order_totals[$i]['code'] == 'ot_tax') $otax = $order_totals[$i]['value'];
     if ($order_totals[$i]['code'] == 'ot_shipping') $oshipping = $order_totals[$i]['value'];
@@ -123,7 +131,8 @@ if (isset($_SESSION['payment_attempt'])) unset($_SESSION['payment_attempt']);
   $_SESSION['order_summary']['currency_value'] = $order->info['currency_value'];
   $_SESSION['order_summary']['payment_module_code'] = $order->info['payment_module_code'];
   $_SESSION['order_summary']['shipping_method'] = $order->info['shipping_method'];
-  $_SESSION['order_summary']['orders_status'] = $order->info['orders_status'];
+  $_SESSION['order_summary']['order_status'] = $order->info['order_status'];
+  $_SESSION['order_summary']['orders_status'] = $order->info['order_status']; // alias for older versions
   $_SESSION['order_summary']['tax'] = $otax;
   $_SESSION['order_summary']['shipping'] = $oshipping;
   $products_array = array();

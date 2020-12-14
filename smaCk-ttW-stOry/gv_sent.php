@@ -1,24 +1,9 @@
 <?php
-//
-// +----------------------------------------------------------------------+
-// |zen-cart Open Source E-commerce                                       |
-// +----------------------------------------------------------------------+
-// | Copyright (c) 2003 The zen-cart developers                           |
-// |                                                                      |
-// | http://www.zen-cart.com/index.php                                    |
-// |                                                                      |
-// | Portions Copyright (c) 2003 osCommerce                               |
-// +----------------------------------------------------------------------+
-// | This source file is subject to version 2.0 of the GPL license,       |
-// | that is bundled with this package in the file LICENSE, and is        |
-// | available through the world-wide-web at the following url:           |
-// | http://www.zen-cart.com/license/2_0.txt.                             |
-// | If you did not receive a copy of the zen-cart license and are unable |
-// | to obtain it through the world-wide-web, please send a note to       |
-// | license@zen-cart.com so we can mail you a copy immediately.          |
-// +----------------------------------------------------------------------+
-//  $Id: gv_sent.php 3727 2006-06-09 02:42:39Z ajeh $
-//
+/**
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
+ * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
+ * @version $Id: Scott C Wilson 2020 Apr 12 Modified in v1.5.7 $
+ */
 
   require('includes/application_top.php');
 
@@ -33,9 +18,8 @@
 <title><?php echo TITLE; ?></title>
 <link rel="stylesheet" type="text/css" href="includes/stylesheet.css">
 <link rel="stylesheet" type="text/css" href="includes/cssjsmenuhover.css" media="all" id="hoverJS">
-<script language="javascript" src="includes/menu.js"></script>
+<script type="text/javascript" src="includes/menu.js"></script>
 <script type="text/javascript">
-  <!--
   function init()
   {
     cssjsmenu('navbar');
@@ -45,7 +29,6 @@
       kill.disabled = true;
     }
   }
-  // -->
 </script>
 </head>
 <body onload="init()">
@@ -78,20 +61,20 @@
                 <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_ACTION; ?>&nbsp;</td>
               </tr>
 <?php
-  $gv_query_raw = "select c.coupon_amount, c.coupon_code, c.coupon_id, et.sent_firstname, et.sent_lastname, et.customer_id_sent, et.emailed_to, et.date_sent, crt.redeem_date, c.coupon_id
-                  from " . TABLE_COUPONS . " c
-                  left join " . TABLE_COUPON_REDEEM_TRACK . " crt
-                  on c.coupon_id= crt.coupon_id, " . TABLE_COUPON_EMAIL_TRACK . " et
-                  where c.coupon_id = et.coupon_id " . "
-                  and c.coupon_type = 'G'
-                  order by date_sent desc";
+  $gv_query_raw = "SELECT c.coupon_amount, c.coupon_code, c.coupon_id, et.sent_firstname, et.sent_lastname, et.customer_id_sent, et.emailed_to, et.date_sent, crt.redeem_date, c.coupon_id
+                  FROM " . TABLE_COUPONS . " c
+                  LEFT JOIN " . TABLE_COUPON_REDEEM_TRACK . " crt
+                  ON c.coupon_id= crt.coupon_id, " . TABLE_COUPON_EMAIL_TRACK . " et
+                  WHERE c.coupon_id = et.coupon_id " . "
+                  AND c.coupon_type = 'G'
+                  ORDER BY date_sent desc";
   $gv_split = new splitPageResults($_GET['page'], MAX_DISPLAY_SEARCH_RESULTS, $gv_query_raw, $gv_query_numrows);
   $gv_list = $db->Execute($gv_query_raw);
   while (!$gv_list->EOF) {
-    if (((!$_GET['gid']) || (@$_GET['gid'] == $gv_list->fields['coupon_id'])) && (!$gInfo)) {
-    $gInfo = new objectInfo($gv_list->fields);
+    if ((empty($_GET['gid']) || (@$_GET['gid'] == $gv_list->fields['coupon_id'])) && !isset($gInfo)) {
+        $gInfo = new objectInfo($gv_list->fields);
     }
-    if ( (is_object($gInfo)) && ($gv_list->fields['coupon_id'] == $gInfo->coupon_id) ) {
+    if (is_object($gInfo) && $gv_list->fields['coupon_id'] == $gInfo->coupon_id) {
       echo '              <tr class="dataTableRowSelected" onmouseover="this.style.cursor=\'hand\'" onclick="document.location.href=\'' . zen_href_link('gv_sent.php', zen_get_all_get_params(array('gid', 'action')) . 'gid=' . $gInfo->coupon_id . '&action=edit') . '\'">' . "\n";
     } else {
       echo '              <tr class="dataTableRow" onmouseover="this.className=\'dataTableRowOver\';this.style.cursor=\'hand\'" onmouseout="this.className=\'dataTableRow\'" onclick="document.location.href=\'' . zen_href_link('gv_sent.php', zen_get_all_get_params(array('gid', 'action')) . 'gid=' . $gv_list->fields['coupon_id']) . '\'">' . "\n";
@@ -103,7 +86,7 @@
                 <td class="dataTableContent" align="right"><?php echo zen_date_short($gv_list->fields['date_sent']); ?></td>
                 <td class="dataTableContent" align="right"><?php echo (empty($gv_list->fields['redeem_date']) ? TEXT_INFO_NOT_REDEEMED : zen_date_short($gv_list->fields['redeem_date'])); ?></td>
                 <td class="dataTableContent" align="right"><?php if ( (is_object($gInfo)) && ($gv_list->fields['coupon_id'] == $gInfo->coupon_id) ) { echo zen_image(DIR_WS_IMAGES . 'icon_arrow_right.gif'); } else { echo '<a href="' . zen_href_link(FILENAME_GV_SENT, 'page=' . $_GET['page'] . '&gid=' . $gv_list->fields['coupon_id']) . '">' . zen_image(DIR_WS_IMAGES . 'icon_info.gif', IMAGE_ICON_INFO) . '</a>'; } ?>&nbsp;</td>
-              </tr>
+              <?php echo '</tr>'; ?>
 <?php
     $gv_list->MoveNext();
   }
@@ -121,31 +104,33 @@
   $heading = array();
   $contents = array();
 
-  $heading[] = array('text' => '[' . $gInfo->coupon_id . '] ' . ' ' . $currencies->format($gInfo->coupon_amount));
-  $redeem = $db->Execute("select * from " . TABLE_COUPON_REDEEM_TRACK . "
-                          where coupon_id = '" . $gInfo->coupon_id . "'");
-  $redeemed = 'No';
-  if ($redeem->RecordCount() > 0) $redeemed = 'Yes';
-  $contents[] = array('text' => TEXT_INFO_SENDERS_ID . ' ' . $gInfo->customer_id_sent);
-  $contents[] = array('text' => TEXT_INFO_AMOUNT_SENT . ' ' . $currencies->format($gInfo->coupon_amount));
-  $contents[] = array('text' => TEXT_INFO_DATE_SENT . ' ' . zen_date_short($gInfo->date_sent));
-  $contents[] = array('text' => TEXT_INFO_VOUCHER_CODE . ' ' . $gInfo->coupon_code);
-  $contents[] = array('text' => TEXT_INFO_EMAIL_ADDRESS . ' ' . $gInfo->emailed_to);
-  if ($redeemed=='Yes') {
-    $contents[] = array('text' => '<br />' . TEXT_INFO_DATE_REDEEMED . ' ' . zen_date_short($redeem->fields['redeem_date']));
-    $contents[] = array('text' => TEXT_INFO_IP_ADDRESS . ' ' . $redeem->fields['redeem_ip']);
-    $contents[] = array('text' => TEXT_INFO_CUSTOMERS_ID . ' ' . $redeem->fields['customer_id']);
-  } else {
-    $contents[] = array('text' => '<br />' . TEXT_INFO_NOT_REDEEMED);
-  }
+  if (isset($gInfo)) {
+    $heading[] = array('text' => '[' . $gInfo->coupon_id . '] ' . ' ' . $currencies->format($gInfo->coupon_amount));
+    $redeem = $db->Execute("SELECT * FROM " . TABLE_COUPON_REDEEM_TRACK . "
+                            WHERE coupon_id = '" . $gInfo->coupon_id . "'");
+    $redeemed = 'No';
+    if ($redeem->RecordCount() > 0) $redeemed = 'Yes';
+    $contents[] = array('text' => TEXT_INFO_SENDERS_ID . ' ' . $gInfo->customer_id_sent);
+    $contents[] = array('text' => TEXT_INFO_AMOUNT_SENT . ' ' . $currencies->format($gInfo->coupon_amount));
+    $contents[] = array('text' => TEXT_INFO_DATE_SENT . ' ' . zen_date_short($gInfo->date_sent));
+    $contents[] = array('text' => TEXT_INFO_VOUCHER_CODE . ' ' . $gInfo->coupon_code);
+    $contents[] = array('text' => TEXT_INFO_EMAIL_ADDRESS . ' ' . $gInfo->emailed_to);
+    if ($redeemed=='Yes') {
+      $contents[] = array('text' => '<br />' . TEXT_INFO_DATE_REDEEMED . ' ' . zen_date_short($redeem->fields['redeem_date']));
+      $contents[] = array('text' => TEXT_INFO_IP_ADDRESS . ' ' . $redeem->fields['redeem_ip']);
+      $contents[] = array('text' => TEXT_INFO_CUSTOMERS_ID . ' ' . $redeem->fields['customer_id']);
+    } else {
+      $contents[] = array('text' => '<br />' . TEXT_INFO_NOT_REDEEMED);
+    }
 
-  if ( (zen_not_null($heading)) && (zen_not_null($contents)) ) {
-    echo '            <td width="25%" valign="top">' . "\n";
+    if ( (zen_not_null($heading)) && (zen_not_null($contents)) ) {
+      echo '            <td width="25%" valign="top">' . "\n";
 
-    $box = new box;
-    echo $box->infoBox($heading, $contents);
+      $box = new box;
+      echo $box->infoBox($heading, $contents);
 
-    echo '            </td>' . "\n";
+      echo '            </td>' . "\n";
+    }
   }
 ?>
           </tr>

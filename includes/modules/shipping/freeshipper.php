@@ -1,23 +1,21 @@
 <?php
 /**
- * @package shippingMethod
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
+ * @version $Id: DrByte 2020 Sep 29 Modified in v1.5.7a $
  */
-// $Id: freeshipper.php 14498 2009-10-01 20:16:16Z ajeh $
 //
   class freeshipper {
     var $code, $title, $description, $icon, $enabled;
 
-// class constructor
     function __construct() {
-      global $order, $db;
-
       $this->code = 'freeshipper';
       $this->title = MODULE_SHIPPING_FREESHIPPER_TEXT_TITLE;
       $this->description = MODULE_SHIPPING_FREESHIPPER_TEXT_DESCRIPTION;
-      $this->sort_order = MODULE_SHIPPING_FREESHIPPER_SORT_ORDER;
+      $this->sort_order = defined('MODULE_SHIPPING_FREESHIPPER_SORT_ORDER') ? MODULE_SHIPPING_FREESHIPPER_SORT_ORDER : null;
+      if (null === $this->sort_order) return false;
+
       $this->icon = '';
       $this->tax_class = MODULE_SHIPPING_FREESHIPPER_TAX_CLASS;
 
@@ -27,7 +25,18 @@
         $this->enabled = ((MODULE_SHIPPING_FREESHIPPER_STATUS == 'True') ? true : false);
       }
 
-      if ( ($this->enabled == true) && ((int)MODULE_SHIPPING_FREESHIPPER_ZONE > 0) ) {
+      $this->update_status();
+    }
+
+  /**
+   * Perform various checks to see whether this module should be visible
+   */
+    function update_status() {
+      global $order, $db;
+      if (!$this->enabled) return;
+      if (IS_ADMIN_FLAG === true) return;
+
+      if ((int)MODULE_SHIPPING_FREESHIPPER_ZONE > 0) {
         $check_flag = false;
         $check = $db->Execute("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_SHIPPING_FREESHIPPER_ZONE . "' and zone_country_id = '" . $order->delivery['country']['id'] . "' order by zone_id");
         while (!$check->EOF) {
@@ -47,7 +56,6 @@
       }
     }
 
-// class methods
     function quote($method = '') {
       global $order;
 
@@ -94,4 +102,3 @@
       return array('MODULE_SHIPPING_FREESHIPPER_STATUS', 'MODULE_SHIPPING_FREESHIPPER_COST', 'MODULE_SHIPPING_FREESHIPPER_HANDLING', 'MODULE_SHIPPING_FREESHIPPER_TAX_CLASS', 'MODULE_SHIPPING_FREESHIPPER_ZONE', 'MODULE_SHIPPING_FREESHIPPER_SORT_ORDER');
     }
   }
-?>

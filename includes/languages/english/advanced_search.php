@@ -1,10 +1,9 @@
 <?php
 /**
- * @package languageDefines
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: advanced_search.php 3253 2006-03-25 17:26:14Z birdbrain $
+ * @version $Id: Scott C Wilson 2019 Jul 27 Modified in v1.5.7 $
  */
 
   define('NAVBAR_TITLE_1', 'Advanced Search');
@@ -32,10 +31,8 @@ define('ENTRY_DATE_RANGE', 'Search by Date Added');
   define('TEXT_ALL_MANUFACTURERS', 'All Manufacturers');
 
   define('TABLE_HEADING_IMAGE', '');
-  define('TABLE_HEADING_MODEL', 'Model');
   define('TABLE_HEADING_PRODUCTS', 'Product Name');
   define('TABLE_HEADING_MANUFACTURER', 'Manufacturer');
-  define('TABLE_HEADING_QUANTITY', 'Quantity');
   define('TABLE_HEADING_PRICE', 'Price');
   define('TABLE_HEADING_WEIGHT', 'Weight');
   define('TABLE_HEADING_BUY_NOW', 'Buy Now');
@@ -51,4 +48,3 @@ define('ENTRY_DATE_RANGE', 'Search by Date Added');
   define('ERROR_PRICE_TO_LESS_THAN_PRICE_FROM', 'Price To must be greater than or equal to Price From.');
   define('ERROR_INVALID_KEYWORDS', 'Invalid keywords.');
 
-?>

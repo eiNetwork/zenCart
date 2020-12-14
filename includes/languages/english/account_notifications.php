@@ -1,10 +1,9 @@
 <?php
 /**
- * @package languageDefines
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: account_notifications.php 3007 2006-02-11 09:17:12Z drbyte $
+ * @version $Id: Scott C Wilson 2020 Apr 10 Modified in v1.5.7 $
  */
 
 define('NAVBAR_TITLE_1', 'My Account');
@@ -12,7 +11,6 @@ define('NAVBAR_TITLE_2', 'Product Notifications');
 
 define('HEADING_TITLE', 'Product Notifications');
 
-define('MY_NOTIFICATIONS_TITLE', 'My Product Notifications');
 define('MY_NOTIFICATIONS_DESCRIPTION', 'The product notification list allows you to stay up to date on products you find of interest.<br /><br />To be up to date on all product changes, select <strong>Global Product Notifications</strong>.');
 
 define('GLOBAL_NOTIFICATIONS_TITLE', 'Global Product Notifications');
@@ -24,4 +22,3 @@ define('NOTIFICATIONS_NON_EXISTING', 'There are currently no products marked to 
 define('TEXT_NO_PURCHASES', 'No Purchases');
 
 define('SUCCESS_NOTIFICATIONS_UPDATED', 'Your product notifications have been updated.');
-?>

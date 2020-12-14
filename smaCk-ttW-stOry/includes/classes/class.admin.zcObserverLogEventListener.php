@@ -1,9 +1,8 @@
 <?php
 /**
- * @package plugins
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Fri Oct 9 15:32:07 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Feb 29 Modified in v1.5.7 $
  *
  * Designed for ZC >= v1.5.4
  *

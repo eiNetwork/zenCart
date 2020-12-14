@@ -3,10 +3,9 @@
  * autoloader array for catalog application_top.php
  * see  {@link  http://www.zen-cart.com/wiki/index.php/Developers_API_Tutorials#InitSystem wikitutorials} for more details.
  *
- * @package initSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Mon Dec 7 14:53:08 2015 -0500 Modified in v1.5.5 $
+ * @version $Id: Zcwilt 2019 Sep 10 Modified in v1.5.7 $
  */
 if (!defined('IS_ADMIN_FLAG')) {
  die('Illegal Access');
@@ -35,8 +34,8 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
  */
   $autoLoadConfig[0][] = array('autoType'=>'include',
                                'loadFile'=> DIR_WS_INCLUDES . 'version.php');
-  $autoLoadConfig[0][] = array('autoType'=>'class',
-                                'loadFile'=>'class.base.php');
+//  $autoLoadConfig[0][] = array('autoType'=>'class',
+//                                'loadFile'=>'class.base.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'class.notifier.php');
   $autoLoadConfig[0][] = array('autoType'=>'classInstantiate',
@@ -55,8 +54,6 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'language.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
-                                'loadFile'=>'cache.php');
-  $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'sniffer.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'shopping_cart.php');
@@ -69,12 +66,6 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
   $autoLoadConfig[0][] = array('autoType'=>'class',
                                 'loadFile'=>'breadcrumb.php');
   $autoLoadConfig[0][] = array('autoType'=>'class',
-                               'loadFile'=>'query_cache.php');
-  $autoLoadConfig[0][] = array('autoType'=>'classInstantiate',
-                               'className'=>'QueryCache',
-                               'objectName'=>'queryCache',
-                               'checkInstantiated'=>true);
-  $autoLoadConfig[0][] = array('autoType'=>'class',
                                'loadFile'=>'class.zcPassword.php');
   $autoLoadConfig[0][] = array('autoType'=>'classInstantiate',
                                'className'=>'zcPassword',
@@ -82,17 +73,6 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
 
 
 
-/**
- * Breakpoint 10.
- *
- * require('includes/init_includes/init_file_db_names.php');
- * require('includes/init_includes/init_database.php');
- *
- */
-  $autoLoadConfig[10][] = array('autoType'=>'init_script',
-                                'loadFile'=> 'init_file_db_names.php');
-  $autoLoadConfig[10][] = array('autoType'=>'init_script',
-                                'loadFile'=>'init_database.php');
 /**
  * Breakpoint 30.
  *
@@ -131,6 +111,8 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
  * require('includes/init_includes/init_tlds.php');
  *
  */
+  $autoLoadConfig[60][] = array('autoType' => 'require',
+                                'loadFile' => DIR_WS_FUNCTIONS . 'functions_osh_update.php');
   $autoLoadConfig[60][] = array('autoType'=>'init_script',
                                 'loadFile'=> 'init_general_funcs.php');
   $autoLoadConfig[60][] = array('autoType'=>'init_script',
@@ -164,9 +146,16 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
                                 'className'=>'currencies',
                                 'objectName'=>'currencies');
 /**
- * Breakpoint 100.
+ * Breakpoint 96.
  *
  * require('includes/init_includes/init_sanitize.php');
+ *
+ */
+$autoLoadConfig[96][] = array('autoType'=>'init_script',
+                              'loadFile'=> 'init_sanitize.php');
+/**
+ * Breakpoint 100.
+ *
  * if(!$_SESSION['navigaton']) $_SESSION['navigation'] = new navigationHistory();
  * $template = new template_func();
  *
@@ -174,8 +163,6 @@ if (!defined('USE_PCONNECT')) define('USE_PCONNECT', 'false');
   $autoLoadConfig[100][] = array('autoType'=>'classInstantiate',
                                  'className'=>'template_func',
                                  'objectName'=>'template');
-  $autoLoadConfig[100][] = array('autoType'=>'init_script',
-                                 'loadFile'=> 'init_sanitize.php');
   $autoLoadConfig[100][] = array('autoType'=>'classInstantiate',
                                 'className'=>'navigationHistory',
                                 'objectName'=>'navigation',

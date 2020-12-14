@@ -17,20 +17,19 @@
 // | to obtain it through the world-wide-web, please send a note to       |
 // | license@zen-cart.com so we can mail you a copy immediately.          |
 // +----------------------------------------------------------------------+
-//  $Id: popup_image.php 1969 2005-09-13 06:57:21Z drbyte $
+//  $Id: popup_image.php   drbyte  Modified in v1.5.6 $
 //
 
   require('includes/application_top.php');
 
-  reset($_GET);
-  while (list($key, ) = each($_GET)) {
+  foreach($_GET as $key => $value) {
     switch ($key) {
       case 'banner':
         $banners_id = zen_db_prepare_input($_GET['banner']);
 
-        $banner = $db->Execute("select banners_title, banners_image, banners_html_text
-                                from " . TABLE_BANNERS . "
-                                where banners_id = '" . (int)$banners_id . "'");
+        $banner = $db->Execute("SELECT banners_title, banners_image, banners_html_text
+                                FROM " . TABLE_BANNERS . "
+                                WHERE banners_id = '" . (int)$banners_id . "'");
 
         $page_title = $banner->fields['banners_title'];
 
@@ -47,14 +46,14 @@
 <html <?php echo HTML_PARAMS; ?>>
 <head>
 <title><?php echo $page_title; ?></title>
-<script language="javascript"><!--
+<script>
 var i=0;
 
 function resize() {
   if (navigator.appName == 'Netscape') i = 40;
   window.resizeTo(document.images[0].width + 30, document.images[0].height + 60 - i);
 }
-//--></script>
+</script>
 </head>
 <body onload="resize();">
 <?php echo $image_source; ?>

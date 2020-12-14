@@ -5,11 +5,10 @@
  * Loaded automatically by index.php?main_page=account_edit.<br />
  * Displays information related to a single specific order
  *
- * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  May 3 2016  Modified in v1.5.5a $
+ * @version $Id: DrByte 2020 Oct 19 Modified in v1.5.7a $
  */
 ?>
 <div class="centerColumn" id="accountHistInfo">
@@ -18,7 +17,7 @@
 <br class="clearBoth" />
 
 <?php if ($current_page != FILENAME_CHECKOUT_SUCCESS) { ?>
-<h2 id="orderHistoryDetailedOrder"><?php echo HEADING_TITLE . ORDER_HEADING_DIVIDER . sprintf(HEADING_ORDER_NUMBER, $_GET['order_id']); ?></h2>
+<h2 id="orderHistoryDetailedOrder"><?php echo HEADING_TITLE . ORDER_HEADING_DIVIDER . sprintf(HEADING_ORDER_NUMBER, zen_output_string_protected($_GET['order_id'])); ?></h2>
 <?php } ?>
 
 <table id="orderHistoryHeading">
@@ -26,7 +25,7 @@
         <th scope="col" id="myAccountQuantity"><?php echo HEADING_QUANTITY; ?></th>
         <th scope="col" id="myAccountProducts"><?php echo HEADING_PRODUCTS; ?></th>
 <?php
-  if (sizeof($order->info['tax_groups']) > 1) {
+  if (isset($order->info['tax_groups']) && count($order->info['tax_groups']) > 1) {
 ?>
         <th scope="col" id="myAccountTax"><?php echo HEADING_TAX; ?></th>
 <?php
@@ -39,7 +38,9 @@
   ?>
     <tr>
         <td class="accountQuantityDisplay"><?php echo  $order->products[$i]['qty'] . QUANTITY_SUFFIX; ?></td>
-        <td class="accountProductDisplay"><?php echo  $order->products[$i]['name'];
+        <td class="accountProductDisplay"><?php
+
+            echo  $order->products[$i]['name'];
 
     if ( (isset($order->products[$i]['attributes'])) && (sizeof($order->products[$i]['attributes']) > 0) ) {
       echo '<ul class="orderAttribsList">';
@@ -51,7 +52,7 @@
 ?>
         </td>
 <?php
-    if (sizeof($order->info['tax_groups']) > 1) {
+    if (isset($order->info['tax_groups']) && count($order->info['tax_groups']) > 1) {
 ?>
         <td class="accountTaxDisplay"><?php echo zen_display_tax_value($order->products[$i]['tax']) . '%' ?></td>
 <?php
@@ -106,12 +107,24 @@ if (sizeof($statusArray)) {
         <th scope="col" id="myAccountStatusComments"><?php echo TABLE_HEADING_STATUS_COMMENTS; ?></th>
        </tr>
 <?php
+  $first = true; 
   foreach ($statusArray as $statuses) {
 ?>
     <tr>
         <td><?php echo zen_date_short($statuses['date_added']); ?></td>
         <td><?php echo $statuses['orders_status_name']; ?></td>
-        <td><?php echo (empty($statuses['comments']) ? '&nbsp;' : nl2br(zen_output_string_protected($statuses['comments']))); ?></td>
+        <td>
+<?php 
+    if (!empty($statuses['comments'])) {
+      if ($first) { 
+         echo nl2br(zen_output_string_protected($statuses['comments']));
+         $first = false; 
+      } else {
+         echo nl2br(zen_output_string($statuses['comments']));
+      }
+    }
+?>
+       </td> 
      </tr>
 <?php
   }
@@ -122,7 +135,7 @@ if (sizeof($statusArray)) {
 <hr />
 <div id="myAccountShipInfo" class="floatingBox back">
 <?php
-  if ($order->delivery != false) {
+  if (!empty($order->delivery['format_id'])) {
 ?>
 <h3><?php echo HEADING_DELIVERY_ADDRESS; ?></h3>
 <address><?php echo zen_address_format($order->delivery['format_id'], $order->delivery, 1, ' ', '<br />'); ?></address>

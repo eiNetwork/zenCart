@@ -1,10 +1,9 @@
 <?php
 /**
- * @package admin
- * @copyright Copyright 2003-2010 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: options_values_manager.php 15883 2010-04-11 16:41:26Z wilt $
+ * @version $Id: Scott C Wilson 2020 Apr 07 Modified in v1.5.7 $
  */
 
 define('HEADING_TITLE_OPT', 'Product Options');
@@ -27,7 +26,6 @@ define('TEXT_WARNING_OF_DELETE', '<span class="alert">This option has products a
 define('TEXT_OK_TO_DELETE', 'This option has no products and values linked to it - it is safe to delete it.');
 define('TEXT_OPTION_ID', 'Option ID');
 define('TEXT_OPTION_NAME', 'Option Name');
-define('TABLE_HEADING_OPT_DISCOUNTED','Discounted');
 
 define('ATTRIBUTE_WARNING_DUPLICATE','Duplicate Attribute - Attribute was not added'); // attributes duplicate warning
 define('ATTRIBUTE_WARNING_DUPLICATE_UPDATE','Duplicate Attribute Exists - Attribute was not changed'); // attributes duplicate warning
@@ -51,16 +49,10 @@ define('TABLE_TEXT_MAX_COUNT_SHORT', 'Max:');
   define('TABLE_HEADING_OPT_WEIGHT_PREFIX','Prefix');
   define('TABLE_HEADING_OPT_WEIGHT','Weight');
   define('TABLE_HEADING_OPT_SORT_ORDER','Sort Order');
-  define('TABLE_HEADING_OPT_DEFAULT','Default');
-
-  define('TABLE_HEADING_YES','Yes');
-  define('TABLE_HEADING_NO','No');
 
   define('TABLE_HEADING_OPT_TYPE', 'Option Type'); //CLR 031203 add option type column
   define('TABLE_HEADING_OPTION_VALUE_SIZE','Size');
   define('TABLE_HEADING_OPTION_VALUE_MAX','Max');
-  define('TABLE_HEADING_OPTION_VALUE_ROWS','Rows');
-  define('TABLE_HEADING_OPTION_VALUE_COMMENTS','Comments');
 
   define('TEXT_OPTION_VALUE_COMMENTS','Comments: ');
   define('TEXT_OPTION_VALUE_SIZE','Display Size: ');
@@ -119,4 +111,6 @@ define('TABLE_TEXT_MAX_COUNT_SHORT', 'Max:');
   define('ERROR_OPTION_VALUES_DELETE_MISMATCH', 'Error: Mismatched Option Name and Option Value selected');
 
   define('SUCCESS_OPTION_VALUES_DELETE', 'Successful: Deletion of: ');
-  
+  define('LABEL_FILTER', 'Select Option Value to filter');
+  define('TEXT_DISPLAY_NUMBER_OF_OPTION_VALUES', 'Displaying <b>%d</b> to <b>%d</b> (of <b>%d</b> Option Values)');
+  define('TEXT_SHOW_ALL', 'Show All');

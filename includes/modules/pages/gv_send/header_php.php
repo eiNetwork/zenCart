@@ -5,11 +5,10 @@
  * Used to allow customer to send GV to their friends/family by way of email.
  * They can send up to the amount of GV accumlated in their account by way of purchased GV's or GV's sent to them.
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sun Oct 18 03:26:56 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: Scott C Wilson 2019 Jul 05 Modified in v1.5.7 $
  */
 
 // This should be first line of the script:
@@ -18,13 +17,14 @@ if (isset($_POST['message'])) $_POST['message'] = zen_output_string_protected($_
 
 require_once('includes/classes/http_client.php');
 
+if (!isset($_GET['action'])) $_GET['action'] = '';  
 // verify no timeout has occurred on the send or process
-if (!$_SESSION['customer_id'] and ($_GET['action'] == 'send' or $_GET['action'] == 'process')) {
+if (!zen_is_logged_in() && isset($_GET['action']) && ($_GET['action'] == 'send' or $_GET['action'] == 'process')) {
   zen_redirect(zen_href_link(FILENAME_TIME_OUT));
 }
 
 // if the customer is not logged on, redirect them to the login page
-if (!$_SESSION['customer_id']) {
+if (!zen_is_logged_in()) {
   $_SESSION['navigation']->set_snapshot();
   zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
 }
@@ -97,12 +97,11 @@ if ($_GET['action'] == 'send') {
 
 if ($_GET['action'] == 'process') {
   if (!isset($_POST['back'])) { // customer didn't click the back button
-    $id1 = zen_create_coupon_code($mail['customers_email_address']);
+    $id1 = zen_create_coupon_code($account->fields['customers_email_address']);
     // sanitize and remove non-numeric characters
     $_POST['amount'] = preg_replace('/[^0-9.,%]/', '', $_POST['amount']);
 
     $new_amount = $gv_result->fields['amount'] - $currencies->value($_POST['amount'], true, DEFAULT_CURRENCY);
-    //die($currencies->value($_POST['amount'], true, $_SESSION['currency']));
     $new_db_amount = $gv_result->fields['amount'] - $currencies->value($_POST['amount'], true, DEFAULT_CURRENCY);
     if ($new_amount < 0) {
       $error= true;
@@ -209,6 +208,7 @@ if ($_GET['action'] == 'complete') zen_redirect(zen_href_link(FILENAME_GV_SEND, 
 $breadcrumb->add(NAVBAR_TITLE);
 
 // validate entries
+if (empty($gv_amount)) $gv_amount = 0; 
 $gv_amount = (float)$gv_amount;
 
 // This should be last line of the script:

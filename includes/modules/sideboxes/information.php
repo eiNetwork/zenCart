@@ -2,14 +2,14 @@
 /**
  * information sidebox - displays list of general info links, as defined in this file
  *
- * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Sat Oct 17 21:54:07 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 May 16 Modified in v1.5.7 $
  */
 
   unset($information);
+  $information = array();
 
   if (DEFINE_SHIPPINGINFO_STATUS <= 1) {
     $information[] = '<a href="' . zen_href_link(FILENAME_SHIPPING) . '">' . BOX_INFORMATION_SHIPPING . '</a>';
@@ -26,7 +26,7 @@
 
 // forum/bb link:
   if (!empty($external_bb_url) && !empty($external_bb_text)) {
-    $information[] = '<a href="' . $external_bb_url . '" target="_blank">' . $external_bb_text . '</a>';
+    $information[] = '<a href="' . $external_bb_url . '" rel="noopener" target="_blank">' . $external_bb_text . '</a>';
   }
 
   if (DEFINE_SITE_MAP_STATUS <= 1) {
@@ -34,11 +34,11 @@
   }
 
   // only show GV FAQ when installed
-  if (MODULE_ORDER_TOTAL_GV_STATUS == 'true') {
+  if (defined('MODULE_ORDER_TOTAL_GV_STATUS') && MODULE_ORDER_TOTAL_GV_STATUS == 'true') {
     $information[] = '<a href="' . zen_href_link(FILENAME_GV_FAQ) . '">' . BOX_INFORMATION_GV . '</a>';
   }
   // only show Discount Coupon FAQ when installed
-  if (DEFINE_DISCOUNT_COUPON_STATUS <= 1 && MODULE_ORDER_TOTAL_COUPON_STATUS == 'true') {
+  if (DEFINE_DISCOUNT_COUPON_STATUS <= 1 && defined('MODULE_ORDER_TOTAL_COUPON_STATUS') && MODULE_ORDER_TOTAL_COUPON_STATUS == 'true') {
     $information[] = '<a href="' . zen_href_link(FILENAME_DISCOUNT_COUPON) . '">' . BOX_INFORMATION_DISCOUNT_COUPONS . '</a>';
   }
 

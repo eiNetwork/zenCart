@@ -2,31 +2,32 @@
 /**
  * Payment Class.
  *
- * @package classes
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt  Sat Feb 6 10:07:47 2016 +0000 Modified in v1.5.5 $
+ * @version $Id: mc12345678 2020 Jul 20 Modified in v1.5.7a $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
 }
 /**
  * Payment Class.
- * This class interfaces with various payment modules
+ * This class interfaces with payment modules
  *
- * @package classes
  */
 class payment extends base {
   var $modules, $selected_module, $doesCollectsCardDataOnsite;
 
-  // class constructor
   function __construct($module = '') {
-    global $PHP_SELF, $language, $credit_covers, $messageStack;
-    $this->doesCollectsCardDataOnsite = false;
+      global $PHP_SELF, $language, $credit_covers, $messageStack;
+      $this->doesCollectsCardDataOnsite = false;
 
-    if (defined('MODULE_PAYMENT_INSTALLED') && zen_not_null(MODULE_PAYMENT_INSTALLED)) {
-      $this->modules = explode(';', MODULE_PAYMENT_INSTALLED);
+      if (defined('MODULE_PAYMENT_INSTALLED') && !empty(MODULE_PAYMENT_INSTALLED)) {
+        $this->modules = explode(';', MODULE_PAYMENT_INSTALLED);
+      }
+      $this->notify('NOTIFY_PAYMENT_CLASS_GET_INSTALLED_MODULES', $module);
+
+      if (empty($this->modules)) return;
 
       $include_modules = array();
 
@@ -35,17 +36,17 @@ class payment extends base {
 
         $include_modules[] = array('class' => $module, 'file' => $module . '.php');
       } else {
-        reset($this->modules);
 
         // Free Payment Only shows
-        if (zen_get_configuration_key_value('MODULE_PAYMENT_FREECHARGER_STATUS') and ($_SESSION['cart']->show_total()==0 and (!isset($_SESSION['shipping']['cost']) || $_SESSION['shipping']['cost'] == 0))) {
+        $freecharger_enabled = (defined('MODULE_PAYMENT_FREECHARGER_STATUS') && MODULE_PAYMENT_FREECHARGER_STATUS == 'True');
+        if ($freecharger_enabled && $_SESSION['cart']->show_total() == 0 && (!isset($_SESSION['shipping']['cost']) || $_SESSION['shipping']['cost'] == 0)) {
           $this->selected_module = $module;
           if (file_exists(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/' . 'freecharger.php')) {
             $include_modules[] = array('class'=> 'freecharger', 'file' => 'freecharger.php');
           }
         } else {
           // All Other Payment Modules show
-          while (list(, $value) = each($this->modules)) {
+          foreach($this->modules as $value) {
             // double check that the module really exists before adding to the array
             if (file_exists(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/' . $value)) {
               $class = substr($value, 0, strrpos($value, '.'));
@@ -59,16 +60,18 @@ class payment extends base {
       }
 
       for ($i=0, $n=sizeof($include_modules); $i<$n; $i++) {
-        //          include(DIR_WS_LANGUAGES . $_SESSION['language'] . '/modules/payment/' . $include_modules[$i]['file']);
         $lang_file = zen_get_file_directory(DIR_WS_LANGUAGES . $_SESSION['language'] . '/modules/payment/', $include_modules[$i]['file'], 'false');
         if (@file_exists($lang_file)) {
           include_once($lang_file);
         } else {
-          if (IS_ADMIN_FLAG === false && is_object($messageStack)) {
-            $messageStack->add('checkout_payment', WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
-          } else {
-            $messageStack->add_session(WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+          if (is_object($messageStack)) {
+            if (IS_ADMIN_FLAG === false) {
+              $messageStack->add('checkout_payment', WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+            } else {
+              $messageStack->add_session(WARNING_COULD_NOT_LOCATE_LANG_FILE . $lang_file, 'caution');
+            }
           }
+          continue;
         }
         include_once(DIR_WS_MODULES . 'payment/' . $include_modules[$i]['file']);
 
@@ -92,35 +95,32 @@ class payment extends base {
         if (!isset($credit_covers) || $credit_covers == FALSE) $_SESSION['payment'] = $include_modules[0]['class'];
       }
 
-      if ( (zen_not_null($module)) && (in_array($module, $this->modules)) && (isset($GLOBALS[$module]->form_action_url)) ) {
+      if (zen_not_null($module) && in_array($module, $this->modules) && isset($GLOBALS[$module]->form_action_url)) {
         $this->form_action_url = $GLOBALS[$module]->form_action_url;
       }
-    }
   }
 
-  // class methods
-  /* The following method is needed in the checkout_confirmation.php page
+  /**
+  The update_status() method is needed in the checkout_confirmation.php page
   due to a chicken and egg problem with the payment class and order class.
-  The payment modules needs the order destination data for the dynamic status
+  The payment modules need the order destination data for the dynamic status
   feature, and the order class needs the payment module title.
-  The following method is a work-around to implementing the method in all
-  payment modules available which would break the modules in the contributions
-  section. This should be looked into again post 2.2.
+  Modules should implement this method to inspect the current order address
+  for to determine if the module should remain enabled,
+  and set their own $this->enabled property accordingly.
   */
   function update_status() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module])) {
-        if (method_exists($GLOBALS[$this->selected_module], 'update_status')) {
-          $GLOBALS[$this->selected_module]->update_status();
-        }
-      }
-    }
+    if (empty($this->selected_module)) return;
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
 
   function javascript_validation() {
-    $js = '';
-    if (is_array($this->modules) && sizeof($this->selection()) > 0) {
-      $js = '<script type="text/javascript"><!-- ' . "\n" .
+    if (!is_array($this->modules) || empty($this->selection())) return '';
+      $js = '<script type="text/javascript">' . "\n" .
       'function check_form() {' . "\n" .
       '  var error = 0;' . "\n" .
       '  var error_message = "' . JS_ERROR . '";' . "\n" .
@@ -139,10 +139,9 @@ class payment extends base {
       '    }' . "\n" .
       '  }' . "\n\n";
 
-      reset($this->modules);
-      while (list(, $value) = each($this->modules)) {
+      foreach($this->modules as $value) {
         $class = substr($value, 0, strrpos($value, '.'));
-        if ($GLOBALS[$class]->enabled) {
+        if (isset($GLOBALS[$class]->enabled) && $GLOBALS[$class]->enabled == true) {
           $js .= $GLOBALS[$class]->javascript_validation();
         }
       }
@@ -155,138 +154,156 @@ class payment extends base {
        $js =  $js .'    alert(error_message);' . "\n";
        $js =  $js . '    return false;' . "\n";
        $js =  $js .'  } else {' . "\n";
-       $js =  $js .' var result = true '  . "\n";
+       $js =  $js .' var result = true; '  . "\n";
        if ($this->doesCollectsCardDataOnsite == true && PADSS_AJAX_CHECKOUT == '1') {
          $js .= '      result = !(doesCollectsCardDataOnsite(payment_value));' . "\n";
        }
        $js =  $js .' if (result == false) doCollectsCardDataOnsite();' . "\n";
        $js =  $js .'    return result;' . "\n";
-       $js =  $js .'  }' . "\n" . '}' . "\n" . '//--></script>' . "\n";
-    }
+       $js =  $js .'  }' . "\n" . '}' . "\n" . '</script>' . "\n";
     return $js;
   }
 
   function selection() {
     $selection_array = array();
-    if (is_array($this->modules)) {
-      reset($this->modules);
-      while (list(, $value) = each($this->modules)) {
+    if (!is_array($this->modules)) return $selection_array;
+    foreach($this->modules as $value) {
         $class = substr($value, 0, strrpos($value, '.'));
-        if ($GLOBALS[$class]->enabled) {
-          $selection = $GLOBALS[$class]->selection();
-          if (isset($GLOBALS[$class]->collectsCardDataOnsite) && $GLOBALS[$class]->collectsCardDataOnsite == true) {
-            $selection['fields'][] = array('title' => '',
-                                         'field' => zen_draw_hidden_field($this->code . '_collects_onsite', 'true', 'id="' . $this->code. '_collects_onsite"'),
-                                         'tag' => '');
-
-          }
-          if (is_array($selection)) $selection_array[] = $selection;
+        if (!isset($GLOBALS[$class]->enabled) || $GLOBALS[$class]->enabled != true) {
+            continue;
         }
-      }
+        $selection = $GLOBALS[$class]->selection();
+
+        if (isset($GLOBALS[$class]->collectsCardDataOnsite) && $GLOBALS[$class]->collectsCardDataOnsite == true) {
+            $selection['fields'][] = array('title' => '',
+                                         'field' => zen_draw_hidden_field($class . '_collects_onsite', 'true', 'id="' . $class . '_collects_onsite"'),
+                                         'tag' => '');
+        }
+        if (is_array($selection)) $selection_array[] = $selection;
     }
     return $selection_array;
   }
+
   function in_special_checkout() {
     $result = false;
-    if (is_array($this->modules)) {
-      reset($this->modules);
-      while (list(, $value) = each($this->modules)) {
+    if (!is_array($this->modules)) return $result;
+    $function = __FUNCTION__;
+    foreach($this->modules as $value) {
         $class = substr($value, 0, strrpos($value, '.'));
-        if ($GLOBALS[$class]->enabled && method_exists($GLOBALS[$class], 'in_special_checkout')) {
-          $module_result = $GLOBALS[$class]->in_special_checkout();
+        if (isset($GLOBALS[$class]) && is_object($GLOBALS[$class]) && $GLOBALS[$class]->enabled && method_exists($GLOBALS[$class], $function)) {
+          $module_result = $GLOBALS[$class]->$function();
           if ($module_result === true) $result = true;
         }
-      }
     }
     return $result;
   }
 
   function pre_confirmation_check() {
     global $credit_covers, $payment_modules;
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        if ($credit_covers) {
-          $GLOBALS[$this->selected_module]->enabled = false;
-          $GLOBALS[$this->selected_module] = NULL;
-          $payment_modules = '';
-        } else {
-          $GLOBALS[$this->selected_module]->pre_confirmation_check();
-        }
-      }
+    if (empty($this->selected_module)) return;
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module]) || $GLOBALS[$this->selected_module]->enabled != true) return;
+    $function = __FUNCTION__;
+    if ($credit_covers) {
+        $GLOBALS[$this->selected_module]->enabled = false;
+        $GLOBALS[$this->selected_module] = NULL;
+        $payment_modules = '';
+    } else {
+        $GLOBALS[$this->selected_module]->$function();
     }
   }
 
   function confirmation() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->confirmation();
-      }
-    }
+    $default = array('title' => '', 'fields' => array());
+    if (!is_array($this->modules)) return $default;
+    if (!is_object($GLOBALS[$this->selected_module])) return $default;
+    if (!$GLOBALS[$this->selected_module]->enabled) return $default;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return $default;
+    $confirmation = $GLOBALS[$this->selected_module]->$function();
+    if (!is_array($confirmation)) return $default;
+    // use array_merge here to normalize the response - ie: so that both title/fields indices are populated even if the module doesn't return either of them
+    return array_merge($default, $confirmation);
   }
 
   function process_button_ajax() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->process_button_ajax();
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
   function process_button() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->process_button();
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
 
   function before_process() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->before_process();
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
 
   function after_process() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->after_process();
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
 
   function after_order_create($zf_order_id) {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) && (method_exists($GLOBALS[$this->selected_module], 'after_order_create'))) {
-        return $GLOBALS[$this->selected_module]->after_order_create($zf_order_id);
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function($zf_order_id);
   }
 
   function admin_notification($zf_order_id) {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) && (method_exists($GLOBALS[$this->selected_module], 'admin_notification'))) {
-        return $GLOBALS[$this->selected_module]->admin_notification($zf_order_id);
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function($zf_order_id);
   }
 
   function get_error() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        return $GLOBALS[$this->selected_module]->get_error();
-      }
-    }
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    return $GLOBALS[$this->selected_module]->$function();
   }
 
   function get_checkout_confirm_form_replacement() {
-    if (is_array($this->modules)) {
-      if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-        if (method_exists($GLOBALS[$this->selected_module], 'get_checkout_confirm_form_replacement')) {
-          return $GLOBALS[$this->selected_module]->get_checkout_confirm_form_replacement();
-        }
-      }
-    }
-    return array(false, '');
+    $default = array(false, '');
+    if (!is_array($this->modules)) return $default;
+    if (!is_object($GLOBALS[$this->selected_module]) || $GLOBALS[$this->selected_module]->enabled != true) return $default;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return $default;
+    return $GLOBALS[$this->selected_module]->$function();
+  }
+
+  function clear_payment()
+  {
+    if (!is_array($this->modules)) return;
+    if (!is_object($GLOBALS[$this->selected_module])) return;
+    if (!$GLOBALS[$this->selected_module]->enabled) return;
+    $function = __FUNCTION__;
+    if (!method_exists($GLOBALS[$this->selected_module], $function)) return;
+    $GLOBALS[$this->selected_module]->$function();
   }
 }

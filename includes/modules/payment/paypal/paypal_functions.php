@@ -2,12 +2,11 @@
 /**
  * functions used by payment module class for Paypal IPN payment method
  *
- * @package paymentMethod
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @copyright Portions Copyright 2004 DevosC.com
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Wed Mar 16 16:12:21 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: DrByte 2020 Jun 22 Modified in v1.5.7 $
  */
 
 // Functions for paypal processing
@@ -50,7 +49,7 @@
     $stored_session = $db->Execute($sql);
     if ($stored_session->recordCount() < 1) {
       global $isECtransaction, $isDPtransaction;
-      if ($_POST['payment_type'] == 'instant' && $isDPtransaction && ((isset($_POST['auth_status']) && $_POST['auth_status'] == 'Completed') || $_POST['payment_status'] == 'Completed')) {
+      if (isset($_POST['payment_type']) && $_POST['payment_type'] == 'instant' && $isDPtransaction && ((isset($_POST['auth_status']) && $_POST['auth_status'] == 'Completed') || $_POST['payment_status'] == 'Completed')) {
         $session_stuff[1] = '(EC/DP transaction)';
       }
       ipn_debug_email('IPN ERROR :: Could not find stored session {' . $session_stuff[1] . '} in DB; thus cannot validate or re-create session as a transaction awaiting PayPal Website Payments Standard confirmation initiated by this store. Might be an Express Checkout or eBay transaction or some other action that triggers PayPal IPN notifications.');
@@ -73,9 +72,9 @@
                 FROM " . TABLE_PAYPAL . "
                 WHERE txn_id = :transactionID: OR invoice = :transactionID:
                 ORDER BY order_id DESC LIMIT 1 ";
-    $sqlParent = $db->bindVars($sql, ':transactionID:', $postArray['parent_txn_id'], 'string');
-    $sqlTxn = $db->bindVars($sql, ':transactionID:', $postArray['txn_id'], 'string');
+
     if (isset($postArray['parent_txn_id']) && trim($postArray['parent_txn_id']) != '') {
+      $sqlParent = $db->bindVars($sql, ':transactionID:', $postArray['parent_txn_id'], 'string');
       $ipn_id = $db->Execute($sqlParent);
       if($ipn_id->RecordCount() > 0) {
         ipn_debug_email('IPN NOTICE :: This transaction HAS a parent record. Thus this is an update of some sort.');
@@ -84,6 +83,7 @@
         $paypalipnID = $ipn_id->fields['paypal_ipn_id'];
       }
     } else {
+      $sqlTxn = $db->bindVars($sql, ':transactionID:', $postArray['txn_id'], 'string');
       $ipn_id = $db->Execute($sqlTxn);
       if ($ipn_id->RecordCount() <= 0) {
         ipn_debug_email('IPN NOTICE :: Could not find matched txn_id record in DB. Therefore is new to us. ');
@@ -184,7 +184,7 @@
     } else {
       $my_currency = substr(MODULE_PAYMENT_PAYPAL_CURRENCY, 5);
     }
-    $pp_currencies = array('CAD', 'EUR', 'GBP', 'JPY', 'USD', 'AUD', 'CHF', 'CZK', 'DKK', 'HKD', 'HUF', 'NOK', 'NZD', 'PLN', 'SEK', 'SGD', 'THB', 'MXN', 'ILS', 'PHP', 'TWD', 'BRL', 'MYR');
+    $pp_currencies = array('CAD', 'EUR', 'GBP', 'JPY', 'USD', 'AUD', 'CHF', 'CZK', 'DKK', 'HKD', 'HUF', 'NOK', 'NZD', 'PLN', 'SEK', 'SGD', 'THB', 'MXN', 'ILS', 'PHP', 'TWD', 'BRL', 'MYR', 'INR');
     if (!in_array($my_currency, $pp_currencies)) {
       $my_currency = 'USD';
     }
@@ -196,7 +196,7 @@
     $my_currency = select_pp_currency();
     $exchanged_amount = ($mode == 'IPN' ? ($amount * $currencies->get_value($my_currency)) : $amount);
     $transaction_amount = preg_replace('/[^0-9.]/', '', number_format($exchanged_amount, $currencies->get_decimal_places($my_currency), '.', ''));
-    if ( ($_POST['mc_currency'] != $my_currency) || ($_POST['mc_gross'] != $transaction_amount && $_POST['mc_gross'] != -0.01) && MODULE_PAYMENT_PAYPAL_TESTING != 'Test' ) {
+    if ($_POST['mc_currency'] != $my_currency || ($_POST['mc_gross'] != $transaction_amount && $_POST['mc_gross'] != -0.01) && (!defined('MODULE_PAYMENT_PAYPAL_TESTING') || MODULE_PAYMENT_PAYPAL_TESTING != 'Test') ) {
       ipn_debug_email('IPN WARNING :: Currency/Amount Mismatch.  Details: ' . "\n" . 'PayPal email address = ' . $_POST['business'] . "\n" . ' | mc_currency = ' . $_POST['mc_currency'] . "\n" . ' | submitted_currency = ' . $my_currency . "\n" . ' | order_currency = ' . $currency . "\n" . ' | mc_gross = ' . $_POST['mc_gross'] . "\n" . ' | converted_amount = ' . $transaction_amount . "\n" . ' | order_amount = ' . $amount );
       return false;
     }
@@ -217,7 +217,7 @@
 // if it's not unique or linked to a parent, then:
 // 1. could be an e-check denied / cleared
 // 2. could be an express-checkout "pending" transaction which has been Accepted in the merchant's PayPal console and needs activation in Zen Cart
-    if ($postArray['payment_status']=='Completed' && txn_type=='express_checkout' && $postArray['payment_type']=='echeck') {
+    if ($postArray['payment_status']=='Completed' && $txn_type=='express_checkout' && $postArray['payment_type']=='echeck') {
       $txn_type = 'express-checkout-cleared';
       return $txn_type;
     }
@@ -319,7 +319,7 @@
  * Create order-history record from IPN data
  */
   function ipn_create_order_history_array($insert_id) {
-    $sql_data_array = array ('paypal_ipn_id' => $insert_id,
+    $sql_data_array = array ('paypal_ipn_id' => (int)$insert_id,
                              'txn_id' => $_POST['txn_id'],
                              'parent_txn_id' => $_POST['parent_txn_id'],
                              'payment_status' => $_POST['payment_status'],
@@ -385,6 +385,7 @@
   }
   function getRequestBodyContents(&$handle) {
     if ($handle) {
+      $line = '';
       while(!feof($handle)) {
         $line .= @fgets($handle, 1024);
       }
@@ -438,9 +439,9 @@
     // send received data back to PayPal for validation
     $scheme = 'https://';
     //Parse url
-    $web = parse_url($scheme . 'www.paypal.com/cgi-bin/webscr');
-    if ((isset($_POST['test_ipn']) && $_POST['test_ipn'] == 1) || MODULE_PAYMENT_PAYPAL_HANDLER == 'sandbox') {
-      $web = parse_url($scheme . 'www.sandbox.paypal.com/cgi-bin/webscr');
+    $web = parse_url($scheme . 'ipnpb.paypal.com/cgi-bin/webscr');
+    if ((isset($_POST['test_ipn']) && $_POST['test_ipn'] == 1) || (defined('MODULE_PAYMENT_PAYPAL_HANDLER') && MODULE_PAYMENT_PAYPAL_HANDLER == 'sandbox')) {
+      $web = parse_url($scheme . 'ipnpb.sandbox.paypal.com/cgi-bin/webscr');
     }
     //Set the port number
     if($web['scheme'] == "https") {
@@ -481,7 +482,7 @@
     ipn_debug_email('IPN INFO - POST VARS to be sent back (unsorted) for validation (using fsockopen): ' . "\n" . 'To: ' . $ssl . $web['host'] . ':' . $web['port'] . "\n" . $header . stripslashes(print_r($postback_array, true)));
 
     //Create paypal connection
-    if (MODULE_PAYMENT_PAYPAL_IPN_DEBUG == 'Yes') {
+    if (defined('MODULE_PAYMENT_PAYPAL_IPN_DEBUG') && MODULE_PAYMENT_PAYPAL_IPN_DEBUG == 'Yes') {
       $fp=fsockopen($ssl . $web['host'], $web['port'], $errnum, $errstr, 30);
     } else {
       $fp=@fsockopen($ssl . $web['host'], $web['port'], $errnum, $errstr, 30);
@@ -639,30 +640,24 @@
 /**
  * Write order-history update to ZC tables denoting the update supplied by the IPN
  */
-  function ipn_update_orders_status_and_history($ordersID, $new_status = 1, $txn_type) {
+  function ipn_update_orders_status_and_history($ordersID, $new_status = 1, $txn_type = '') {
     global $db;
-    ipn_debug_email('IPN NOTICE :: Updating order #' . (int)$ordersID . ' to status: ' . (int)$new_status . ' (txn_type: ' . $txn_type . ')');
-    $db->Execute("update " . TABLE_ORDERS  . "
-                  set orders_status = '" . (int)$new_status . "', last_modified = now()
-                  where orders_id = '" . (int)$ordersID . "'");
 
-    $sql_data_array = array('orders_id' => (int)$ordersID,
-                            'orders_status_id' => (int)$new_status,
-                            'date_added' => 'now()',
-                            'comments' => 'PayPal status: ' . $_POST['payment_status'] . ' ' . ' @ ' . $_POST['payment_date'] . (($_POST['parent_txn_id'] !='') ? "\n" . ' Parent Trans ID:' . $_POST['parent_txn_id'] : '') . "\n" . ' Trans ID:' . $_POST['txn_id'] . "\n" . ' Amount: ' . $_POST['mc_gross'] . ' ' . $_POST['mc_currency'],
-                            'customer_notified' => false
-                           );
-    zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
+    ipn_debug_email('IPN NOTICE :: Updating order #' . (int)$ordersID . ' to status: ' . (int)$new_status . ' (txn_type: ' . $txn_type . ')');
+
+    $comments = 'PayPal status: ' . $_POST['payment_status'] . ' ' . ' @ ' . $_POST['payment_date'] . (($_POST['parent_txn_id'] !='') ? "\n" . ' Parent Trans ID:' . $_POST['parent_txn_id'] : '') . "\n" . ' Trans ID:' . $_POST['txn_id'] . "\n" . ' Amount: ' . $_POST['mc_gross'] . ' ' . $_POST['mc_currency'];
+    zen_update_orders_history($ordersID, $comments, null, $new_status, 0);
+
     ipn_debug_email('IPN NOTICE :: Update complete.');
 
 /**
  * Activate any downloads associated with an order which has now been cleared
  */
     if ($txn_type=='echeck-cleared' || $txn_type == 'express-checkout-cleared' || substr($txn_type,0,8) == 'cleared-') {
-      $check_status = $db->Execute("select date_purchased from " . TABLE_ORDERS . " where orders_id = '" . (int)$ordersID . "'");
+      $check_status = $db->Execute("SELECT date_purchased FROM " . TABLE_ORDERS . " WHERE orders_id = '" . (int)$ordersID . "'");
       $zc_max_days = zen_date_diff($check_status->fields['date_purchased'], date('Y-m-d H:i:s', time())) + (int)DOWNLOAD_MAX_DAYS;
       ipn_debug_email('IPN NOTICE :: Updating order #' . (int)$ordersID . ' downloads (if any).  New max days: ' . (int)$zc_max_days . ', New count: ' . (int)DOWNLOAD_MAX_COUNT);
-      $update_downloads_query = "update " . TABLE_ORDERS_PRODUCTS_DOWNLOAD . " set download_maxdays='" . (int)$zc_max_days . "', download_count='" . (int)DOWNLOAD_MAX_COUNT . "' where orders_id='" . (int)$ordersID . "'";
+      $update_downloads_query = "UPDATE " . TABLE_ORDERS_PRODUCTS_DOWNLOAD . " SET download_maxdays='" . (int)$zc_max_days . "', download_count='" . (int)DOWNLOAD_MAX_COUNT . "' WHERE orders_id='" . (int)$ordersID . "'";
       $db->Execute($update_downloads_query);
     }
   }
@@ -960,21 +955,21 @@
     if (isset($optionsST['tax_cart']) && $optionsST['tax_cart'] == 0) unset($optionsST['tax_cart']);
     if (isset($optionsST['shipping']) && $optionsST['shipping'] == 0) unset($optionsST['shipping']);
 
-    // tidy up all values so that they comply with proper format (number_format(xxxx,2) for PayPal US use )
+    // tidy up all values so that they comply with proper format (rounded to 2 decimals for PayPal US use )
     if (!defined('PAYPALWPP_SKIP_LINE_ITEM_DETAIL_FORMATTING') || PAYPALWPP_SKIP_LINE_ITEM_DETAIL_FORMATTING != 'true' || in_array($order->info['currency'], array('JPY', 'NOK', 'HUF', 'TWD'))) {
       if (is_array($optionsST)) foreach ($optionsST as $key=>$value) {
-        $optionsST[$key] = number_format($value, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2));
+        $optionsST[$key] = round($value, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2));
       }
       if (is_array($optionsLI)) foreach ($optionsLI as $key=>$value) {
         if (substr($key, 0, 8) == 'tax_' && ($optionsLI[$key] == '' || $optionsLI[$key] == 0)) {
           unset($optionsLI[$key]);
         } else {
-          if (strstr($key, 'amount')) $optionsLI[$key] = number_format($value, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2));
+          if (strstr($key, 'amount')) $optionsLI[$key] = round($value, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2));
         }
       }
     }
 
-    ipn_logging('getLineItemDetails 8', 'checking subtotals... ' . "\n" . print_r(array_merge(array('calculated total'=>number_format($stAll, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2))), $optionsST), true) . "\n-------------------\ndifference: " . ($stDiff + 0) . '  (abs+rounded: ' . ($stDiffRounded + 0) . ')');
+    ipn_logging('getLineItemDetails 8', 'checking subtotals... ' . "\n" . print_r(array_merge(array('calculated total'=>round($stAll, ((int)$currencies->get_decimal_places($restrictedCurrency) == 0 ? 0 : 2))), $optionsST), true) . "\n-------------------\ndifference: " . ($stDiff + 0) . '  (abs+rounded: ' . ($stDiffRounded + 0) . ')');
 
     if ( $stDiffRounded != 0) {
       ipn_logging('getLineItemDetails 9', 'Subtotals Bad. Skipping line-item/subtotal details');
@@ -1006,13 +1001,3 @@
     return $logfilename;
   }
 
-if (!function_exists('curl_setopt_array')) {
-  function curl_setopt_array(&$ch, $curl_options) {
-    foreach ($curl_options as $option => $value) {
-      if (!curl_setopt($ch, $option, $value)) {
-        return FALSE;
-      }
-    }
-    return TRUE;
-  }
-}

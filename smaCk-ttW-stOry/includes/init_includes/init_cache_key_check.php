@@ -1,9 +1,8 @@
 <?php
 /**
- * @package admin
- * @copyright Copyright 2003-2014 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version GIT: $Id: Author: DrByte  Jul 7 2014 Modified in v1.5.4 $
+ * @version $Id: Scott C Wilson 2020 Apr 12 Modified in v1.5.7 $
  */
 /**
  * System check for valid SESSION_WRITE_DIRECTORY value
@@ -16,6 +15,7 @@ if (!file_exists(SESSION_WRITE_DIRECTORY) || !is_writable(SESSION_WRITE_DIRECTOR
   zen_record_admin_activity('Session directory folder not found. Will attempt to re-detect and update configuration. Old value: ' . SESSION_WRITE_DIRECTORY, 'notice');
   define('DIR_FS_ROOT', realpath(dirname($_SERVER['SCRIPT_FILENAME']) . '/../') . '/');
 
+  $possible_dir = array();
   $possible_dir[] = DIR_FS_SQL_CACHE;
   $possible_dir[] = DIR_FS_CATALOG . 'cache';
   $possible_dir[] = DIR_FS_ROOT . 'cache';
@@ -35,7 +35,14 @@ if (!file_exists(SESSION_WRITE_DIRECTORY) || !is_writable(SESSION_WRITE_DIRECTOR
   }
   if ($selected_dir == '') $selected_dir = DIR_FS_CATALOG . 'cache';
 
-  $sql = "update " . TABLE_CONFIGURATION . " set configuration_value = '" . $db->prepare_input(trim($selected_dir)) . "' where configuration_key = 'SESSION_WRITE_DIRECTORY'";
+  $sql = "SELECT configuration_key FROM " . TABLE_CONFIGURATION . "  WHERE configuration_key = 'SESSION_WRITE_DIRECTORY'";
+  $conf_count = $db->Execute($sql);
+
+  if (empty($conf_count->RecordCount())) {
+    $sql = "INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Session Directory', 'SESSION_WRITE_DIRECTORY', '/tmp', 'This should point to the folder specified in your DIR_FS_SQL_CACHE setting in your configure.php files.', '15', '1', now())";
+    $db->Execute($sql);
+  }
+  $sql = "UPDATE " . TABLE_CONFIGURATION . " SET configuration_value = '" . $db->prepare_input(trim($selected_dir)) . "' WHERE configuration_key = 'SESSION_WRITE_DIRECTORY'";
   $db->Execute($sql);
   zen_record_admin_activity('Updated SESSION_WRITE_DIRECTORY configuration setting to ' . $selected_dir, 'notice');
 

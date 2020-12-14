@@ -2,16 +2,15 @@
 /**
  * Header code file for the Account Notifications page
  *
- * @package page
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: header_php.php 3007 2006-02-11 09:17:12Z drbyte $
+ * @version $Id: DrByte 2020 Aug 08 Modified in v1.5.7a $
  */
 // This should be first line of the script:
 $zco_notifier->notify('NOTIFY_HEADER_START_ACCOUNT_NOTIFICATION');
 
-if (!$_SESSION['customer_id']) {
+if (!zen_is_logged_in()) {
   $_SESSION['navigation']->set_snapshot();
   zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
 }
@@ -24,6 +23,8 @@ $global_query = "SELECT global_product_notifications
 
 $global_query = $db->bindVars($global_query, ':customersID',$_SESSION['customer_id'], 'integer');
 $global = $db->Execute($global_query);
+//$flag_global_notifications = $global->fields['global_product_notifications'];
+$flag_global_notifications = 0; // @TODO - fix template layout, and then use the flag value from db, above.
 
 if (isset($_POST['action']) && ($_POST['action'] == 'process')) {
   if (isset($_POST['product_global']) && is_numeric($_POST['product_global'])) {
@@ -45,7 +46,7 @@ if (isset($_POST['action']) && ($_POST['action'] == 'process')) {
     $sql = $db->bindVars($sql, ':customersID',$_SESSION['customer_id'], 'integer');
     $db->Execute($sql);
 
-  } elseif (sizeof($products) > 0) {
+  } elseif (!empty($products)) {
     $products_parsed = array();
 
     foreach ($products as $parse_entry) {

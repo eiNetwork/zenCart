@@ -1,10 +1,9 @@
 <?php
 /**
- * @package languageDefines
- * @copyright Copyright 2003-2008 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: address_book_process.php 9647 2008-09-17 00:10:08Z drbyte $
+ * @version $Id: Scott C Wilson 2020 Apr 12 Modified in v1.5.7 $
  */
 
 define('NAVBAR_TITLE_1', 'My Account');
@@ -19,12 +18,8 @@ define('HEADING_TITLE_MODIFY_ENTRY', 'Update Address Book Entry');
 define('HEADING_TITLE_DELETE_ENTRY', 'Delete Address Book Entry');
 define('HEADING_TITLE', 'Address Details');
 
-define('DELETE_ADDRESS_TITLE', 'Delete Address');
 define('DELETE_ADDRESS_DESCRIPTION', 'Are you sure you would like to delete the selected address from your address book?');
 
-define('NEW_ADDRESS_TITLE', 'New Address Book Entry');
-
-define('SELECTED_ADDRESS', 'Selected Address');
 define('SET_AS_PRIMARY', 'Set as primary address.');
 
 define('SUCCESS_ADDRESS_BOOK_ENTRY_DELETED', 'The selected address has been successfully removed from your address book.');

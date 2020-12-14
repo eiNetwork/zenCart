@@ -5,11 +5,10 @@
  * Loaded automatically by index.php?main_page=checkout_success.<br />
  * Displays confirmation details after order has been successfully processed.
  *
- * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Mon Mar 23 13:48:06 2015 -0400 Modified in v1.5.5 $
+ * @version $Id: torvista 2019 Oct 25 Modified in v1.5.7 $
  */
 ?>
 <div class="centerColumn" id="checkoutSuccess">
@@ -49,7 +48,7 @@ if (isset($additional_payment_messages) && $additional_payment_messages != '') {
 }
 ?>
 <!-- eof payment-method-alerts -->
-<!--bof logoff-->
+
 <div id="checkoutSuccessLogoff">
 <?php
   if (isset($_SESSION['customer_guest_id'])) {
@@ -58,13 +57,16 @@ if (isset($additional_payment_messages) && $additional_payment_messages != '') {
     echo TEXT_CHECKOUT_LOGOFF_CUSTOMER;
   }
 ?>
-<div class="buttonRow forward"><a href="<?php echo zen_href_link(FILENAME_LOGOFF, '', 'SSL'); ?>"><?php echo zen_image_button(BUTTON_IMAGE_LOG_OFF , BUTTON_LOG_OFF_ALT); ?></a></div>
 </div>
-<!--eof logoff-->
-
-<div id="checkoutSuccessOrderLink"><?php echo TEXT_SEE_ORDERS;?></div>
+<div class="buttonRow forward">
+    <a href="<?php echo zen_href_link(FILENAME_CONTACT_US, '', 'SSL'); ?>" id="linkContactUs"><?php echo zen_image_button(BUTTON_IMAGE_CONTACT_US , BUTTON_CONTACT_US_TEXT); ?></a>
+    <a href="<?php echo zen_href_link(FILENAME_ACCOUNT, '', 'SSL'); ?>" id="linkMyAccount"><?php echo zen_image_button(BUTTON_IMAGE_MY_ORDERS , BUTTON_MY_ORDERS_TEXT); ?></a>
+    <a href="<?php echo zen_href_link(FILENAME_LOGOFF, '', 'SSL'); ?>" id="linkLogoff"><?php echo zen_image_button(BUTTON_IMAGE_LOG_OFF , BUTTON_LOG_OFF_ALT); ?></a>
+</div>
 
 <div id="checkoutSuccessContactLink"><?php echo TEXT_CONTACT_STORE_OWNER;?></div>
+
+<br class="clearBoth" />
 
 <!-- bof order details -->
 <?php
@@ -91,7 +93,7 @@ require($template->get_template_dir('tpl_account_history_info_default.php',DIR_W
 <br />
 <?php } ?>
 <div class="buttonRow forward"><?php echo zen_image_submit(BUTTON_IMAGE_UPDATE, BUTTON_UPDATE_ALT); ?></div>
-</form>
+<?php echo '</form>'; ?>
 </fieldset>
 <?php
     }

@@ -6,10 +6,10 @@
  * Displays final checkout details, cart, payment and shipping info details.
  *
  * @package templateSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2019 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: picaflor-azul Fri Jan 8 02:59:52 2016 -0500 New in v1.5.5 $
+ * @version $Id: DrByte 2019 Jan 04 Modified in v1.5.6a $
  */
 ?>
 <div class="centerColumn" id="checkoutConfirmDefault">
@@ -203,8 +203,23 @@ $(document).ready(function () {
      }
    }
 ?>
+<?php
+// Add shipping-module "extra" variables so they get transported to the checkout_process page.
+if (isset ($_SESSION['shipping']['extras']) && is_array ($_SESSION['shipping']['extras'])) {
+    list ($module, $method) = explode ('_', $_SESSION['shipping']['id']);
+    foreach ($_SESSION['shipping']['extras'] as $varname => $value) {
+        echo zen_draw_hidden_field ($module . '_' . $varname, $value) . PHP_EOL;
+    }
+}
+?>
 <div class="buttonRow forward confirm-order"><?php echo zen_image_submit(BUTTON_IMAGE_CONFIRM_ORDER, BUTTON_CONFIRM_ORDER_ALT, 'name="btn_submit" id="btn_submit"') ;?></div>
 </form>
 <div class="buttonRow back"><?php echo TITLE_CONTINUE_CHECKOUT_PROCEDURE . '<br />' . TEXT_CONTINUE_CHECKOUT_PROCEDURE; ?></div>
 
 </div>
+<script>
+    $(document).ready(function () {
+        // $(window).scrollTop(0);
+        $("html, body").animate({ scrollTop: 0 }, "fast");
+    });
+</script>

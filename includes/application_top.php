@@ -6,12 +6,15 @@
  * the elements to be initialised and the order in which that happens.
  * see {@link  http://www.zen-cart.com/wiki/index.php/Developers_API_Tutorials#InitSystem wikitutorials} for more details.
  *
- * @package initSystem
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: zcwilt  Mon Oct 19 18:21:05 2015 +0100 Modified in v1.5.5 $
+ * @version $Id: mc12345678 2020 Jul 28 Modified in v1.5.7a $
  */
+use Zencart\FileSystem\FileSystem;
+use Zencart\PluginManager\PluginManager;
+use Zencart\InitSystem\InitSystem;
+use Zencart\LanguageLoader\CatalogLanguageLoader;
 /**
  * inoculate against hack attempts which waste CPU cycles
  */
@@ -59,9 +62,18 @@ define('IS_ADMIN_FLAG', false);
  * integer saves the time at which the script started.
  */
 define('PAGE_PARSE_START_TIME', microtime());
-//  define('DISPLAY_PAGE_PARSE_TIME', 'true');
 @ini_set("arg_separator.output","&");
 @ini_set("html_errors","0");
+/**
+ * Ensure minimum PHP version.
+ * This is intended to run before any dependencies like short-array-syntax are loaded, in order to avoid unfriendly fatal errors caused by such incompatibility.
+ * This version of Zen Cart actually requires newer than PHP 5.4, but we are only enforcing 5.4 here at this stage for the sake of this syntax matter.
+ * See https://www.zen-cart.com/requirements or run zc_install to see actual requirements!
+ */
+if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50400) {
+    require 'includes/templates/template_default/templates/tpl_zc_phpupgrade_default.php';
+    exit(0);
+}
 /**
  * Set the local configuration parameters - mainly for developers
  */
@@ -81,24 +93,16 @@ define('DEBUG_AUTOLOAD', false);
  * Note STRICT_ERROR_REPORTING should never be set to true on a production site. <br />
  * It is mainly there to show php warnings during testing/bug fixing phases.<br />
  */
-if (defined('STRICT_ERROR_REPORTING') && STRICT_ERROR_REPORTING == true) {
+if (DEBUG_AUTOLOAD || (defined('STRICT_ERROR_REPORTING') && STRICT_ERROR_REPORTING == true)) {
   @ini_set('display_errors', TRUE);
-  error_reporting(version_compare(PHP_VERSION, 5.3, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE : version_compare(PHP_VERSION, 5.4, '>=') ? E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_STRICT : E_ALL & ~E_NOTICE);
+  error_reporting(E_ALL); 
 } else {
   error_reporting(0);
 }
 /*
- * turn off magic-quotes support, for both runtime and sybase, as both will cause problems if enabled
- */
-if (version_compare(PHP_VERSION, 5.3, '<') && function_exists('set_magic_quotes_runtime')) set_magic_quotes_runtime(0);
-if (version_compare(PHP_VERSION, 5.4, '<') && @ini_get('magic_quotes_sybase') != 0) @ini_set('magic_quotes_sybase', 0);
-/*
  * Get time zone info from PHP config
  */
-if (version_compare(PHP_VERSION, 5.3, '>='))
-{
-  @date_default_timezone_set(date_default_timezone_get());
-}
+@date_default_timezone_set(date_default_timezone_get());
 /**
  * check for and include load application parameters
  */
@@ -165,13 +169,58 @@ if (( (!file_exists('includes/configure.php') && !file_exists('includes/local/co
   exit;
 }
 /**
- * load the autoloader interpreter code.
-*/
-require('includes/autoload_func.php');
+ * psr-4 autoloading
+ */
+require DIR_FS_CATALOG . DIR_WS_CLASSES . 'class.base.php';
+require DIR_FS_CATALOG . DIR_WS_CLASSES . 'vendors/AuraAutoload/src/Loader.php';
+$psr4Autoloader = new \Aura\Autoload\Loader;
+$psr4Autoloader->register();
+require('includes/psr4Autoload.php');
+
+require DIR_FS_CATALOG . DIR_WS_CLASSES . 'query_cache.php';
+$queryCache = new QueryCache();
+require DIR_FS_CATALOG . DIR_WS_CLASSES . 'cache.php';
+$zc_cache = new cache();
+
+require 'includes/init_includes/init_file_db_names.php';
+require 'includes/init_includes/init_database.php';
+
+$pluginManager = new PluginManager($db);
+$installedPlugins = $pluginManager->getInstalledPlugins();
+
+$fs = FileSystem::getInstance();
+$fs->loadFilesFromPluginsDirectory($installedPlugins, 'catalog/includes/extra_datafiles', '~^[^\._].*\.php$~i');
+
+foreach ($installedPlugins as $plugin) {
+    $namespaceAdmin = 'Zencart\\Plugins\\Admin\\' . ucfirst($plugin['unique_key']);
+    $namespaceCatalog = 'Zencart\\Plugins\\Catalog\\' . ucfirst($plugin['unique_key']);
+    $filePath = DIR_FS_CATALOG . 'zc_plugins/' . $plugin['unique_key'] . '/' . $plugin['version'] . '/';
+    $filePathAdmin = $filePath . 'classes/admin';
+    $filePathCatalog = $filePath . 'classes/';
+    $psr4Autoloader->addPrefix($namespaceAdmin, $filePathAdmin);
+    $psr4Autoloader->addPrefix($namespaceCatalog, $filePathCatalog);
+}
+
+$autoLoadConfig = array();
+if (isset($loaderPrefix)) {
+    $loaderPrefix = preg_replace('/[^a-z_]/', '', $loaderPrefix);
+} else {
+    $loaderPrefix = 'config';
+}
+$loader_file = $loaderPrefix . '.core.php';
+$initSystem = new InitSystem('catalog', $loaderPrefix, FileSystem::getInstance(), $pluginManager, $installedPlugins);
+
+if (defined('DEBUG_AUTOLOAD') && DEBUG_AUTOLOAD == true) $initSystem->setDebug(true);
+
+$loaderList = $initSystem->loadAutoLoaders();
+
+$initSystemList = $initSystem->processLoaderList($loaderList);
+
+require(DIR_FS_CATALOG . 'includes/autoload_func.php');
 /**
  * load the counter code
 **/
-if ($spider_flag == false) {
+if (empty($spider_flag)) {
 // counter and counter history
   require(DIR_WS_INCLUDES . 'counter.php');
 }

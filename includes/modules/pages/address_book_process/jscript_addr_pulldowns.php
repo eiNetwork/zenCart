@@ -4,14 +4,13 @@
  *
  * handles pulldown menu dependencies for state/country selection
  *
- * @package page
- * @copyright Copyright 2003-2016 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: Author: DrByte  Wed Jan 6 12:47:43 2016 -0500 Modified in v1.5.5 $
+ * @version $Id: Zen4All 2019 Jun 03 Modified in v1.5.7 $
  */
 ?>
-<script type="text/javascript"><!--
+<script type="text/javascript">
 
 function update_zone(theForm) {
   // if there is no zone_id field to update, or if it is hidden from display, then exit performing no updates
@@ -42,8 +41,11 @@ function update_zone(theForm) {
     theForm.state.setAttribute('className', 'hiddenField');
     document.getElementById("stateLabel").className = 'hiddenField';
     document.getElementById("stateLabel").setAttribute('className', 'hiddenField');
-    document.getElementById("stText").className = 'hiddenField';
-    document.getElementById("stText").setAttribute('className', 'hiddenField');
+
+    if (document.getElementById("stText")) {
+      document.getElementById("stText").className = 'hiddenField';
+      document.getElementById("stText").setAttribute('className', 'hiddenField');
+    }
     document.getElementById("stBreak").className = 'hiddenField';
     document.getElementById("stBreak").setAttribute('className', 'hiddenField');
   }
@@ -59,4 +61,4 @@ function update_zone(theForm) {
     document.getElementById("stBreak").className = 'clearBoth visibleField';
     document.getElementById("stBreak").setAttribute('className', 'clearBoth visibleField');
   }
-//--></script>
+</script>

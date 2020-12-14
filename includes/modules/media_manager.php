@@ -2,10 +2,9 @@
 /**
  * iterates thru media collections/clips
  *
- * @package productTypes
- * @copyright Copyright 2003-2009 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: media_manager.php 11825 2009-01-15 09:46:19Z drbyte $
+ * @version $Id: DrByte 2020 Nov 20 Modified in v1.5.7b $
  */
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
@@ -17,6 +16,7 @@ if (!defined('IS_ADMIN_FLAG')) {
 $zv_collection_query = "select media_id, product_id from " . TABLE_MEDIA_TO_PRODUCTS . "
                         where product_id = '" . (int)$_GET['products_id'] . "'";
 $zq_collections = $db->Execute($zv_collection_query);
+$za_media_manager = array();
 $zv_product_has_media = false;
 /**
  * loop thru collections to identify actual media clips
@@ -66,4 +66,4 @@ if ($zq_collections->RecordCount() > 0) {
     $zq_collections->MoveNext();
   }
 }
-$zv_product_has_media = (sizeof($za_media_manager)) > 0 ? TRUE : FALSE;
+$zv_product_has_media = (count($za_media_manager) > 0);

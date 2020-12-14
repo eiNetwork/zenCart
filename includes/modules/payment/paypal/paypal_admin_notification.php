@@ -2,12 +2,11 @@
 /**
  * admin subtemplate for Paypal Website Payments Standard payment method
  *
- * @package paymentMethod
- * @copyright Copyright 2003-2010 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @copyright Portions Copyright 2004 DevosC.com
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: paypal_admin_notification.php 15560 2010-02-22 07:50:28Z drbyte $
+ * @version $Id: DrByte 2020 May 16 Modified in v1.5.7 $
  */
 
 // strip slashes in case they were added to handle apostrophes:
@@ -16,8 +15,8 @@
   }
 
 // display all paypal status fields (in admin Orders page):
-          $output = '<td><table>'."\n";
-          $output .= '<tr style="background-color : #cccccc; border-style : dotted;">'."\n";
+          $output = '<table>'."\n";
+          $output .= '<tr style="background-color : #cccccc; border: 1px solid black;">'."\n";
 
           $output .= '<td valign="top"><table>'."\n";
 
@@ -108,7 +107,7 @@
           $output .= '<tr><td class="main">'."\n";
           $output .= MODULE_PAYMENT_PAYPAL_ENTRY_TXN_ID."\n";
           $output .= '</td><td class="main">'."\n";
-          $output .= '<a href="https://www.paypal.com/us/cgi-bin/webscr?cmd=_view-a-trans&id=' . $ipn->fields['txn_id'] . '" target="_blank">' . $ipn->fields['txn_id'] . '</a>' ."\n";
+          $output .= '<a href="https://www.paypal.com/us/cgi-bin/webscr?cmd=_view-a-trans&id=' . $ipn->fields['txn_id'] . '" rel="noopener" target="_blank">' . $ipn->fields['txn_id'] . '</a>' ."\n";
           $output .= '</td></tr>'."\n";
 
           $output .= '<tr><td class="main">'."\n";
@@ -199,4 +198,4 @@
           $output .= '</table></td>'."\n";
         }
           $output .= '</tr>'."\n";
-          $output .='</table></td>'."\n";
+          $output .='</table>'."\n";

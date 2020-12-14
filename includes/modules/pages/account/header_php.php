@@ -2,18 +2,17 @@
 /**
  * Header code file for the customer's Account page
  *
- * @package page
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2020 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: header_php.php 4824 2006-10-23 21:01:28Z drbyte $
+ * @version $Id: DrByte 2019 Sep 06 Modified in v1.5.7 $
  */
 // This should be first line of the script:
 $zco_notifier->notify('NOTIFY_HEADER_START_ACCOUNT');
 $customer_has_gv_balance = false;
 $customer_gv_balance = false;
 
-if (!$_SESSION['customer_id']) {
+if (!zen_is_logged_in()) {
   $_SESSION['navigation']->set_snapshot();
   zen_redirect(zen_href_link(FILENAME_LOGIN, '', 'SSL'));
 }
@@ -39,7 +38,9 @@ $orders_query = "SELECT o.orders_id, o.date_purchased, o.delivery_name,
                  WHERE  o.customers_id = :customersID
                  AND    o.orders_id = ot.orders_id
                  AND    ot.class = 'ot_total'
-                 AND    o.orders_status = s.orders_status_id
+                 AND    s.orders_status_id = 
+                          (SELECT orders_status_id FROM " . TABLE_ORDERS_STATUS_HISTORY . " osh 
+                           WHERE osh.orders_id = o.orders_id AND osh.customer_notified >= 0 ORDER BY osh.date_added DESC LIMIT 1)
                  AND   s.language_id = :languagesID
                  ORDER BY orders_id DESC LIMIT 3";
 
