@@ -23,9 +23,74 @@
 
     function process() {
       global $order, $currencies;
-      $this->output[] = array('title' => $this->title . ':',
-                              'text' => $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']),
-                              'value' => $order->info['total']);
+      if( $order->products[0]['payment_plan'] ) {
+        $title = "";
+        $text = "";
+        $lines = explode("<br />", $order->products[0]['payment_plan']);
+        foreach( $lines as $thisLine ) {
+            $tokens = explode("[[[", $thisLine);
+            foreach( $tokens as $thisToken ) {
+                $tokenSplit = explode("]]]", $thisToken);
+                if( count($tokenSplit) > 1 ) {
+                  if( is_numeric($tokenSplit[0]) ) {
+                    $text .= $currencies->format($order->info['total'] * $tokenSplit[0], true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "p" ) {
+                    $thisVal = $order->info['total'];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "el" ) {
+                    $thisVal = $order->info['erate_eligible'];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "er" ) {
+                    $thisVal = $order->info['erate_eligible'] * $_SESSION["selected_erate_discount"];
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "ap" ) {
+                    $thisVal = $order->info['total'] - ($order->info['erate_eligible'] * $_SESSION["selected_erate_discount"]);
+                    $text .= $currencies->format($thisVal, true, $order->info['currency'], $order->info['currency_value']);
+                    $title .= $tokenSplit[1];
+                  } else if( $tokenSplit[0] == "r" ) {
+                    $title .= (100 * $_SESSION["selected_erate_discount"]) . "%" . $tokenSplit[1];
+                  } else {
+                    $text .= $tokenSplit[0];
+                    $title .= $tokenSplit[1];
+                  }
+                } else {
+                  $title .= $tokenSplit[0];
+                }
+            }
+            $title .= "<br />";
+            $text .= "<br />";
+        }
+        if( count($lines) > 1 ) {
+            $title = substr($title, 0, -6);
+            $text = substr($text, 0, -6);
+        }
+
+        $this->output[] = array('title' => $title,
+                                'text' => $text,
+                                'RTItitle' => '',
+                                'RTItext' => '',
+                                'value' => $order->info['total']);
+      } else if( $order->info['shipping_cost'] || $order->info['RTI'] ) {
+        $this->output[] = array('title' => 'Sub-Total:<br />Shipping & Handling:<br />' . $this->title . ':',
+                                'text' => $currencies->format($order->info['total'] - $order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['shipping_cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']) . "<br />",
+                                'RTItitle' => 'Sub-Total:<br />RTI Imaging Services:<br />' . $this->title . ':',
+                                'RTItext' => $currencies->format($order->info['cost'] - $order->info['RTI'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['RTI'], true, $order->info['currency'], $order->info['currency_value']) . "<br />" . 
+                                          $currencies->format($order->info['cost'], true, $order->info['currency'], $order->info['currency_value']) . "<br />",
+                                'value' => $order->info['total']);
+      } else {
+        $this->output[] = array('title' => $this->title . ':',
+                                'text' => $currencies->format($order->info['total'], true, $order->info['currency'], $order->info['currency_value']),
+                                'RTItitle' => '',
+                                'RTItext' => '',
+                                'value' => $order->info['total']);
+      }
     }
 
     function check() {

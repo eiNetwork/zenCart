@@ -16,7 +16,7 @@
 
 // look in your $PATH_LOCALE/locale directory for available locales..
   $locales = ['en_US', 'en_US.utf8', 'en', 'English_United States.1252'];
-  @setlocale(LC_TIME, $locales);
+  @setlocale(LC_TIME, 'en_US.ISO_8859-1');
   define('DATE_FORMAT_LONG', '%A %d %B, %Y'); // this is used for strftime()
   define('DATE_FORMAT', 'm/d/Y'); // this is used for date()
 
@@ -41,7 +41,7 @@
   define('HTML_PARAMS','dir="ltr" lang="en"');
 
 // charset for web pages and emails
-  define('CHARSET', 'utf-8');
+  define('CHARSET', 'iso-8859-1'');
 
 // Define the name of your Gift Certificate as Gift Voucher, Gift Certificate, Zen Cart Dollars, etc. here for use through out the shop
   define('TEXT_GV_NAME','Gift Certificate');
@@ -92,7 +92,7 @@
   define('BOX_REVIEWS_TEXT_OF_5_STARS', '%s of 5 Stars!');
 
 // shopping_cart box text in sideboxes/shopping_cart.php
-  define('BOX_HEADING_SHOPPING_CART', 'Shopping Cart');
+  define('BOX_HEADING_SHOPPING_CART', 'Shopping cart');
   define('BOX_SHOPPING_CART_EMPTY', 'Your cart is empty.');
   define('BOX_SHOPPING_CART_DIVIDER', 'ea.-&nbsp;');
 
@@ -548,7 +548,12 @@ define('ARIA_PAGINATION_','');
 
 // table headings for cart display and upcoming products
   define('TABLE_HEADING_QUANTITY', 'Qty.');
-  define('TABLE_HEADING_PRODUCTS', 'Item Name');
+  define('TABLE_HEADING_TERMS', 'Terms - click to view');
+  define('TABLE_HEADING_NUMPAY','Number of Payments');
+  define('TABLE_HEADING_PAYFREQ','Billing Frequency');
+  define('TABLE_HEADING_QUANTITY', 'Quantity');
+  define('REFRESH', 'Refresh');
+  define('DELETE', 'Delete');  define('TABLE_HEADING_PRODUCTS', 'Item Name');
   define('TABLE_HEADING_TOTAL', 'Total');
 
 // create account - login shared

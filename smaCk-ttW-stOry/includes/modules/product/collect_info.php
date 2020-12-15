@@ -10,13 +10,18 @@ if (!defined('IS_ADMIN_FLAG')) {
 }
 $parameters = [
   'products_name' => '',
+  'products_type' => '',
   'products_description' => '',
   'products_url' => '',
   'products_id' => '',
   'products_quantity' => '0',
   'products_model' => '',
+  'mfg_part_number' => '',
+  'quote_number' => '',
   'products_image' => '',
   'products_price' => '0.0000',
+  'products_cost' => '0.0000',
+  'products_erate_eligible' => '0.0000',
   'products_virtual' => DEFAULT_PRODUCT_PRODUCTS_VIRTUAL,
   'products_weight' => '0',
   'products_date_added' => '',
@@ -86,6 +91,22 @@ foreach ($manufacturers as $manufacturer) {
   $manufacturers_array[] = [
     'id' => $manufacturer['manufacturers_id'],
     'text' => $manufacturer['manufacturers_name']
+  ];
+}
+
+$product_types_array = [
+    [
+    'id' => '',
+    'text' => TEXT_NONE
+    ]
+];
+$product_types = $db->Execute("SELECT type_id, type_name
+                               FROM " . TABLE_PRODUCT_TYPES . "
+                               ORDER BY type_name");
+foreach ($productTypes as $productType) {
+  $product_types_array[] = [
+    'id' => $productType['type_id'],
+    'text' => $productType['type_name']
   ];
 }
 
@@ -189,6 +210,12 @@ if (zen_get_categories_status($current_category_id) == 0 && $pInfo->products_sta
       ?>
     </div>
   </div>
+  <div class="form-group">
+      <?php echo zen_draw_label(TEXT_PRODUCT_TYPE_NAME, 'products_type', 'class="col-sm-3 control-label"'); ?>
+    <div class="col-sm-9 col-md-6">
+        <?php echo zen_draw_pull_down_menu('products_type', $product_types_array, $pInfo->products_type, 'class="form-control" id="products_type"'); ?>
+    </div>
+  </div>
 <?php
     // -----
     // Give an observer the chance to supply some additional product-related inputs.  Each
@@ -262,6 +289,18 @@ if (zen_get_categories_status($current_category_id) == 0 && $pInfo->products_sta
         <?php echo zen_draw_label(TEXT_PRODUCTS_PRICE_GROSS, 'products_price_gross', 'class="col-sm-3 control-label"'); ?>
       <div class="col-sm-9 col-md-6">
           <?php echo zen_draw_input_field('products_price_gross', $pInfo->products_price, 'onkeyup="updateNet()" class="form-control" id="products_price_gross"'); ?>
+      </div>
+    </div>
+    <div class="form-group">
+        <?php echo zen_draw_label(TEXT_PRODUCTS_COST, 'products_cost', 'class="col-sm-3 control-label"'); ?>
+      <div class="col-sm-9 col-md-6">
+          <?php echo zen_draw_input_field('products_cost', $pInfo->products_cost, ' class="form-control" id="products_cost"'); ?>
+      </div>
+    </div>
+    <div class="form-group">
+        <?php echo zen_draw_label(TEXT_PRODUCTS_ERATE, 'products_erate_eligible', 'class="col-sm-3 control-label"'); ?>
+      <div class="col-sm-9 col-md-6">
+          <?php echo zen_draw_input_field('products_erate_eligible', $pInfo->products_erate_eligible, 'onkeyup="class="form-control" id="products_erate_eligible"'); ?>
       </div>
     </div>
   </div>
@@ -346,6 +385,18 @@ if (zen_get_categories_status($current_category_id) == 0 && $pInfo->products_sta
       <?php echo zen_draw_label(TEXT_PRODUCTS_MODEL, 'products_model', 'class="col-sm-3 control-label"'); ?>
     <div class="col-sm-9 col-md-6">
         <?php echo zen_draw_input_field('products_model', htmlspecialchars(stripslashes($pInfo->products_model), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'products_model') . ' class="form-control" id="products_model"'); ?>
+    </div>
+  </div>
+  <div class="form-group">
+      <?php echo zen_draw_label(TEXT_PRODUCTS_PART_NUMBER, 'mfg_part_number', 'class="col-sm-3 control-label"'); ?>
+    <div class="col-sm-9 col-md-6">
+        <?php echo zen_draw_input_field('mfg_part_number', htmlspecialchars(stripslashes($pInfo->mfg_part_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'mfg_part_number') . ' class="form-control" id="mfg_part_number"'); ?>
+    </div>
+  </div>
+  <div class="form-group">
+      <?php echo zen_draw_label(TEXT_PRODUCTS_QUOTE_NUMBER, 'quote_number', 'class="col-sm-3 control-label"'); ?>
+    <div class="col-sm-9 col-md-6">
+        <?php echo zen_draw_input_field('quote_number', htmlspecialchars(stripslashes($pInfo->quote_number), ENT_COMPAT, CHARSET, TRUE), zen_set_field_length(TABLE_PRODUCTS, 'quote_number') . ' class="form-control" id="quote_number"'); ?>
     </div>
   </div>
     <hr>

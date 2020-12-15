@@ -165,6 +165,11 @@ define('BOX_REPORTS_PRODUCTS_PURCHASED', 'Products Purchased');
 define('BOX_REPORTS_ORDERS_TOTAL', 'Customer Orders-Total');
 define('BOX_REPORTS_PRODUCTS_LOWSTOCK', 'Products Low Stock');
 define('BOX_REPORTS_CUSTOMERS_REFERRALS', 'Customers Referral');
+define('BOX_REPORTS_VENDOR_ORDER', 'Vendor Order');
+define('BOX_REPORTS_INSTALL_PLANNING', 'Install Planning');
+define('BOX_REPORTS_LIBRARY_SYSTEM', 'Library System');
+define('BOX_REPORTS_PENDING_ORDERS', 'Pending Orders');
+define('BOX_REPORTS_TEST', 'Test');
 
 // tools text
 define('BOX_HEADING_TOOLS', 'Tools');
@@ -300,6 +305,7 @@ define('IMAGE_NEW_CURRENCY', 'New Currency');
 define('IMAGE_NEW_LANGUAGE', 'New Language');
 define('IMAGE_NEW_NEWSLETTER', 'New Newsletter');
 define('IMAGE_NEW_PRODUCT', 'New Product');
+define('IMAGE_NEW_PRODUCT_TYPE', 'New Product Type');
 define('IMAGE_NEW_SALE', 'New Sale');
 define('IMAGE_NEW_TAX_CLASS', 'New Tax Class');
 define('IMAGE_NEW_TAX_RATE', 'New Tax Rate');

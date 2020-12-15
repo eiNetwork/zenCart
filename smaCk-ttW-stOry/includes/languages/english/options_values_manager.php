@@ -14,6 +14,7 @@ define('TABLE_HEADING_ID', 'ID');
 define('TABLE_HEADING_PRODUCT', 'Product Name');
 define('TABLE_HEADING_OPT_NAME', 'Option Name');
 define('TABLE_HEADING_OPT_VALUE', 'Option Value');
+define('TABLE_HEADING_OPT_PART_NUMBER', 'Part Number');
 define('TABLE_HEADING_OPT_PRICE', 'Price');
 define('TABLE_HEADING_OPT_PRICE_PREFIX', 'Prefix');
 define('TABLE_HEADING_ACTION', 'Action');

@@ -23,7 +23,11 @@
 
 class zen_categories_ul_generator {
     var $root_category_id = 0,
-    $max_level = 0,
+    $max_level = 6,
+    $root_start_string = '',
+    $root_end_string = '',
+    $parent_start_string = '',
+    $parent_end_string = '',
     $data = array(),
     $parent_group_start_string = '<ul%s>',
     $parent_group_end_string = '</ul>',
@@ -53,10 +57,12 @@ class zen_categories_ul_generator {
         }
     }
     
-    function buildBranch($parent_id, $level = 0, $submenu=true, $parent_link='')
+    function buildBranch($parent_id, $level = 1, $submenu=true, $parent_link='')
     {
         $level = (int)$level;
-        $result = sprintf($this->parent_group_start_string, ($submenu==true) ? ' class="level'. ($level+1) . '"' : '' );
+        if ($parent_id != '0') {
+            $result = sprintf($this->parent_group_start_string, ($submenu==true) ? ' class="level'. ($level) . '"' : '' );
+        }
         
         if (($this->data[$parent_id])) {
             foreach($this->data[$parent_id] as $category_id => $category) {
@@ -64,11 +70,26 @@ class zen_categories_ul_generator {
                 if (isset($this->data[$category_id])) {
                     $result .= sprintf($this->child_start_string, ($submenu==true) ? ' class="submenu"' : '');
                 } else {
-                    $result .= sprintf($this->child_start_string, '');
+                    if (($this->data[$category_id]) && ($submenu==false)) {
+                        $result .= sprintf($this->parent_group_start_string, ($submenu==true) ? ' class="level'. ($level+1) . '"' : '');
+                        $result .= sprintf($this->child_start_string, ($submenu==true) ? ' class="submenu"' : '');
+                    } else {
+                        $result .= sprintf($this->child_start_string, '');
+                    }
+                }
+                if ($level == 0) {
+                    $result .= $this->root_start_string;
                 }
                 $result .= str_repeat($this->spacer_string, $this->spacer_multiplier * 1) . '<a href="' . zen_href_link(FILENAME_DEFAULT, 'cPath=' . $category_link) . '">';
                 $result .= $category['name'];
                 $result .= '</a>';
+
+                if ($level == 0) {
+                    $result .= $this->root_end_string;
+                }
+                if (($this->data[$category_id])) {
+                    $result .= $this->parent_end_string;
+                }
 
                 if (isset($this->data[$category_id]) && (($this->max_level == '0') || ($this->max_level > $level+1))) {
                     $result .= $this->buildBranch($category_id, $level+1, $submenu, $category_link . '_');

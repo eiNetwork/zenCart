@@ -15,22 +15,22 @@ $EMAIL_COMMON_CSS
 
   <!-- Header Section -->
   <div class="header">
-    <img src="$EMAIL_LOGO_FILE" alt="$EMAIL_LOGO_ALT_TEXT" title="$EMAIL_LOGO_ALT_TEXT" width="$EMAIL_LOGO_WIDTH" height="$EMAIL_LOGO_HEIGHT" border="0" />
     $EXTRA_HEADER_INFO
+    </br>
   </div>
 
 
   <!-- Content Section -->
-  <div class="content">
-    <div>$EMAIL_SALUTATION $EMAIL_CUSTOMERS_NAME,</div>
-    <div>$EMAIL_TEXT_ORDER_NUMBER</div>
+  <div class="content" style="background-color: #ffffff;">
+    <div>Dear $EMAIL_CUSTOMERS_NAME,</div>
+    <div></br>$EMAIL_TEXT_STATUS_UPDATED</div>
+    <div><strong>$EMAIL_TEXT_STATUS_LABEL</strong></div>
+    <div><strong>$EMAIL_TEXT_STATUS_COMMENTS</strong></div>
+    <div></br>$EMAIL_TEXT_ORDER_NUMBER</div>
     <div>$EMAIL_TEXT_INVOICE_URL</div>
-    <div>$EMAIL_TEXT_DATE_ORDERED</div>
-    <div>$EMAIL_TEXT_STATUS_COMMENTS</div>
-    <div>$EMAIL_TEXT_STATUS_UPDATED</div>
-    <div>$EMAIL_TEXT_STATUS_LABEL</div>
-    <div>$EMAIL_TEXT_STATUS_PLEASE_REPLY</div>
-    <div>$EMAIL_STORE_NAME</div>
+    <div>$EMAIL_TEXT_DATE_ORDERED</br></div>
+    <div></br><strong>$EMAIL_TEXT_STATUS_PLEASE_REPLY</strong></div>
+    <div></br>$EMAIL_STORE_NAME</div>
   </div>
 
   <div class="order_message">

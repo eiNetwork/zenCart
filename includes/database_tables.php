@@ -42,6 +42,7 @@ define('TABLE_CURRENCIES', DB_PREFIX . 'currencies');
 define('TABLE_CUSTOMERS', DB_PREFIX . 'customers');
 define('TABLE_CUSTOMERS_BASKET', DB_PREFIX . 'customers_basket');
 define('TABLE_CUSTOMERS_BASKET_ATTRIBUTES', DB_PREFIX . 'customers_basket_attributes');
+define('TABLE_CUSTOMERS_BASKET_NEW', DB_PREFIX . 'customers_basket_new');
 define('TABLE_CUSTOMERS_INFO', DB_PREFIX . 'customers_info');
 define('TABLE_DB_CACHE', DB_PREFIX . 'db_cache');
 define('TABLE_EMAIL_ARCHIVE', DB_PREFIX . 'email_archive');

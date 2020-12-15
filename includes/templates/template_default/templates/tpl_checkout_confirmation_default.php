@@ -106,17 +106,17 @@
 
       <table id="cartContentsDisplay">
         <tr class="cartTableHeading">
-        <th scope="col" id="ccQuantityHeading"><?php echo TABLE_HEADING_QUANTITY; ?></th>
-        <th scope="col" id="ccProductsHeading"><?php echo TABLE_HEADING_PRODUCTS; ?></th>
+        <th scope="col" id="ccQuantityHeading" class="showBorder"><?php echo TABLE_HEADING_QUANTITY; ?></th>
+        <th scope="col" id="ccProductsHeading" class="showBorder"><?php echo TABLE_HEADING_PRODUCTS; ?></th>
 <?php
   // If there are tax groups, display the tax columns for price breakdown
   if (sizeof($order->info['tax_groups']) > 1) {
 ?>
-          <th scope="col" id="ccTaxHeading"><?php echo HEADING_TAX; ?></th>
+          <th scope="col" id="ccTaxHeading" class="showBorder"><?php echo HEADING_TAX; ?></th>
 <?php
   }
 ?>
-          <th scope="col" id="ccTotalHeading"><?php echo TABLE_HEADING_TOTAL; ?></th>
+          <th scope="col" id="ccTotalHeading" class="showBorder"><?php echo TABLE_HEADING_TOTAL; ?></th>
         </tr>
 <?php // now loop thru all products to display quantity and price ?>
 <?php for ($i=0, $n=sizeof($order->products); $i<$n; $i++) { ?>

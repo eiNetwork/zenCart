@@ -27,8 +27,8 @@ a:visited {color:#0066cc;}
 .gv-block { padding: 5px; border: 1px #cccccc solid; background-color: #99FF99; }
 .content-line-title {font-weight:bold; font-size:11px; padding-top:3px;}
 .order-detail-area {background-color:#CCCC99; border:1px #9a9a9a; width:542px; padding:2px; font-size:10px; }
-.product-details {font-size:10px;}
-.product-details-num {font-size:10px; font-weight:bold;}
+.product-details {font-size:10px; border:1px solid #cdcdcd}
+.product-details-num {font-size:10px; font-weight:bold; border:1px solid #cdcdcd;white-space:nowrap;}
 .order-totals-text {font-size:10px; font-weight:bold;}
 .order-totals-num {font-size:10px; }
 .comments {background-color:#FF6699; border:1px #9a9a9a; width:542px; padding:2px; font-size:10px; }

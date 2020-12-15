@@ -24,6 +24,7 @@ $adminSanitizerTypes = array(
     'CONVERT_INT' => array('type' => 'builtin'),
     'FILE_DIR_REGEX' => array('type' => 'builtin'),
     'ALPHANUM_DASH_UNDERSCORE' => array('type' => 'builtin'),
+    'ALPHANUM_DASH_UNDERSCORE_SPACE' => array('type' => 'builtin'),
     'WORDS_AND_SYMBOLS_REGEX' => array('type' => 'builtin'),
     'META_TAGS' => array('type' => 'builtin'),
     'SANITIZE_EMAIL' => array('type' => 'builtin'),
@@ -212,6 +213,12 @@ $group = array(
     'customers_lastname', 'entry_street_address', 'entry_suburb', 'entry_city', 'entry_state', 'customers_referral',
     'symbol_left', 'symbol_right', 'products_model', 'alt_url', 'email_to_name',
 );
+$sanitizer->addSimpleSanitization('ALPHANUM_DASH_UNDERSCORE_SPACE', $group);
+
+$group = array('title', 'coupon_name', 'banners_title', 'coupon_code', 'group_name', 'geo_zone_name', 'geo_zone_description',
+               'tax_class_description', 'tax_class_title', 'tax_description', 'entry_company', 'customers_firstname',
+               'customers_lastname', 'entry_street_address', 'entry_suburb', 'entry_city', 'entry_state', 'customers_referral',
+               'symbol_left', 'symbol_right');
 $sanitizer->addSimpleSanitization('WORDS_AND_SYMBOLS_REGEX', $group);
 
 $group = array('metatags_title', 'metatags_keywords', 'metatags_description');

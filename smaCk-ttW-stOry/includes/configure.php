@@ -14,12 +14,7 @@
 /**
  * Enter the domain for your Admin URL. If you have SSL, enter the correct https address in the HTTP_SERVER setting, instead of just an http address.
  */
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('HTTP_SERVER', 'https://intranet.einetwork.net');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('HTTP_SERVER', 'http://devintra.einetwork.net');
-/*** ***/
 /**
  * Note about HTTPS_SERVER:
  * There is no longer an HTTPS_SERVER setting for the Admin. Instead, put your SSL URL in the HTTP_SERVER setting above.
@@ -35,14 +30,8 @@ define('HTTP_SERVER', 'http://devintra.einetwork.net');
  * Enter the domain for your storefront URL.
  * Enter a separate SSL URL in HTTPS_CATALOG_SERVER if your store supports SSL.
  */
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('HTTP_CATALOG_SERVER', 'https://intranet.einetwork.net');
 define('HTTPS_CATALOG_SERVER', 'https://intranet.einetwork.net');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('HTTP_CATALOG_SERVER', 'http://devintra.einetwork.net');
-define('HTTPS_CATALOG_SERVER', 'https://devintra.einetwork.net');
-/*** ***/
 
 /**
  * Do you use SSL for your customers login/checkout on the storefront? If so, enter 'true'. Else 'false'.
@@ -61,12 +50,7 @@ define('DIR_WS_HTTPS_CATALOG', '/zenCart/');
  * This is the complete physical path to your store's files.  eg: /var/www/vhost/accountname/public_html/store/
  * Should have a closing / on it.
  */
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('DIR_FS_CATALOG', '/home/einet/public_html/intranet/zenCart/');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('DIR_FS_CATALOG', '/home/devintra/public_html/zenCart/');
-/*** ***/
 
 /**
  * NOTE about DIR_FS_ADMIN
@@ -82,14 +66,8 @@ define('DB_TYPE', 'mysql'); // always 'mysql'
 define('DB_PREFIX', ''); // prefix for database table names -- preferred to be left empty
 define('DB_CHARSET', 'utf8'); // 'utf8' or 'latin1' are most common
 define('DB_SERVER', 'localhost');  // address of your db server
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('DB_SERVER_USERNAME', 'changeme');
 define('DB_SERVER_PASSWORD', 'changeme');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('DB_SERVER_USERNAME', 'changeme');
-define('DB_SERVER_PASSWORD', 'changeme');
-/*** ***/
 define('DB_DATABASE', 'einet_zencart');
 
 /**

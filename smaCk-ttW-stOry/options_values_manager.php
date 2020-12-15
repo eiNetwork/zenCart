@@ -65,17 +65,20 @@ if (zen_not_null($action)) {
       break;
     case 'add_product_option_values':
       $value_name_array = $_POST['value_name'];
+      $part_number_array = $_POST['mfg_part_number'];
       $value_id = (int)$_POST['value_id'];
       $_SESSION['options_names_values_last_mod'] = $option_id = (int)$_POST['option_id'];
       $products_options_values_sort_order = (int)$_POST['products_options_values_sort_order'];
 
       for ($i = 0, $n = sizeof($languages); $i < $n; $i++) {
         $value_name = zen_db_prepare_input($value_name_array[$languages[$i]['id']]);
+        $part_number = zen_db_prepare_input($part_number_array[$languages[$i]['id']]);
 
-        $db->Execute("INSERT INTO " . TABLE_PRODUCTS_OPTIONS_VALUES . " (products_options_values_id, language_id, products_options_values_name, products_options_values_sort_order)
+        $db->Execute("INSERT INTO " . TABLE_PRODUCTS_OPTIONS_VALUES . " (products_options_values_id, language_id, products_options_values_name, mfg_part_number, products_options_values_sort_order)
                       VALUES (" . (int)$value_id . ",
                               " . (int)$languages[$i]['id'] . ",
                               '" . zen_db_input($value_name) . "',
+                              '" . zen_db_input($part_number) . "',
                               " . (int)$products_options_values_sort_order . ")");
       }
 
@@ -111,16 +114,19 @@ if (zen_not_null($action)) {
       break;
     case 'update_value':
       $value_name_array = $_POST['value_name'];
+      $part_number_array = $_POST['mfg_part_number'];
       $value_id = (int)$_POST['value_id'];
       $_SESSION['options_names_values_last_mod'] = $option_id = (int)$_POST['option_id'];
       $products_options_values_sort_order = (int)$_POST['products_options_values_sort_order'];
 
       for ($i = 0, $n = sizeof($languages); $i < $n; $i++) {
         $value_name = zen_db_prepare_input($value_name_array[$languages[$i]['id']]);
+        $part_number = zen_db_prepare_input($part_number_array[$languages[$i]['id']]);
 
         $db->Execute("UPDATE " . TABLE_PRODUCTS_OPTIONS_VALUES . "
                       SET products_options_values_name = '" . zen_db_input($value_name) . "',
-                          products_options_values_sort_order = " . (int)$products_options_values_sort_order . "
+                          products_options_values_sort_order = " . (int)$products_options_values_sort_order . ",
+                          mfg_part_number = '" . zen_db_input($part_number) . "'
                       WHERE products_options_values_id = " . (int)$value_id . "
                       AND language_id = " . (int)$languages[$i]['id']);
       }
@@ -559,7 +565,7 @@ if (zen_not_null($action)) {
                 <td colspan="4" class="pageHeading"><?php echo $values_values->fields['products_options_values_name']; ?></td>
               </tr>
               <?php
-              $products_values = $db->Execute("SELECT p.products_id, pd.products_name, po.products_options_name, pa.options_id
+              $products_values = $db->Execute("SELECT p.products_id, pd.products_name, po.products_options_name, pa.options_id, po.mfg_part_number
                                                FROM " . TABLE_PRODUCTS . " p,
                                                     " . TABLE_PRODUCTS_ATTRIBUTES . " pa,
                                                     " . TABLE_PRODUCTS_OPTIONS . " po,
@@ -724,6 +730,7 @@ if (zen_not_null($action)) {
                 <th class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_ID; ?></th>
                 <th class="dataTableHeadingContent"><?php echo TABLE_HEADING_OPT_NAME; ?></th>
                 <th class="dataTableHeadingContent"><?php echo TABLE_HEADING_OPT_VALUE; ?></th>
+                <th class="dataTableHeadingContent"><?php echo TABLE_HEADING_OPT_PART_NUMBER; ?></th>
                 <th class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_OPTION_VALUE_SORT_ORDER; ?></th>
                 <th class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_ACTION; ?></th>
               </tr>
@@ -741,6 +748,7 @@ if (zen_not_null($action)) {
                 $option_id = (!empty($last_mod) ? (string)$last_mod : $values_value['products_options_id']);
 
                 $values_name = $values_value['products_options_values_name'];
+                $part_number = $values_value['mfg_part_number'];
                 $products_options_values_sort_order = $values_value['products_options_values_sort_order'];
                 ?>
                 <tr>
@@ -762,6 +770,21 @@ if (zen_not_null($action)) {
                       $inputs .= zen_draw_input_field('value_name[' . $languages[$i]['id'] . ']', zen_output_string($value_name->fields['products_options_values_name']), zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'products_options_values_name', 50) . ' class="form-control"');
                       $inputs .= '</div>';
                       $inputs .= '</div>';
+                    }
+                    $inputs2 = '';
+                    for ($i = 0, $n = sizeof($languages); $i < $n; $i++) {
+                      $value_name = $db->Execute("SELECT mfg_part_number
+                                                  FROM " . TABLE_PRODUCTS_OPTIONS_VALUES . "
+                                                  WHERE products_options_values_id = " . (int)$values_value['products_options_values_id'] . "
+                                                  AND language_id = " . (int)$languages[$i]['id']);
+                      $inputs2 .= '<div class="form-group">';
+                      $inputs2 .= '<div class="input-group">';
+                      $inputs2 .= '<span class="input-group-addon">';
+                      $inputs2 .= zen_image(DIR_WS_CATALOG_LANGUAGES . $languages[$i]['directory'] . '/images/' . $languages[$i]['image'], $languages[$i]['name']);
+                      $inputs2 .= '</span>';
+                      $inputs2 .= zen_draw_input_field('value_name[' . $languages[$i]['id'] . ']', zen_output_string($value_name->fields['mfg_part_number']), zen_set_field_length(TABLE_PRODUCTS_OPTIONS_VALUES, 'mfg_part_number', 50) . ' class="form-control"');
+                      $inputs2 .= '</div>';
+                      $inputs2 .= '</div>';
                     }
                     $products_options_values_sort_order = $db->Execute("SELECT distinct products_options_values_sort_order
                                                                         FROM " . TABLE_PRODUCTS_OPTIONS_VALUES . "
@@ -790,6 +813,7 @@ if (zen_not_null($action)) {
                       <?php echo zen_draw_pull_down_menu('option_id', $optionsValueArray, $values_value['products_options_id'], 'class="form-control"'); ?>
                     </td>
                     <td class="attributeBoxContent"><?php echo $inputs; ?></td>
+                    <td class="attributeBoxContent"><?php echo $inputs2; ?></td>
                     <td class="attributeBoxContent text-right"><?php echo zen_draw_input_field('products_options_values_sort_order', $products_options_values_sort_order->fields['products_options_values_sort_order'], 'size="4" class="form-control"'); ?></td>
                     <td class="attributeBoxContent text-right">
                       <button type="submit" class="btn btn-primary"><?php echo IMAGE_UPDATE; ?></button>
@@ -802,6 +826,7 @@ if (zen_not_null($action)) {
                     <td class="text-right"><?php echo $values_value["products_options_values_id"]; ?></td>
                     <td><?php echo $options_name; ?></td>
                     <td><?php echo $values_name; ?></td>
+                    <td><?php echo $part_number; ?></td>
                     <td class="text-right"><?php echo $values_value['products_options_values_sort_order']; ?></td>
                     <?php if ($action == 'update_option_value') { ?>
                       <td>&nbsp;</td>

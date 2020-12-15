@@ -238,6 +238,10 @@ if (zen_not_null($action)) {
           $value_price = (float)$_POST['value_price'];
           $price_prefix = (int)$_POST['price_prefix'];
           $price_prefix = ($price_prefix == 1 ? '+' : ($price_prefix == 2 ? '-' : ''));
+          $products_id = (int)$_POST['products_id'];
+          $options_id = (int)$_POST['options_id'];
+          $value_cost = (float)$_POST['value_cost'];
+          $cost_prefix = (float)$_POST['cost_prefix'];
 
           $products_options_sort_order = (int)$_POST['products_options_sort_order'];
 
@@ -300,12 +304,14 @@ if (zen_not_null($action)) {
           }
           $attributes_image_name = zen_limit_image_filename($attributes_image_name, TABLE_PRODUCTS_ATTRIBUTES, 'attributes_image');
 
-          $db->Execute("INSERT INTO " . TABLE_PRODUCTS_ATTRIBUTES . " (products_id, options_id, options_values_id, options_values_price, price_prefix, products_options_sort_order, product_attribute_is_free, products_attributes_weight, products_attributes_weight_prefix, attributes_display_only, attributes_default, attributes_discounted, attributes_image, attributes_price_base_included, attributes_price_onetime, attributes_price_factor, attributes_price_factor_offset, attributes_price_factor_onetime, attributes_price_factor_onetime_offset, attributes_qty_prices, attributes_qty_prices_onetime, attributes_price_words, attributes_price_words_free, attributes_price_letters, attributes_price_letters_free, attributes_required)
+          $db->Execute("INSERT INTO " . TABLE_PRODUCTS_ATTRIBUTES . " (products_id, options_id, options_values_id, options_values_price, price_prefix, options_values_cost, cost_prefix, products_options_sort_order, product_attribute_is_free, products_attributes_weight, products_attributes_weight_prefix, attributes_display_only, attributes_default, attributes_discounted, attributes_image, attributes_price_base_included, attributes_price_onetime, attributes_price_factor, attributes_price_factor_offset, attributes_price_factor_onetime, attributes_price_factor_onetime_offset, attributes_qty_prices, attributes_qty_prices_onetime, attributes_price_words, attributes_price_words_free, attributes_price_letters, attributes_price_letters_free, attributes_required)
                         VALUES (" . (int)$products_id . ",
                                 " . (int)$options_id . ",
                                 " . (int)$values_id . ",
                                 " . (float)$value_price . ",
                                 '" . zen_db_input($price_prefix) . "',
+                                '" . (float)zen_db_input($value_cost) . "',
+                                '" . zen_db_input($cost_prefix) . "',
                                 " . (int)$products_options_sort_order . ",
                                 " . (int)$product_attribute_is_free . ",
                                 " . (float)$products_attributes_weight . ",
@@ -390,6 +396,8 @@ if (zen_not_null($action)) {
           $value_price = (float)$_POST['value_price'];
           $price_prefix = (int)$_POST['price_prefix'];
           $price_prefix = ($price_prefix == 1 ? '+' : ($price_prefix == 2 ? '-' : ''));
+          $value_cost = (float)$_POST['value_cost']);
+          $cost_prefix = $_POST['cost_prefix'];
 
           $products_options_sort_order = (int)$_POST['products_options_sort_order'];
           $product_attribute_is_free = (int)$_POST['product_attribute_is_free'];
@@ -416,6 +424,7 @@ if (zen_not_null($action)) {
           $attributes_required = (int)$_POST['attributes_required'];
 
           $attribute_id = (int)$_POST['attribute_id'];
+
 
 // edit
 // attributes images
@@ -454,6 +463,8 @@ if (zen_not_null($action)) {
                             options_values_id = " . (int)$values_id . ",
                             options_values_price = " . (float)$value_price . ",
                             price_prefix = '" . zen_db_input($price_prefix) . "',
+                            options_values_cost = '" . (float)$value_cost . "',
+                            cost_prefix = '" . zen_db_input($cost_prefix) . "',
                             products_options_sort_order = " . (int)$products_options_sort_order . ",
                             product_attribute_is_free = " . (int)$product_attribute_is_free . ",
                             products_attributes_weight = " . (float)$products_attributes_weight . ",
@@ -666,7 +677,7 @@ function zen_js_option_values_list($selectedName, $fieldName)
       $val_count = 0;
     }
 
-    $value_string .= '    ' . $fieldName . '.options[' . $val_count . '] = new Option("' . $products_options_values_name . ($attribute['products_options_values_id'] == 0 ? '/UPLOAD FILE' : '') . ($show_value_numbers ? ' [ #' . $attribute['products_options_values_id'] . ' ] ' : '') . '", "' . $attribute['products_options_values_id'] . '");' . "\n";
+    $value_string .= '    ' . $fieldName . '.options[' . $val_count . '] = new Option("' . $products_options_values_name . ($attributes->fields['products_options_values_id'] == 0 ? '/UPLOAD FILE' : '') . (($attributes->fields['mfg_part_number'] != '') ? (" [ " . $attributes->fields['mfg_part_number'] . " ]") : '') . ($show_value_numbers ? ' [ #' . $attributes->fields['products_options_values_id'] . ' ] ' : '') . '", "' . $attributes->fields['products_options_values_id'] . '");' . "\n";
 
     $last_option_processed = $attribute['products_options_id'];
     $val_count++;
@@ -1086,6 +1097,7 @@ function zen_js_option_values_list($selectedName, $fieldName)
                 <td class="dataTableHeadingContent"><?php echo TABLE_HEADING_OPT_NAME; ?></td>
                 <td class="dataTableHeadingContent"><?php echo TABLE_HEADING_OPT_VALUE; ?></td>
                 <td class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_OPT_PRICE_PREFIX; ?>&nbsp;<?php echo TABLE_HEADING_OPT_PRICE; ?></td>
+                <td class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_OPT_COST_PREFIX; ?>&nbsp;<?php echo TABLE_HEADING_OPT_COST; ?></td>
                 <td class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_OPT_WEIGHT_PREFIX; ?>&nbsp;<?php echo TABLE_HEADING_OPT_WEIGHT; ?></td>
                 <td class="dataTableHeadingContent text-right"><?php echo TABLE_HEADING_OPT_SORT_ORDER; ?></td>
                 <td class="dataTableHeadingContent text-center"><?php echo LEGEND_BOX; ?></td>
@@ -1219,6 +1231,18 @@ function zen_js_option_values_list($selectedName, $fieldName)
                             'id' => '2',
                             'text' => '-']
                         ];
+                        $cost_prefix_array = [
+                          [
+                            'id' => '0',
+                            'text' => TEXT_NONE
+                          ],
+                          [
+                            'id' => '1',
+                            'text' => '+'],
+                          [
+                            'id' => '2',
+                            'text' => '-']
+                        ];
                         $weight_prefix_array = [
                           [
                             'id' => '0',
@@ -1232,6 +1256,7 @@ function zen_js_option_values_list($selectedName, $fieldName)
                             'text' => '-']
                         ];
                         $attributes_value_price_prefix = ($attributes_value['price_prefix'] == '+' ? 1 : ($attributes_value['price_prefix'] == '-' ? 2 : 0));
+                        $attributes_value_cost_prefix = ($attributes_value['cost_prefix'] == '+' ? 1 : ($attributes_value['cost_prefix'] == '-' ? 2 : 0));
                         $products_attributes_weight_prefix = ($attributes_value['products_attributes_weight_prefix'] == '+' ? 1 : ($attributes_value['price_prefix'] == '-' ? 2 : 0));
                         ?>
                         <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
@@ -1240,6 +1265,14 @@ function zen_js_option_values_list($selectedName, $fieldName)
                             <?php echo zen_draw_pull_down_menu('price_prefix', $price_prefix_array, $attributes_value_price_prefix, 'class="form-control" title="' . TABLE_HEADING_OPT_PRICE_PREFIX . '"'); ?>
                             <span class="input-group-btn" style="width:0px;"></span>
                             <?php echo zen_draw_input_field('value_price', $attributes_value['options_values_price'], 'class="form-control"'); ?>
+                          </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
+                          <?php echo zen_draw_label(TABLE_HEADING_OPT_COST, 'value_cost', 'class="control-label"'); ?>
+                          <div class="input-group">
+                            <?php echo zen_draw_pull_down_menu('cost_prefix', $cost_prefix_array, $attributes_value_cost_prefix, 'class="form-control" title="' . TABLE_HEADING_OPT_COST_PREFIX . '"'); ?>
+                            <span class="input-group-btn" style="width:0px;"></span>
+                            <?php echo zen_draw_input_field('value_cost', $attributes_value['options_values_cost'], 'class="form-control"'); ?>
                           </div>
                         </div>
                         <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
@@ -1551,6 +1584,7 @@ function zen_js_option_values_list($selectedName, $fieldName)
                       <?php echo $values_name; ?>
                     </td>
                     <td class="text-right"><?php echo $attributes_value['price_prefix']; ?>&nbsp;<?php echo $attributes_value['options_values_price']; ?></td>
+                    <td class="text-right"><?php echo $attributes_value['cost_prefix']; ?>&nbsp;<?php echo $attributes_value['options_values_cost']; ?></td>
                     <td class="text-right"><?php echo $attributes_value['products_attributes_weight_prefix']; ?>&nbsp;<?php echo $attributes_value['products_attributes_weight']; ?></td>
                     <td class="text-right"><?php echo $attributes_value['products_options_sort_order']; ?></td>
                     <?php if ($action == '') { ?>
@@ -1772,9 +1806,22 @@ function zen_js_option_values_list($selectedName, $fieldName)
                       $radio_attributes_required = zen_get_show_product_switch($products_filter, 'ATTRIBUTES_REQUIRED', 'DEFAULT_', '');
 
                       $default_price_prefix = zen_get_show_product_switch($products_filter, 'PRICE_PREFIX', 'DEFAULT_', '');
+                      $default_cost_prefix = zen_get_show_product_switch($products_filter, 'COST_PREFIX', 'DEFAULT_', '');
                       $default_products_attributes_weight_prefix = zen_get_show_product_switch($products_filter, 'PRODUCTS_ATTRIBUTES_WEIGHT_PREFIX', 'DEFAULT_', '');
 
                       $price_prefix_array = [
+                        [
+                          'id' => '0',
+                          'text' => TEXT_NONE
+                        ],
+                        [
+                          'id' => '1',
+                          'text' => '+'],
+                        [
+                          'id' => '2',
+                          'text' => '-']
+                      ];
+                      $cost_prefix_array = [
                         [
                           'id' => '0',
                           'text' => TEXT_NONE
@@ -1805,6 +1852,14 @@ function zen_js_option_values_list($selectedName, $fieldName)
                           <?php echo zen_draw_pull_down_menu('price_prefix', $price_prefix_array, $default_price_prefix, 'class="form-control" title="' . TABLE_HEADING_OPT_PRICE_PREFIX . '"'); ?>
                           <span class="input-group-btn" style="width:0px;"></span>
                           <?php echo zen_draw_input_field('value_price', '', 'class="form-control" id="value_price"'); ?>
+                        </div>
+                      </div>
+                      <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
+                        <?php echo zen_draw_label(TABLE_HEADING_OPT_COST, 'value_cost', 'class="control-label"'); ?>
+                        <div class="input-group">
+                          <?php echo zen_draw_pull_down_menu('cost_prefix', $cost_prefix_array, $default_cost_prefix, 'class="form-control" title="' . TABLE_HEADING_OPT_COST_PREFIX . '"'); ?>
+                          <span class="input-group-btn" style="width:0px;"></span>
+                          <?php echo zen_draw_input_field('value_cost', '', 'class="form-control" id="value_cost"'); ?>
                         </div>
                       </div>
                       <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">

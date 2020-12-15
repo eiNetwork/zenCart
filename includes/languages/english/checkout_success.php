@@ -9,14 +9,13 @@
 define('NAVBAR_TITLE_1', 'Checkout');
 define('NAVBAR_TITLE_2', 'Success - Thank You');
 
-define('HEADING_TITLE', 'Thank You! We Appreciate your Business!');
+define('HEADING_TITLE', '');
 
 define('TEXT_SUCCESS', '');
-define('TEXT_NOTIFY_PRODUCTS', 'Please notify me of updates to these products');
-// Still used by some older templates
-define('TEXT_SEE_ORDERS', 'You can view your order history by going to the <a href="' . zen_href_link(FILENAME_ACCOUNT, '', 'SSL') . '">My Account</a> page and by clicking on "View All Orders".');
-define('TEXT_CONTACT_STORE_OWNER', 'Please direct any questions to customer service.');
-define('TEXT_THANKS_FOR_SHOPPING', 'Thanks for shopping with us online!');
+define('TEXT_NOTIFY_PRODUCTS', '');
+define('TEXT_SEE_ORDERS', '');
+define('TEXT_CONTACT_STORE_OWNER', '');
+define('TEXT_THANKS_FOR_SHOPPING', '');
 
 define('TABLE_HEADING_COMMENTS', '');
 
@@ -30,6 +29,8 @@ define('TEXT_CHECKOUT_LOGOFF_CUSTOMER', 'Thank you for shopping. Please click th
 
 define('HEADING_ORDER_NUMBER', 'Order #%s');
 define('HEADING_ORDER_DATE', 'Order Date:');
+define('HEADING_ORDER_TOTAL', 'Order Total:');
+define('HEADING_ORDER_TERMS', 'Order Terms &amp; Conditions');
 
 define('HEADING_DELIVERY_ADDRESS', 'Delivery Address');
 define('HEADING_SHIPPING_METHOD', 'Shipping Method');
@@ -46,5 +47,9 @@ define('HEADING_ORDER_HISTORY', 'Status History &amp; Comments');
 define('TABLE_HEADING_STATUS_DATE', 'Date');
 define('TABLE_HEADING_STATUS_ORDER_STATUS', 'Order Status');
 define('TABLE_HEADING_STATUS_COMMENTS', 'Comments');
+define('TABLE_HEADING_ANNUAL_COST', 'Annual Cost per Unit');
+define('TABLE_HEADING_TOTAL_COST', 'Total Program Cost');
+define('TABLE_HEADING_PRICE', 'Item Cost');
+
 define('QUANTITY_SUFFIX', '&nbsp;ea.  ');
 define('ORDER_HEADING_DIVIDER', '&nbsp;-&nbsp;');

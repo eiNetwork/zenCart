@@ -16,14 +16,8 @@
  * HTTP_SERVER is your Main webserver: eg-http://www.yourdomain.com
  * HTTPS_SERVER is your Secure/SSL webserver: eg-https://www.yourdomain.com
  */
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('HTTP_SERVER', 'https://intranet.einetwork.net');
 define('HTTPS_SERVER', 'https://intranet.einetwork.net');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('HTTP_SERVER', 'https://devintra.einetwork.net');
-define('HTTPS_SERVER', 'https://devintra.einetwork.net');
-/*** ***/
 
 /**
  *  If you want to tell Zen Cart to use your HTTPS URL on sensitive pages like login and checkout, set this to 'true'. Otherwise 'false'. (Keep the quotes)
@@ -42,12 +36,7 @@ define('DIR_WS_HTTPS_CATALOG', '/zenCart/');
  * This is the complete physical path to your store's files.  eg: /var/www/vhost/accountname/public_html/store/
  * Should have a closing / on it.
  */
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('DIR_FS_CATALOG', '/home/einet/public_html/intranet/zenCart/');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('DIR_FS_CATALOG', '/home/devintra/public_html/zenCart/');
-/*** ***/
 
 /**
  * The following settings define your database connection.
@@ -57,15 +46,8 @@ define('DB_TYPE', 'mysql'); // always 'mysql'
 define('DB_PREFIX', ''); // prefix for database table names -- preferred to be left empty
 define('DB_CHARSET', 'utf8'); // 'utf8' or 'latin1' are most common
 define('DB_SERVER', 'localhost');  // address of your db server
-/*** ***/
-/*** COMMENT THIS IN WHEN CHECKING IN ***
 define('DB_SERVER_USERNAME', 'changeme');
 define('DB_SERVER_PASSWORD', 'changeme');
-/*** ***/
-/*** COMMENT THIS OUT WHEN CHECKING IN ***/
-define('DB_SERVER_USERNAME', 'changeme');
-define('DB_SERVER_PASSWORD', 'changeme');
-/*** ***/
 define('DB_DATABASE', 'einet_zencart');
 
 /**

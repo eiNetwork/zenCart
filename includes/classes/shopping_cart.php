@@ -11,6 +11,20 @@
 if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
 }
+
+define('MASTER_CART', -19);
+define('WAP_TYPE_ID', 15);
+define('WAP_CONFIG_SERVICE', '291:b939a5923d5a9312245c815028df75b4');
+define('WAP_CLOUD_MANAGEMENT', '292:4be22063d2f020962db4f610062f2ccc');
+define('WAP_WITH_ANTENNA', 280);
+define('WAP_NO_ANTENNA', 281);
+define('WAP_INSTALL', 282);
+define('WAP_INSTALL_BASE_PRICE', 110.00);
+define('WAP_CABLING', 283);
+define('WAP_REQUIRED_TEXT_ID', 29);
+define('WAP_REQUIRED_CONFIG_TEXT_VALUE_ID', 137);
+define('WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID', 138);
+
 class shoppingCart extends base {
   /**
    * shopping cart contents
@@ -94,10 +108,9 @@ class shoppingCart extends base {
    */
   function restore_contents() {
     global $db;
-    if (!zen_is_logged_in() || zen_in_guest_checkout()) {
-        return false;
-    }
+    if (!$_SESSION['customer_id'] || !$_SESSION['selectedCartID']) return false;
     $this->notify('NOTIFIER_CART_RESTORE_CONTENTS_START');
+/***
     // insert current cart contents in database
     if (is_array($this->contents)) {
       foreach($this->contents as $products_id => $data) {
@@ -148,37 +161,68 @@ class shoppingCart extends base {
         }
       }
     }
+***/
 
     // reset per-session cart contents, but not the database contents
     $this->reset(false);
 
-    $products_query = "SELECT products_id, customers_basket_quantity
+    $products_query = "SELECT customers_basket_new_id, products_id, customers_basket_quantity
                        FROM " . TABLE_CUSTOMERS_BASKET . "
-                       WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
-                       ORDER BY customers_basket_id";
+                       WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
+                       ORDER BY customers_basket_new_id, customers_basket_id";
+    if( $_SESSION['selectedCartID'] == MASTER_CART ) {
+        $products_query = "SELECT entry_company AS library_name, customers_basket_new_id, products_id, customers_basket_quantity
+                           FROM " . TABLE_CUSTOMERS_BASKET . "
+                           JOIN " . TABLE_CUSTOMERS_BASKET_NEW . " USING (customers_basket_new_id)
+                           JOIN " . TABLE_ADDRESS_BOOK . " USING (address_book_id)
+                           WHERE address_book_id in (" . MASTER_CART;
+        foreach( $_SESSION["customer_addresses"] as $thisAddress ) {
+            $products_query .= "," . $thisAddress["ID"];
+        }
+        $products_query .= ") ORDER BY library_name, customers_basket_new_id, customers_basket_id";
+    }
+
     $products = $db->Execute($products_query);
 
     while (!$products->EOF) {
-      $this->contents[$products->fields['products_id']] = array('qty' => $products->fields['customers_basket_quantity']);
+      if( !isset($this->contents[$products->fields['customers_basket_new_id']]) ) {
+        $this->contents[$products->fields['customers_basket_new_id']] = array();
+      }
+      $this->contents[$products->fields['customers_basket_new_id']][$products->fields['products_id']] = array('qty' => $products->fields['customers_basket_quantity']);
 
       // set contents in sort order
       $order_by = ' order by LPAD(products_options_sort_order,11,"0")';
 
-      $attributes = $db->Execute("SELECT products_options_id, products_options_value_id, products_options_value_text
+      if( $_SESSION['selectedCartID'] == MASTER_CART ) {
+        $attributes_query = "SELECT products_options_id, products_options_value_id, products_options_value_text
                              FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                             WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
-                             AND products_id = '" . zen_db_input($products->fields['products_id']) . "' " . $order_by);
+                             JOIN " . TABLE_CUSTOMERS_BASKET_NEW . " USING (customers_basket_new_id)
+                             JOIN " . TABLE_ADDRESS_BOOK . " USING (address_book_id)
+                             WHERE address_book_id IN (" . MASTER_CART;
+        foreach( $_SESSION["customer_addresses"] as $thisAddress ) {
+            $attributes_query .= "," . $thisAddress["ID"];
+        }
+        $attributes_query .= ") AND products_id = '" . zen_db_input($products->fields['products_id']) . "' " . $order_by;
+
+        $attributes = $db->Execute($attributes_query);
+      } else {
+        $attributes = $db->Execute("SELECT products_options_id, products_options_value_id, products_options_value_text
+                                    FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                                    WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
+                                    AND products_id = '" . zen_db_input($products->fields['products_id']) . "' " . $order_by);
+      }
 
       while (!$attributes->EOF) {
-        $this->contents[$products->fields['products_id']]['attributes'][$attributes->fields['products_options_id']] = $attributes->fields['products_options_value_id'];
+        $this->contents[$products->fields['customers_basket_new_id']][$products->fields['products_id']]['attributes'][$attributes->fields['products_options_id']] = $attributes->fields['products_options_value_id'];
         //CLR 020606 if text attribute, then set additional information
         if ($attributes->fields['products_options_value_id'] == PRODUCTS_OPTIONS_VALUES_TEXT_ID) {
-          $this->contents[$products->fields['products_id']]['attributes_values'][$attributes->fields['products_options_id']] = $attributes->fields['products_options_value_text'];
+          $this->contents[$products->fields['customers_basket_new_id']][$products->fields['products_id']]['attributes_values'][$attributes->fields['products_options_id']] = $attributes->fields['products_options_value_text'];
         }
         $attributes->MoveNext();
       }
       $products->MoveNext();
     }
+
     $this->cartID = $this->generate_cart_id();
     $this->notify('NOTIFIER_CART_RESTORE_CONTENTS_END');
     $this->cleanup();
@@ -209,10 +253,21 @@ class shoppingCart extends base {
     $this->free_shipping_price = 0;
     $this->free_shipping_weight = 0;
 
-    if (zen_is_logged_in() && $reset_database == true) {
-      $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET . " WHERE customers_id = " . (int)$_SESSION['customer_id'];
+    if (isset($_SESSION['selectedCartID']) && ($reset_database == true)) {
+      $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET . "
+              WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'";
+      if( isset($_REQUEST["products_type"]) ) {
+        $sql .= " AND products_id IN (SELECT products_id FROM " . TABLE_PRODUCTS . " WHERE products_type = '" . $_REQUEST["products_type"] . "')";
+      }
+
       $db->Execute($sql);
-      $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . " WHERE customers_id = " . (int)$_SESSION['customer_id'];
+
+      $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+              WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'";
+      if( isset($_REQUEST["products_type"]) ) {
+        $sql .= " AND products_id IN (SELECT products_id FROM " . TABLE_PRODUCTS . " WHERE products_type = '" . $_REQUEST["products_type"] . "')";
+      }
+
       $db->Execute($sql);
     }
 
@@ -264,15 +319,16 @@ class shoppingCart extends base {
     if ($this->in_cart($products_id)) {
       $this->update_quantity($products_id, $qty, $attributes);
     } else {
-      $this->contents[] = array($products_id);  // @TODO - why is this line here? Appears to be removed in the call to cleanup(), so doesn't really serve any purpose here.
-      $this->contents[$products_id] = array('qty' => (float)$qty);
+      $this->contents[$_SESSION['selectedCartID']][] = array($products_id);
+      $this->contents[$_SESSION['selectedCartID']][$products_id] = array('qty' => (float)$qty);
       // insert into database
-      if (zen_is_logged_in() && !zen_in_guest_checkout()) {
+      if (isset($_SESSION['customer_id'])) {
         $sql = "INSERT INTO " . TABLE_CUSTOMERS_BASKET . "
                 (customers_id, products_id, customers_basket_quantity,
-                customers_basket_date_added)
-                VALUES (" . (int)$_SESSION['customer_id'] . ", '" . zen_db_input($products_id) . "', '" .
-                $qty . "', '" . date('Ymd') . "')";
+                customers_basket_date_added, customers_basket_new_id)
+                VALUES ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input($products_id) . "', '" .
+                $qty . "', '" . date('Ymd') . "', " . $_SESSION["selectedCartID"] .")";
+
         $db->Execute($sql);
       }
 
@@ -297,7 +353,7 @@ class shoppingCart extends base {
                 if (strlen ($attr_value) > $check->fields['products_options_length']) {
                   $attr_value = zen_trunc_string ($attr_value, $check->fields['products_options_length'], '');
                 }
-                $this->contents[$products_id]['attributes_values'][$option] = $attr_value;
+                $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes_values'][$option] = $attr_value;
               }
             }
           }
@@ -305,10 +361,10 @@ class shoppingCart extends base {
           if (!$blank_value) {
             if (is_array($value) ) {
               foreach($value as $opt => $val) {
-                $this->contents[$products_id]['attributes'][$option.'_chk'.$val] = $val;
+                $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'][$option.'_chk'.$val] = $val;
               }
             } else {
-              $this->contents[$products_id]['attributes'][$option] = $value;
+              $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'][$option] = $value;
             }
 
             if (zen_is_logged_in() && !zen_in_guest_checkout()) {
@@ -316,9 +372,10 @@ class shoppingCart extends base {
                 foreach($value as $opt => $val) {
                   $products_options_sort_order= zen_get_attributes_options_sort_order(zen_get_prid($products_id), $option, $opt);
                   $sql = "INSERT INTO " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                          (customers_id, products_id, products_options_id, products_options_value_id, products_options_sort_order)
-                          VALUES (" . (int)$_SESSION['customer_id'] . ", '" . zen_db_input($products_id) . "', 
+                          (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_sort_order)
+                          VALUES ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input($products_id) . "',
                           '" . (int)$option.'_chk'. (int)$val . "', '" . (int)$val . "',  '" . $products_options_sort_order . "')";
+
                   $db->Execute($sql);
                 }
               } else {
@@ -327,9 +384,10 @@ class shoppingCart extends base {
                 }
                 $products_options_sort_order= zen_get_attributes_options_sort_order(zen_get_prid($products_id), $option, $value);
                 $sql = "INSERT INTO " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                        (customers_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
-                        VALUES (" . (int)$_SESSION['customer_id'] . ", '" . zen_db_input($products_id) . "', 
+                        (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                        VALUES ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input($products_id) . "',
                         '" . (int)$option . "', '" . (int)$value . "', '" . $attr_value . "', '" . $products_options_sort_order . "')";
+
                 $db->Execute($sql);
               }
             }
@@ -337,6 +395,60 @@ class shoppingCart extends base {
         }
       }
     }
+
+    // check whether we need to add a wireless configuration cost and cloud management costs
+    $wapQty = 0;
+    foreach( array_keys($this->contents[$_SESSION['selectedCartID']]) as $thisID ) {
+      if( in_array(explode(":", $thisID)[0], [WAP_WITH_ANTENNA,WAP_NO_ANTENNA]) ) {
+        $wapQty += $this->contents[$_SESSION['selectedCartID']][$thisID]["qty"];
+      }
+    }
+    if( $wapQty > 0 && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CONFIG_SERVICE);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE] = array('qty' => 1);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]['attributes'][WAP_REQUIRED_TEXT_ID] = WAP_REQUIRED_CONFIG_TEXT_VALUE_ID;
+      // insert into database
+      if (isset($_SESSION['customer_id'])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '1', '" . date('Ymd') . "', " . $_SESSION["selectedCartID"] .")";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CONFIG_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      }
+    } else if( ($wapQty == 0) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->remove(WAP_CONFIG_SERVICE);
+    }
+    if( $wapQty > 0 && (!isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) || ($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"] != $wapQty)) ) {
+      // insert into database
+      if (isset($_SESSION['customer_id']) && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" . zen_db_input($wapQty) . "', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      } else if (isset($_SESSION['customer_id']) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "update " . TABLE_CUSTOMERS_BASKET . " set customers_basket_quantity='" . zen_db_input($wapQty) . "', customers_id='" . (int)$_SESSION['customer_id'] . 
+               "', customers_basket_date_added='" . date('Ymd') . "' where products_id='" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "' and customers_basket_new_id='" . (int)$_SESSION["selectedCartID"] . "'";
+        $db->Execute($sql);
+      }
+      if( !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]) ) {
+        $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CLOUD_MANAGEMENT);
+      }
+      $this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT] = array('qty' => $wapQty, 'attributes' => array(WAP_REQUIRED_TEXT_ID => WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID));
+    } else if( $wapQty == 0 && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) ) {
+      $this->remove(WAP_CLOUD_MANAGEMENT);
+    }
+
     $this->cleanup();
 
     // assign a temporary unique ID to the order contents to prevent hack attempts during the checkout procedure
@@ -377,12 +489,12 @@ class shoppingCart extends base {
       }
     }
 
-    $this->contents[$products_id] = array('qty' => (float)$quantity);
-
-    if (zen_is_logged_in() && !zen_in_guest_checkout()) {
+    $this->contents[$_SESSION['selectedCartID']][$products_id] = array('qty' => (float)$quantity);
+    // update database
+    if (isset($_SESSION['selectedCartID'])) {
       $sql = "UPDATE " . TABLE_CUSTOMERS_BASKET . "
               SET customers_basket_quantity = '" . (float)$quantity . "'
-              WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
+              WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
               AND products_id = '" . zen_db_input($products_id) . "'";
       $db->Execute($sql);
     }
@@ -401,41 +513,44 @@ class shoppingCart extends base {
             $option = substr($option, strlen(TEXT_PREFIX));
             $attr_value = stripslashes($value);
             $value = PRODUCTS_OPTIONS_VALUES_TEXT_ID;
-            $this->contents[$products_id]['attributes_values'][$option] = $attr_value;
+            $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes_values'][$option] = $attr_value;
           }
         }
 
         if (!$blank_value) {
           if (is_array($value) ) {
             foreach($value as $opt => $val) {
-              $this->contents[$products_id]['attributes'][$option.'_chk'.$val] = $val;
+              $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'][$option.'_chk'.$val] = $val;
             }
           } else {
-            $this->contents[$products_id]['attributes'][$option] = $value;
+            $this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'][$option] = $value;
           }
 
-          if (zen_is_logged_in() && !zen_in_guest_checkout()) {
-              if ($attr_value) {
-                $attr_value = zen_db_input($attr_value);
+          if ($attr_value) {
+            $attr_value = zen_db_input($attr_value);
+          }
+          if (is_array($value) ) {
+            if (is_array($value) ) {
+              foreach($value as $opt => $val) {
+                $products_options_sort_order= zen_get_attributes_options_sort_order(zen_get_prid($products_id), $option, $opt);
+                $sql = "UPDATE " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                        SET products_options_value_id = '" . (int)$val . "'
+                        WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
+                        AND products_id = '" . zen_db_input($products_id) . "'
+                        AND products_options_id = '" . (int)$option.'_chk'.(int)$val . "'";
+
+                $db->Execute($sql);
               }
-              if (is_array($value) ) {
-                foreach($value as $opt => $val) {
-                  $products_options_sort_order= zen_get_attributes_options_sort_order(zen_get_prid($products_id), $option, $opt);
-                  $sql = "UPDATE " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                          SET products_options_value_id = '" . (int)$val . "'
-                          WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
-                          AND products_id = '" . zen_db_input($products_id) . "'
-                          AND products_options_id = '" . (int)$option.'_chk'.(int)$val . "'";
-                  $db->Execute($sql);
-                }
-              } else {
-                  $sql = "UPDATE " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                          SET products_options_value_id = " . (int)$value . ", products_options_value_text = '" . $attr_value . "'
-                          WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
-                          AND products_id = '" . zen_db_input($products_id) . "'
-                          AND products_options_id = '" . (int)$option . "'"; // intentionally passing a string
-                  $db->Execute($sql);
+            } else {
+              if (isset($_SESSION['customer_id'])) {
+                $sql = "UPDATE " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                        SET products_options_value_id = '" . (int)$value . "', products_options_value_text = '" . $attr_value . "'
+                        WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
+                        AND products_id = '" . zen_db_input($products_id) . "'
+                        AND products_options_id = '" . (int)$option . "'";
+                $db->Execute($sql);
               }
+            }
           }
         }
       }
@@ -457,18 +572,19 @@ class shoppingCart extends base {
     global $db;
     $this->notify('NOTIFIER_CART_CLEANUP_START');
     foreach($this->contents as $key => $data) {
-      if (!isset($this->contents[$key]['qty']) || $this->contents[$key]['qty'] <= 0) {
-        unset($this->contents[$key]);
-
-        if (zen_is_logged_in() && !zen_in_guest_checkout()) {
+      if (!isset($this->contents[$_SESSION['selectedCartID']][$key]['qty']) || $this->contents[$_SESSION['selectedCartID']][$key]['qty'] <= 0) {
+        unset($this->contents[$_SESSION['selectedCartID']][$key]);
+        // remove from database
+        if (isset($_SESSION['selectedCartID'])) {
           $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET . "
-                  WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
+                  WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
                   AND products_id = '" . $key . "'";
           $db->Execute($sql);
 
           $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-                  WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
+                  WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
                   AND products_id = '" . $key . "'";
+
           $db->Execute($sql);
         }
       }
@@ -490,9 +606,21 @@ class shoppingCart extends base {
   function count_contents() {
     $this->notify('NOTIFIER_CART_COUNT_CONTENTS_START');
     $total_items = 0;
-    if (is_array($this->contents)) {
-      foreach($this->contents as $products_id => $data) {
-        $total_items += $this->get_quantity($products_id);
+    if( $_SESSION['selectedCartID'] == MASTER_CART ) {
+      foreach( $this->contents as $key => $thisCart) {
+        $_SESSION['selectedCartID'] = $key;
+        reset($this->contents[$_SESSION['selectedCartID']]);
+        while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+          $total_items += $this->get_quantity($products_id);
+        }
+      }
+      $_SESSION['selectedCartID'] = MASTER_CART;
+    } else {
+      if (is_array($this->contents[$_SESSION['selectedCartID']])) {
+        reset($this->contents[$_SESSION['selectedCartID']]);
+        while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+          $total_items += $this->get_quantity($products_id);
+        }
       }
     }
     $this->notify('NOTIFIER_CART_COUNT_CONTENTS_END');
@@ -509,9 +637,9 @@ class shoppingCart extends base {
    */
   function get_quantity($products_id) {
     $this->notify('NOTIFIER_CART_GET_QUANTITY_START', array(), $products_id);
-    if (isset($this->contents[$products_id])) {
+    if (isset($this->contents[$_SESSION['selectedCartID']][$products_id])) {
       $this->notify('NOTIFIER_CART_GET_QUANTITY_END_QTY', array(), $products_id);
-      return $this->contents[$products_id]['qty'];
+      return $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'];
     } else {
       $this->notify('NOTIFIER_CART_GET_QUANTITY_END_FALSE', $products_id);
       return 0;
@@ -525,7 +653,7 @@ class shoppingCart extends base {
    */
   function in_cart($products_id) {
     $this->notify('NOTIFIER_CART_IN_CART_START', array(), $products_id);
-    if (isset($this->contents[$products_id])) {
+    if (isset($this->contents[$_SESSION['selectedCartID']][$products_id])) {
       $this->notify('NOTIFIER_CART_IN_CART_END_TRUE', array(), $products_id);
       return true;
     } else {
@@ -542,19 +670,75 @@ class shoppingCart extends base {
   function remove($products_id) {
     global $db;
     $this->notify('NOTIFIER_CART_REMOVE_START', array(), $products_id);
-    unset($this->contents[$products_id]);
+    unset($this->contents[$_SESSION['selectedCartID']][$products_id]);
     // remove from database
-    if (zen_is_logged_in() && !zen_in_guest_checkout()) {
+    if ($_SESSION['selectedCartID']) {
       $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET . "
-              WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
+              WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
               AND products_id = '" . zen_db_input($products_id) . "'";
+
       $db->Execute($sql);
 
       $sql = "DELETE FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
-              WHERE customers_id = " . (int)$_SESSION['customer_id'] . "
+              WHERE customers_basket_new_id = '" . (int)$_SESSION['selectedCartID'] . "'
               AND products_id = '" . zen_db_input($products_id) . "'";
+
       $db->Execute($sql);
     }
+
+    // check whether we need to add a wireless configuration cost
+    $wapQty = 0;
+    foreach( array_keys($this->contents[$_SESSION['selectedCartID']]) as $thisID ) {
+      if( in_array(explode(":", $thisID)[0], [WAP_WITH_ANTENNA,WAP_NO_ANTENNA]) ) {
+        $wapQty += $this->contents[$_SESSION['selectedCartID']][$thisID]["qty"];
+      }
+    }
+    if( $wapQty > 0 && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CONFIG_SERVICE);
+      $this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE] = array('qty' => 1);
+      // insert into database
+      if (isset($_SESSION['customer_id'])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '1', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CONFIG_SERVICE) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CONFIG_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      }
+    } else if( ($wapQty == 0) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CONFIG_SERVICE]["qty"]) ) {
+      $this->remove(WAP_CONFIG_SERVICE);
+    }
+    if( $wapQty > 0 && (!isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) || ($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"] != $wapQty)) ) {
+      // insert into database
+      if (isset($_SESSION['customer_id']) && !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET . "
+                              (customers_id, products_id, customers_basket_quantity,
+                              customers_basket_date_added, customers_basket_new_id)
+                              values ('" . (int)$_SESSION['customer_id'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" . zen_db_input($wapQty) . "', '" . date('Ymd') . "', '" . (int)$_SESSION["selectedCartID"] ."')";
+        $db->Execute($sql);
+        $sql = "insert into " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . "
+                              (customers_basket_new_id, products_id, products_options_id, products_options_value_id, products_options_value_text, products_options_sort_order)
+                              values ('" . (int)$_SESSION['selectedCartID'] . "', '" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "', '" .
+                              WAP_REQUIRED_TEXT_ID . "', '" . WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID . "', '', '" . $products_options_sort_order . "')";
+        $db->Execute($sql);
+      } else if (isset($_SESSION['customer_id']) && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"])) {
+        $sql = "update " . TABLE_CUSTOMERS_BASKET . " set customers_basket_quantity='" . zen_db_input($wapQty) . "', customers_id='" . (int)$_SESSION['customer_id'] . 
+               "', customers_basket_date_added='" . date('Ymd') . "' where products_id='" . zen_db_input(WAP_CLOUD_MANAGEMENT) . "' and customers_basket_new_id='" . (int)$_SESSION["selectedCartID"] ."'";
+        $db->Execute($sql);
+      }
+      if( !isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]) ) {
+        $this->contents[$_SESSION['selectedCartID']][] = array(WAP_CLOUD_MANAGEMENT);
+      }
+      $this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT] = array('qty' => $wapQty, 'attributes' => array(WAP_REQUIRED_TEXT_ID => WAP_REQUIRED_CLOUD_LICENSE_TEXT_VALUE_ID));
+    } else if( $wapQty == 0 && isset($this->contents[$_SESSION['selectedCartID']][WAP_CLOUD_MANAGEMENT]["qty"]) ) {
+      $this->remove(WAP_CLOUD_MANAGEMENT);
+    }
+
+    $this->cleanup();
 
     // assign a temporary unique ID to the order contents to prevent hack attempts during the checkout procedure
     $this->cartID = $this->generate_cart_id();
@@ -577,11 +761,11 @@ class shoppingCart extends base {
    * @return string
    */
   function get_product_id_list() {
-    if (!is_array($this->contents)) {
+    if (!is_array($this->contents[$_SESSION['selectedCartID']])) {
       return '';
     }
     $product_id_list = array();
-    foreach($this->contents as $products_id => $data) {
+    foreach($this->contents[$_SESSION['selectedCartID']] as $products_id => $data) {
       $product_id_list[] = $products_id;
     }
     return implode(',', $product_id_list);
@@ -602,15 +786,20 @@ class shoppingCart extends base {
     $this->free_shipping_price = 0;
     $this->free_shipping_weight = 0;
     $this->download_count = 0;
-    if (!is_array($this->contents)) return 0;
+    if (!is_array($this->contents[$_SESSION['selectedCartID']])) return 0;
 
 // By default, Price Factor is based on Price and is called from function zen_get_attributes_price_factor
 // Setting a define for ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL to 1 to calculate the Price Factor from Special rather than Price switches this to be based on Special, if it exists
     if (!defined('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL')) define('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL', 1);
-    foreach($this->contents as $products_id => $data) {
+    foreach($this->contents[$_SESSION['selectedCartID']] as $products_id => $data) {
+      // ignore the ones we're covering
+      if( in_array($products_id, [WAP_CONFIG_SERVICE,WAP_CLOUD_MANAGEMENT]) ) {
+        continue;
+      }
+
       $total_before_discounts = 0;
       $freeShippingTotal = $productTotal = $totalOnetimeCharge = $totalOnetimeChargeNoDiscount = 0;
-      $qty = $this->contents[$products_id]['qty'];
+      $qty = $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'];
 
       // products price
       $product_query = "SELECT products_id, products_price, products_tax_class_id, products_weight,
@@ -680,8 +869,8 @@ class shoppingCart extends base {
       // attributes price
       $savedProductTotal = $productTotal;
       $attributesTotal = 0;
-      if (isset($this->contents[$products_id]['attributes'])) {
-        foreach($this->contents[$products_id]['attributes'] as $option => $value) {
+      if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
+        foreach($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'] as $option => $value) {
           $productTotal = 0;
           $adjust_downloads ++;
           /*
@@ -772,8 +961,8 @@ class shoppingCart extends base {
             $chk_special = zen_get_products_special_price($products_id, false);
             // products_options_value_text
             if (ATTRIBUTES_ENABLED_TEXT_PRICES == 'true' && zen_get_attributes_type($attribute_price->fields['products_attributes_id']) == PRODUCTS_OPTIONS_TYPE_TEXT) {
-              $text_words = zen_get_word_count_price($this->contents[$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_words_free'], $attribute_price->fields['attributes_price_words']);
-              $text_letters = zen_get_letters_count_price($this->contents[$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_letters_free'], $attribute_price->fields['attributes_price_letters']);
+              $text_words = zen_get_word_count_price($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_words_free'], $attribute_price->fields['attributes_price_words']);
+              $text_letters = zen_get_letters_count_price($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_letters_free'], $attribute_price->fields['attributes_price_letters']);
 
               $productTotal += $text_letters;
               $productTotal += $text_words;
@@ -851,8 +1040,8 @@ class shoppingCart extends base {
       } // attributes price
       $productTotal = $savedProductTotal + $attributesTotal;
       // attributes weight
-      if (isset($this->contents[$products_id]['attributes'])) {
-        foreach($this->contents[$products_id]['attributes'] as $option => $value) {
+      if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
+        foreach($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'] as $option => $value) {
           $attribute_weight_query = "SELECT products_attributes_weight, products_attributes_weight_prefix
                                        FROM " . TABLE_PRODUCTS_ATTRIBUTES . "
                                        WHERE products_id = " . (int)$prid . "
@@ -926,18 +1115,19 @@ class shoppingCart extends base {
    * @param mixed the product ID of the item to check
    * @return decimal the price of the item's attributes
    */
-  function attributes_price($products_id) {
+  function attributes_price($products_id, $overrideCartID = null) {
     global $db, $currencies;
 
     $total_attributes_price = 0;
-    $qty = $this->contents[$products_id]['qty'];
+    $overrideCartID = $overrideCartID ? $overrideCartID : $_SESSION['selectedCartID'];
+    $qty = $this->contents[$overrideCartID][$products_id]['qty'];
 
     $this->notify('NOTIFY_CART_ATTRIBUTES_PRICE_START', $products_id);
 
-    if (isset($this->contents[$products_id]['attributes'])) {
+    if (isset($this->contents[$overrideCartID][$products_id]['attributes'])) {
 
       if(!defined('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL')) define('ATTRIBUTES_PRICE_FACTOR_FROM_SPECIAL', 1);
-      foreach($this->contents[$products_id]['attributes'] as $option => $value) {
+      foreach($this->contents[$overrideCartID][$products_id]['attributes'] as $option => $value) {
         $attributes_price = 0;
         $attribute_price_query = "SELECT *
                                     FROM " . TABLE_PRODUCTS_ATTRIBUTES . "
@@ -988,8 +1178,8 @@ class shoppingCart extends base {
           // calculate additional charges
           // products_options_value_text
           if (ATTRIBUTES_ENABLED_TEXT_PRICES == 'true' && zen_get_attributes_type($attribute_price->fields['products_attributes_id']) == PRODUCTS_OPTIONS_TYPE_TEXT) {
-            $text_words = zen_get_word_count_price($this->contents[$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_words_free'], $attribute_price->fields['attributes_price_words']);
-            $text_letters = zen_get_letters_count_price($this->contents[$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_letters_free'], $attribute_price->fields['attributes_price_letters']);
+            $text_words = zen_get_word_count_price($this->contents[$overrideCartID][$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_words_free'], $attribute_price->fields['attributes_price_words']);
+            $text_letters = zen_get_letters_count_price($this->contents[$overrideCartID][$products_id]['attributes_values'][$attribute_price->fields['options_id']], $attribute_price->fields['attributes_price_letters_free'], $attribute_price->fields['attributes_price_letters']);
             $attributes_price += $text_letters;
             $attributes_price += $text_words;
           }
@@ -1006,7 +1196,7 @@ class shoppingCart extends base {
           if ($attribute_price->fields['attributes_qty_prices'] != '') {
             $chk_price = zen_get_products_base_price($products_id);
             $chk_special = zen_get_products_special_price($products_id, false);
-            $added_charge = zen_get_attributes_qty_prices_onetime($attribute_price->fields['attributes_qty_prices'], $this->contents[$products_id]['qty']);
+            $added_charge = zen_get_attributes_qty_prices_onetime($attribute_price->fields['attributes_qty_prices'], $this->contents[$_SESSION['selectedCartID']][$products_id]['qty']);
             $attributes_price += $added_charge;
           }
 
@@ -1031,7 +1221,73 @@ class shoppingCart extends base {
     return $total_attributes_price;
   }
   /**
-   * Calculate one-time price of attributes for a given item
+   * Method to calculate cost of attributes for a given item
+   *
+   * @param mixed the product ID of the item to check
+   * @return decimal the cost of the items attributes
+   * @global object access to the db object
+   */
+  function attributes_cost($products_id, $overrideCartID = null) {
+    global $db, $currencies;
+
+    $total_attributes_cost = 0;
+    $overrideCartID = $overrideCartID ? $overrideCartID : $_SESSION['selectedCartID'];
+    $qty = $this->contents[$overrideCartID][$products_id]['qty'];
+
+    if (isset($this->contents[$overrideCartID][$products_id]['attributes'])) {
+
+      reset($this->contents[$overrideCartID][$products_id]['attributes']);
+      while (list($option, $value) = each($this->contents[$overrideCartID][$products_id]['attributes'])) {
+        $attributes_cost = 0;
+        $attribute_cost_query = "select *
+                                    from " . TABLE_PRODUCTS_ATTRIBUTES . "
+                                    where products_id = '" . (int)$products_id . "'
+                                    and options_id = '" . (int)$option . "'
+                                    and options_values_id = '" . (int)$value . "'";
+
+        $attribute_cost = $db->Execute($attribute_cost_query);
+
+        $new_attributes_cost = 0;
+        $discount_type_id = '';
+        $sale_maker_discount = '';
+
+        //          if ($attribute_price->fields['product_attribute_is_free']) {
+        if ($attribute_cost->fields['product_attribute_is_free'] == '1' and zen_get_products_price_is_free((int)$products_id)) {
+          // no charge
+        } else {
+          // + or blank adds
+          if ($attribute_cost->fields['cost_prefix'] == '-') {
+            // calculate proper discount for attributes
+            if ($attribute_cost->fields['attributes_discounted'] == '1') {
+              $discount_type_id = '';
+              $sale_maker_discount = '';
+              $new_attributes_price = zen_get_discount_calc($products_id, $attribute_cost->fields['products_attributes_id'], $attribute_cost->fields['options_values_cost'], $qty);
+              $attributes_cost -= ($new_attributes_cost);
+            } else {
+              $attributes_cost -= $attribute_cost->fields['options_values_cost'];
+            }
+          } else {
+            if ($attribute_cost->fields['attributes_discounted'] == '1') {
+              // calculate proper discount for attributes
+              $discount_type_id = '';
+              $sale_maker_discount = '';
+              $new_attributes_cost = zen_get_discount_calc($products_id, $attribute_cost->fields['products_attributes_id'], $attribute_cost->fields['options_values_cost'], $qty);
+              $attributes_cost += ($new_attributes_cost);
+            } else {
+              $attributes_cost += $attribute_cost->fields['options_values_cost'];
+            }
+          }
+
+          //////////////////////////////////////////////////
+        }
+        $total_attributes_cost += zen_round($attributes_cost, $currencies->get_decimal_places($_SESSION['currency']));
+      }
+    }
+
+    return $total_attributes_cost;
+  }
+  /**
+   * Method to calculate one time price of attributes for a given item
    *
    * @param mixed the product ID of the item to check
    * @param decimal item quantity
@@ -1044,8 +1300,8 @@ class shoppingCart extends base {
 
     $this->notify('NOTIFY_CART_ATTRIBUTES_PRICE_ONETIME_CHARGES_START', $products_id);
 
-    if (isset($this->contents[$products_id]['attributes'])) {
-      foreach($this->contents[$products_id]['attributes'] as $option => $value) {
+    if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
+      foreach($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'] as $option => $value) {
 
         $attribute_price_query = "SELECT *
                                     FROM " . TABLE_PRODUCTS_ATTRIBUTES . "
@@ -1108,7 +1364,51 @@ class shoppingCart extends base {
     return $attributes_price_onetime;
   }
   /**
-   * Calculate weight of attributes for a given item
+   * Method to calculate one time cost of attributes for a given item
+   *
+   * @param mixed the product ID of the item to check
+   * @param decimal item quantity
+   * @return decimal the cost of the items attributes
+   * @global object access to the db object
+   */
+  function attributes_cost_onetime_charges($products_id, $qty) {
+    global $db;
+
+    $attributes_cost_onetime = 0;
+
+    if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
+
+      reset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes']);
+      while (list($option, $value) = each($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
+
+        $attribute_cost_query = "select *
+                                    from " . TABLE_PRODUCTS_ATTRIBUTES . "
+                                    where products_id = '" . (int)$products_id . "'
+                                    and options_id = '" . (int)$option . "'
+                                    and options_values_id = '" . (int)$value . "'";
+
+        $attribute_cost= $db->Execute($attribute_cost_query);
+
+        $new_attributes_cost= 0;
+        $discount_type_id = '';
+        $sale_maker_discount = '';
+
+        //          if ($attribute_price->fields['product_attribute_is_free']) {
+        if ($attribute_cost->fields['product_attribute_is_free'] == '1' and zen_get_products_price_is_free((int)$products_id)) {
+          // no charge
+        } else {
+          $discount_type_id = '';
+          $sale_maker_discount = '';
+          $new_attributes_cost= zen_get_discount_calc($products_id, $attribute_cost->fields['products_attributes_id'], $attribute_cost->fields['options_values_cost'], $qty);
+
+        }
+      }
+    }
+
+    return $attributes_cost_onetime;
+  }
+  /**
+   * Method to calculate weight of attributes for a given item
    *
    * @param mixed the product ID of the item to check
    * @return decimal the weight of the items attributes
@@ -1118,11 +1418,11 @@ class shoppingCart extends base {
 
     $attribute_weight = 0;
 
-    if (isset($this->contents[$products_id]['attributes'])) {
+    if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'])) {
 
       $this->notify('NOTIFY_CART_ATTRIBUTES_WEIGHT_START', $products_id);
 
-      foreach($this->contents[$products_id]['attributes'] as $option => $value) {
+      foreach($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'] as $option => $value) {
         $attribute_weight_query = "SELECT products_attributes_weight, products_attributes_weight_prefix
                                     FROM " . TABLE_PRODUCTS_ATTRIBUTES . "
                                     WHERE products_id = " . (int)$products_id . "
@@ -1170,15 +1470,38 @@ class shoppingCart extends base {
 
     $this->notify('NOTIFIER_CART_GET_PRODUCTS_START', array(), $check_for_valid_cart);
 
-    if (!is_array($this->contents)) return false;
+    if ($_SESSION['selectedCartID'] == MASTER_CART ) {
+      $products_array = array('multiCart' => true);
+      foreach($this->contents as $key => $thisCart) {
+        $products_array[$key] = $this->processCartContents($thisCart, $key);
+      }
+    } else {
+      if (!is_array($this->contents[$_SESSION['selectedCartID']])) return false;
+
+      $products_array = $this->processCartContents($this->contents[$_SESSION['selectedCartID']]);
+    }
+    $this->notify('NOTIFIER_CART_GET_PRODUCTS_END', array(), $products_array);
+    return $products_array;
+  }
+
+
+  function processCartContents($thisCart, $overrideCartID = null) {
+    global $db;
 
     $products_array = array();
-    foreach($this->contents as $products_id => $data) {
-      $products_query = "SELECT p.*, pd.products_name
-                           FROM " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd
-                           WHERE p.products_id = '" . (int)$products_id . "'
-                           AND pd.products_id = p.products_id
-                           AND pd.language_id = " . (int)$_SESSION['languages_id'] . " LIMIT 1";
+    foreach($thisCart as $products_id => $data) {
+
+      $products_query = "SELECT p.products_id, p.products_type, p.master_categories_id, p.products_status, pd.products_name, p.products_model, p.mfg_part_number, p.quote_number, p.products_image,
+                                p.products_price, p.products_cost, p.products_erate_eligible, p.products_weight, p.products_tax_class_id,
+                                p.products_quantity_order_min, p.products_quantity_order_units, p.products_quantity_order_max,
+                                p.product_is_free, p.products_priced_by_attribute,
+                                p.products_discount_type, p.products_discount_type_from, p.products_virtual, p.product_is_always_free_shipping,
+                                pt.type_id, pt.type_name, pt.terms_link, pt.vendor_email, pt.payment_plan
+                         FROM " . TABLE_PRODUCTS . " p JOIN " . TABLE_PRODUCTS_DESCRIPTION . " pd
+                         ON pd.products_id = p.products_id
+                         JOIN " . TABLE_PRODUCT_TYPES . " pt ON pt.type_id = p.products_type
+                         WHERE p.products_id = '" . (int)$products_id . "'
+                         AND pd.language_id = '" . (int)$_SESSION['languages_id'] . "'";
 
       $products = $db->Execute($products_query);
       if (!$products->EOF) {
@@ -1186,6 +1509,8 @@ class shoppingCart extends base {
 
         $prid = $products->fields['products_id'];
         $products_price = $products->fields['products_price'];
+        $products_cost = $products->fields['products_cost'];
+        $products_erate_eligible = $products->fields['products_erate_eligible'];
         //fix here
         /*
         $special_price = zen_get_products_special_price($prid);
@@ -1215,7 +1540,7 @@ class shoppingCart extends base {
         } else {
           // discount qty pricing
           if ($products->fields['products_discount_type'] != '0') {
-            $products_price = zen_get_products_discount_price_qty($products->fields['products_id'], $this->contents[$products_id]['qty']);
+            $products_price = zen_get_products_discount_price_qty($products->fields['products_id'], $thisCart[$products_id]['qty']);
           }
         }
 
@@ -1231,17 +1556,18 @@ class shoppingCart extends base {
             $_SESSION['cart_errors'] .= ERROR_PRODUCT . $products->fields['products_name'] . ERROR_PRODUCT_STATUS_SHOPPING_CART . '<br />';
             $this->remove($products_id);
           } else {
-            if (isset($this->contents[$products_id]['attributes'])) {
+            if (isset($thisCart[$products_id]['attributes'])) {
               $chkcount = 0;
-              foreach($this->contents[$products_id]['attributes'] as $value) {
+              foreach($thisCart[$products_id]['attributes'] as $value) {
+              while (list(, $value) = each($thisCart[$products_id]['attributes'])) {
                 $chkcount ++;
                 $chk_attributes_exist_query = "SELECT products_id
                                           FROM " . TABLE_PRODUCTS_ATTRIBUTES . " pa
                                           WHERE pa.products_id = " . (int)$products_id . "
                                           AND pa.options_values_id = " . (int)$value;
-
+  
                 $chk_attributes_exist = $db->Execute($chk_attributes_exist_query);
-//echo 'what is it: ' . ' : ' . $products_id . ' - ' . $value . ' records: ' . $chk_attributes_exist->RecordCount() . ' vs ' . print_r($this->contents[$products_id]) . '<br>';
+//echo 'what is it: ' . ' : ' . $products_id . ' - ' . $value . ' records: ' . $chk_attributes_exist->RecordCount() . ' vs ' . print_r($thisCart[$products_id]) . '<br>';
                 if ($chk_attributes_exist->EOF) {
                   $fix_once ++;
                   $_SESSION['valid_to_checkout'] = false;
@@ -1261,7 +1587,7 @@ class shoppingCart extends base {
 
           // check only if valid products_status
           if ($fix_once == 0) {
-            $check_quantity = $this->contents[$products_id]['qty'];
+            $check_quantity = $thisCart[$products_id]['qty'];
             $check_quantity_min = $products->fields['products_quantity_order_min'];
             // Check quantity min
             if ($new_check_quantity = $this->in_cart_mixed($prid) ) {
@@ -1303,17 +1629,17 @@ class shoppingCart extends base {
 
         // convert quantity to proper decimals
         if (QUANTITY_DECIMALS != 0) {
-          $fix_qty = $this->contents[$products_id]['qty'];
+          $fix_qty = $thisCart[$products_id]['qty'];
           switch (true) {
             case (!strstr($fix_qty, '.')):
             $new_qty = $fix_qty;
             break;
             default:
-            $new_qty = preg_replace('/[0]+$/','',$this->contents[$products_id]['qty']);
+            $new_qty = preg_replace('/[0]+$/','',$thisCart[$products_id]['qty']);
             break;
           }
         } else {
-          $new_qty = $this->contents[$products_id]['qty'];
+          $new_qty = $thisCart[$products_id]['qty'];
         }
         $check_unit_decimals = zen_get_products_quantity_order_units((int)$products->fields['products_id']);
         if (strstr($check_unit_decimals, '.')) {
@@ -1326,30 +1652,39 @@ class shoppingCart extends base {
                                   'category' => $products->fields['master_categories_id'],
                                   'name' => $products->fields['products_name'],
                                   'model' => $products->fields['products_model'],
+                                  'part_number' => $products->fields['mfg_part_number'],
+                                  'quote_number' => $products->fields['quote_number'],
                                   'image' => $products->fields['products_image'],
                                   'price' => ($products->fields['product_is_free'] =='1' ? 0 : $products_price),
+                                  'cost' => ($products->fields['product_is_free'] =='1' ? 0 : $products_cost),
+                                  'erate_eligible' => ($products->fields['product_is_free'] =='1' ? 0 : $products_erate_eligible),
                                   'quantity' => $new_qty,
                                   'weight' => $products->fields['products_weight'] + $this->attributes_weight($products_id),
-                                  'final_price' => ($products_price + $this->attributes_price($products_id)),
+                                  'final_price' => ($products_price + $this->attributes_price($products_id, $overrideCartID)),
+                                  'wholesale_cost' => ($products_cost + $this->attributes_cost($products_id, $overrideCartID)),
                                   'onetime_charges' => ($this->attributes_price_onetime_charges($products_id, $new_qty)),
                                   'tax_class_id' => $products->fields['products_tax_class_id'],
-                                  'attributes' => (isset($this->contents[$products_id]['attributes']) ? $this->contents[$products_id]['attributes'] : ''),
-                                  'attributes_values' => (isset($this->contents[$products_id]['attributes_values']) ? $this->contents[$products_id]['attributes_values'] : ''),
+                                  'attributes' => (isset($thisCart[$products_id]['attributes']) ? $thisCart[$products_id]['attributes'] : ''),
+                                  'attributes_values' => (isset($thisCart[$products_id]['attributes_values']) ? $thisCart[$products_id]['attributes_values'] : ''),
                                   'products_priced_by_attribute' => $products->fields['products_priced_by_attribute'],
                                   'product_is_free' => $products->fields['product_is_free'],
                                   'products_discount_type' => $products->fields['products_discount_type'],
                                   'products_discount_type_from' => $products->fields['products_discount_type_from'],
-                                  'products_virtual' => (int)$products->fields['products_virtual'],
-                                  'product_is_always_free_shipping' => (int)$products->fields['product_is_always_free_shipping'],
                                   'products_quantity_order_min' => (float)$products->fields['products_quantity_order_min'],
                                   'products_quantity_order_units' => (float)$products->fields['products_quantity_order_units'],
                                   'products_quantity_order_max' => (float)$products->fields['products_quantity_order_max'],
                                   'products_quantity_mixed' => (int)$products->fields['products_quantity_mixed'],
                                   'products_mixed_discount_quantity' => (int)$products->fields['products_mixed_discount_quantity'],
+                                  'products_virtual' => (int)$products->fields['products_virtual'],
+                                  'product_is_always_free_shipping' => (int)$products->fields['product_is_always_free_shipping'],
+                                  'type_name' => $products->fields['type_name'],
+                                  'terms_link' => $products->fields['terms_link'],
+                                  'vendor_email' => $products->fields['vendor_email'],
+                                  'payment_plan' => htmlspecialchars_decode($products->fields['payment_plan']),
+                                  'products_type' => $products->fields['products_type']
                                   );
       }
     }
-    $this->notify('NOTIFIER_CART_GET_PRODUCTS_END', array(), $products_array);
     return $products_array;
   }
   /**
@@ -1407,24 +1742,27 @@ class shoppingCart extends base {
     $gift_voucher = 0;
 
     if ( $this->count_contents() > 0 ) {
-      foreach($this->contents as $products_id => $data) {
-        $free_ship_check = $db->Execute("SELECT products_virtual, products_model, products_price, product_is_always_free_shipping FROM " . TABLE_PRODUCTS . " WHERE products_id = " . (int)$products_id);
+      foreach($this->contents[$_SESSION['selectedCartID']] as $products_id => $data) {
+        $free_ship_check = $db->Execute("SELECT products_virtual, products_model, products_price, product_is_always_free_shipping, products_type FROM " . TABLE_PRODUCTS . " WHERE products_id = " . (int)$products_id);
+        if( $free_ship_check->fields['products_type'] != $_GET["products_type"] ) {
+          continue;
+        }
         $virtual_check = false;
         if (preg_match('/^GIFT/', addslashes($free_ship_check->fields['products_model']))) {
 // @TODO - fix GIFT price in cart special/attribute
           $gift_special = zen_get_products_special_price(zen_get_prid($products_id), true);
           $gift_pba = zen_get_products_price_is_priced_by_attributes(zen_get_prid($products_id));
-//echo '$products_id: ' . zen_get_prid($products_id) . ' price: ' . ($free_ship_check->fields['products_price'] + $this->attributes_price($products_id)) . ' vs special price: ' . $gift_special . ' qty: ' . $this->contents[$products_id]['qty'] . ' PBA: ' . ($gift_pba ? 'YES' : 'NO') . '<br>';
+//echo '$products_id: ' . zen_get_prid($products_id) . ' price: ' . ($free_ship_check->fields['products_price'] + $this->attributes_price($products_id)) . ' vs special price: ' . $gift_special . ' qty: ' . $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'] . ' PBA: ' . ($gift_pba ? 'YES' : 'NO') . '<br>';
           if (!$gift_pba && $gift_special !=0 && $gift_special != $free_ship_check->fields['products_price']) {
-            $gift_voucher += ($gift_special * $this->contents[$products_id]['qty']);
+            $gift_voucher += ($gift_special * $this->contents[$_SESSION['selectedCartID']][$products_id]['qty']);
           } else {
-          $gift_voucher += ($free_ship_check->fields['products_price'] + $this->attributes_price($products_id)) * $this->contents[$products_id]['qty'];
+          $gift_voucher += ($free_ship_check->fields['products_price'] + $this->attributes_price($products_id)) * $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'];
           }
         }
         // product_is_always_free_shipping = 2 is special requires shipping
         // Example: Product with download
-        if (isset($this->contents[$products_id]['attributes']) and $free_ship_check->fields['product_is_always_free_shipping'] != 2) {
-          foreach($this->contents[$products_id]['attributes'] as $value) {
+        if (isset($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes']) and $free_ship_check->fields['product_is_always_free_shipping'] != 2) {
+          foreach($this->contents[$_SESSION['selectedCartID']][$products_id]['attributes'] as $value) {
             $virtual_check_query = "SELECT COUNT(*) as total
                                       FROM " . TABLE_PRODUCTS_ATTRIBUTES . " pa, "
                                       . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
@@ -1550,7 +1888,7 @@ class shoppingCart extends base {
   function in_cart_mixed($products_id) {
     global $db;
     // if nothing is in cart return 0
-    if (!is_array($this->contents)) return 0;
+    if (!is_array($this->contents[$_SESSION['selectedCartID']])) return 0;
 
     // check if mixed is on
     $product = $db->Execute("SELECT products_id, products_quantity_mixed FROM " . TABLE_PRODUCTS . " WHERE products_id=" . (int)$products_id . " limit 1");
@@ -1567,7 +1905,7 @@ class shoppingCart extends base {
 // added for new code - Ajeh
     global $messageStack;
 
-    $check_contents = $this->contents;
+    $check_contents = $this->contents[$_SESSION['selectedCartID']];
     foreach($check_contents as $products_id => $data) {
       $test_id = zen_get_prid($products_id);
 //$messageStack->add_session('header', 'Product: ' . $products_id . ' test_id: ' . $test_id . '<br>', 'error');
@@ -1589,7 +1927,7 @@ class shoppingCart extends base {
   function in_cart_mixed_discount_quantity($products_id) {
     global $db;
     // if nothing is in cart return 0
-    if (!is_array($this->contents)) return 0;
+    if (!is_array($this->contents[$_SESSION['selectedCartID']])) return 0;
 
     // check if mixed is on
     //      $product = $db->Execute("select products_id, products_mixed_discount_quantity from " . TABLE_PRODUCTS . " where products_id='" . (int)$products_id . "' limit 1");
@@ -1604,7 +1942,7 @@ class shoppingCart extends base {
     $in_cart_mixed_qty_discount_quantity = 0;
     $chk_products_id= zen_get_prid($products_id);
 
-    $check_contents = $this->contents;
+    $check_contents = $this->contents[$_SESSION['selectedCartID']];
     foreach($check_contents as $products_id => $data) {
       $test_id = zen_get_prid($products_id);
       if ($test_id == $chk_products_id) {
@@ -1627,17 +1965,17 @@ class shoppingCart extends base {
   function in_cart_check($check_what, $check_value='1') {
     global $db;
     // if nothing is in cart return 0
-    if (!is_array($this->contents)) return 0;
+    if (!is_array($this->contents[$_SESSION['selectedCartID']])) return 0;
 
     // compute total quantity for field
     $in_cart_check_qty=0;
 
-    foreach($this->contents as $products_id => $data) {
+    foreach($this->contents[$_SESSION['selectedCartID']] as $products_id => $data) {
       $testing_id = zen_get_prid($products_id);
       // check if field it true
       $product_check = $db->Execute("SELECT " . $check_what . " AS check_it FROM " . TABLE_PRODUCTS . " WHERE products_id=" . (int)$testing_id . " LIMIT 1");
       if ($product_check->fields['check_it'] == $check_value) {
-        $in_cart_check_qty += $this->contents[$products_id]['qty'];
+        $in_cart_check_qty += $this->contents[$_SESSION['selectedCartID']][$products_id]['qty'];
       }
     }
     return $in_cart_check_qty;
@@ -2111,7 +2449,7 @@ class shoppingCart extends base {
    */
   function actionNotify($goto, $parameters = 'ignored') {
     global $db;
-    if (zen_is_logged_in() && !zen_in_guest_checkout()) {
+    if ($_SESSION['selectedCartID']) {
       if (isset($_GET['products_id'])) {
         $notify = $_GET['products_id'];
       } elseif (isset($_GET['notify'])) {
@@ -2126,12 +2464,12 @@ class shoppingCart extends base {
         $check_query = "SELECT count(*) AS count
                           FROM " . TABLE_PRODUCTS_NOTIFICATIONS . "
                           WHERE products_id = " . (int)$notify[$i] . "
-                          AND customers_id = " . (int)$_SESSION['customer_id'];
+                          AND customers_basket_new_id = " . (int)$_SESSION['selectedCartID'];
         $check = $db->Execute($check_query);
         if ($check->fields['count'] < 1) {
           $sql = "INSERT INTO " . TABLE_PRODUCTS_NOTIFICATIONS . "
                     (products_id, customers_id, date_added)
-                     VALUES (" . (int)$notify[$i] . ", " . (int)$_SESSION['customer_id'] . ", now())";
+                     VALUES (" . (int)$notify[$i] . ", " . (int)$_SESSION['selectedCartID'] . ", now())";
           $db->Execute($sql);
         }
       }
@@ -2150,17 +2488,17 @@ class shoppingCart extends base {
    */
   function actionNotifyRemove($goto, $parameters = 'ignored') {
     global $db;
-    if (zen_is_logged_in() && !zen_in_guest_checkout() && isset($_GET['products_id'])) {
+    if ($_SESSION['selectedCartID'] && isset($_GET['products_id'])) {
       $check_query = "SELECT count(*) AS count
                         FROM " . TABLE_PRODUCTS_NOTIFICATIONS . "
                         WHERE products_id = " . (int)$_GET['products_id'] . "
-                        AND customers_id = " . (int)$_SESSION['customer_id'];
+                        AND customers_basket_new_id = " . (int)$_SESSION['selectedCartID'];
       $check = $db->Execute($check_query);
 
       if ($check->fields['count'] > 0) {
         $sql = "DELETE FROM " . TABLE_PRODUCTS_NOTIFICATIONS . "
                   WHERE products_id = " . (int)$_GET['products_id'] . "
-                  AND customers_id = " . (int)$_SESSION['customer_id'];
+                  AND customers_id = " . (int)$_SESSION['selectedCartID'];
         $db->Execute($sql);
       }
       zen_redirect(zen_href_link($_GET['main_page'], zen_get_all_get_params(array('action', 'main_page'))));

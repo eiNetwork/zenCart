@@ -46,6 +46,10 @@ define('TEXT_NEW_INTRO', 'Please fill out the following information for the new 
 define('TEXT_EDIT_INTRO', 'Please make any necessary changes');
 
 define('TEXT_PRODUCT_TYPES_NAME', 'Product Type Name:');
+define('TEXT_PRODUCT_TYPES_TERMS_LINK', 'Link to Terms and Conditions:');
+define('TEXT_PRODUCT_TYPES_CONFIRMATION_FORMAT_LINK', 'Link to Confirmation Email Format:');
+define('TEXT_PRODUCT_TYPES_PAYMENT_PLAN', 'Payment Plan:');
+define('TEXT_PRODUCT_TYPES_VENDOR_EMAIL', 'Vendor Email:');
 define('TEXT_PRODUCT_TYPES_IMAGE', 'Product Type Default Image:');
 
 define('TEXT_DELETE_INTRO', 'Are you sure you want to delete this product type?');
@@ -54,3 +58,4 @@ define('TEXT_DELETE_PRODUCTS', 'Delete products from this product type? (includi
 define('TEXT_DELETE_WARNING_PRODUCTS', '<b>WARNING:</b> There are %s products still linked to this product type!');
 
 define('IMAGE_LAYOUT', 'Layout Settings');
+

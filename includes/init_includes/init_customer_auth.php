@@ -104,8 +104,8 @@ switch (true) {
 /**
  * check store status before authorizations
  */
-  case (STORE_STATUS != 0):
-    break;
+  //case (STORE_STATUS != 0):
+  //  break;
 /**
  * if not down for maintenance check login status
  */

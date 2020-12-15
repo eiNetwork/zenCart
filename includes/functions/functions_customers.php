@@ -126,14 +126,15 @@ function zen_address_format($address_format_id = 1, $incoming = array(), $html =
  */
 function zen_address_label($customers_id, $address_id = 1, $html = false, $boln = '', $eoln = "\n") {
     global $db;
-    $address_query = "select entry_firstname as firstname, entry_lastname as lastname,
+    $address_query = "select if(ab.customers_id=c.customers_id, ab.entry_firstname, c.customers_firstname) as firstname, 
+                             if(ab.customers_id=c.customers_id, ab.entry_lastname, c.customers_lastname) as lastname, 
                              entry_company as company, entry_street_address as street_address,
                              entry_suburb as suburb, entry_city as city, entry_postcode as postcode,
                              entry_state as state, entry_zone_id as zone_id,
                              entry_country_id as country_id
-                      from " . TABLE_ADDRESS_BOOK . "
-                      where customers_id = " . (int)$customers_id . "
-                      and address_book_id = " . (int)$address_id;
+                      from " . TABLE_ADDRESS_BOOK . " ab join " . TABLE_CUSTOMERS . " as c
+                      where customers_id = '" . (int)$customers_id . "'
+                      and address_book_id = '" . (int)$address_id . "'";
 
     $address = $db->Execute($address_query);
 

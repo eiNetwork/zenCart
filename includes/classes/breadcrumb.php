@@ -56,7 +56,7 @@ class breadcrumb extends base
                 // this line simply sets the "Home" link to be the domain/url, not main_page=index?blahblah:
                 if ($this->_trail[$i]['title'] == HEADER_TITLE_CATALOG) {
                     $trail_string .= '  ' . $prefix . '<a href="' . HTTP_SERVER . DIR_WS_CATALOG . '">' . $this->_trail[$i]['title'] . '</a>' . $suffix;
-                } else {
+                } else if($this->_trail[$i]['title'] != HEADER_TITLE_MY_ACCOUNT) {
                     $trail_string .= '  ' . $prefix . '<a href="' . $this->_trail[$i]['link'] . '">' . $this->_trail[$i]['title'] . '</a>' . $suffix;
                 }
             } else {
@@ -65,7 +65,7 @@ class breadcrumb extends base
                 }
             }
 
-            if (($i + 1) < $n) $trail_string .= $separator;
+            if ((($i+1) < $n) && ($this->_trail[$i]['title'] != HEADER_TITLE_MY_ACCOUNT) ) $trail_string .= $separator;
             $trail_string .= "\n";
         }
 

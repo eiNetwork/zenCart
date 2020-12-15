@@ -35,6 +35,8 @@ define('TABLE_HEADING_OPT_NAME', 'Option Name');
 define('TABLE_HEADING_OPT_VALUE', 'Option Value');
 define('TABLE_HEADING_OPT_PRICE', 'Price');
 define('TABLE_HEADING_OPT_PRICE_PREFIX', 'Prefix');
+define('TABLE_HEADING_OPT_COST', 'Cost');
+define('TABLE_HEADING_OPT_COST_PREFIX', 'Prefix');
 define('TABLE_HEADING_ACTION', 'Action');
 define('TABLE_HEADING_DOWNLOAD', 'Downloadable products:');
 define('TABLE_TEXT_FILENAME', 'Filename:');

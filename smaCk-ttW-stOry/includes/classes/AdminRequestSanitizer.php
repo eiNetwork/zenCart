@@ -407,6 +407,25 @@ class AdminRequestSanitizer extends base
     /**
      * @param $parameterName
      */
+    private function filterAlphanumDashUnderscoreSpace($parameterName)
+    {
+        $alphaNumDashUnderscoreSpace = '/[^a-z0-9_ -]/i';
+        if (isset($_POST[$parameterName])) {
+            $this->debugMessages[] = 'PROCESSING ALPHANUM_DASH_UNDERSCORE_SPACE (POST) == ' . $parameterName;
+            $_POST[$parameterName] = preg_replace($alphaNumDashUnderscoreSpace, '', $_POST[$parameterName]);
+            $this->postKeysAlreadySanitized[] = $parameterName;
+        }
+        if (isset($_GET[$parameterName])) {
+            $this->debugMessages[] = 'PROCESSING ALPHANUM_DASH_UNDERSCORE_SPACE (GET) == ' . $parameterName;
+            $_GET[$parameterName] = preg_replace($alphaNumDashUnderscoreSpace, '', $_GET[$parameterName]);
+            $this->getKeysAlreadySanitized[] = $parameterName;
+
+        }
+    }
+
+    /**
+     * @param $parameterName
+     */
     private function filterWordsAndSymbolsRegex($parameterName)
     {
         $prodNameRegex = '~<\/?scri|on(load|mouse|error|read|key)(up|down)? ?=|[^(class|style)] ?= ?(\(|")|<!~i';
