@@ -158,6 +158,7 @@ class queryFactory extends base {
       echo '<br />in:<br />[' . (strstr($this->zf_sql, 'db_cache') ? 'db_cache table' : $this->zf_sql) . ']<br />';
     } else {
       echo 'WARNING: An Error occurred, please refresh the page and try again.';
+      echo '<br>' . $this->zf_sql . "<br>" . $this->error_number . ' ' . $this->error_text;
     }
     $backtrace_array = debug_backtrace();
     $query_factory_caller = '';

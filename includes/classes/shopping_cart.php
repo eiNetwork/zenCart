@@ -610,7 +610,7 @@ class shoppingCart extends base {
       foreach( $this->contents as $key => $thisCart) {
         $_SESSION['selectedCartID'] = $key;
         reset($this->contents[$_SESSION['selectedCartID']]);
-        while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+        foreach( $this->contents[$_SESSION['selectedCartID']] as $products_id => $productsEntry ) {
           $total_items += $this->get_quantity($products_id);
         }
       }
@@ -618,7 +618,7 @@ class shoppingCart extends base {
     } else {
       if (is_array($this->contents[$_SESSION['selectedCartID']])) {
         reset($this->contents[$_SESSION['selectedCartID']]);
-        while (list($products_id, ) = each($this->contents[$_SESSION['selectedCartID']])) {
+        foreach( $this->contents[$_SESSION['selectedCartID']] as $products_id => $productsEntry ) {
           $total_items += $this->get_quantity($products_id);
         }
       }
@@ -1237,7 +1237,7 @@ class shoppingCart extends base {
     if (isset($this->contents[$overrideCartID][$products_id]['attributes'])) {
 
       reset($this->contents[$overrideCartID][$products_id]['attributes']);
-      while (list($option, $value) = each($this->contents[$overrideCartID][$products_id]['attributes'])) {
+      foreach( $this->contents[$overrideCartID][$products_id]['attributes'] as $option => $value) {
         $attributes_cost = 0;
         $attribute_cost_query = "select *
                                     from " . TABLE_PRODUCTS_ATTRIBUTES . "
@@ -1559,7 +1559,6 @@ class shoppingCart extends base {
             if (isset($thisCart[$products_id]['attributes'])) {
               $chkcount = 0;
               foreach($thisCart[$products_id]['attributes'] as $value) {
-              while (list(, $value) = each($thisCart[$products_id]['attributes'])) {
                 $chkcount ++;
                 $chk_attributes_exist_query = "SELECT products_id
                                           FROM " . TABLE_PRODUCTS_ATTRIBUTES . " pa

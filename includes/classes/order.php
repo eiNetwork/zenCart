@@ -215,6 +215,7 @@ class order extends base {
                                       'tax' => $orders_products->fields['products_tax'],
                                       'price' => $orders_products->fields['products_price'],
                                       'products_type' => $orders_products->fields['products_type'],
+                                      'terms_link' => $orders_products->fields['terms_link'],
                                       'payment_plan' => htmlspecialchars_decode($orders_products->fields['payment_plan']),
                                       'wholesale_cost' => $orders_products->fields['products_cost'],
                                       'erate_eligible' => $orders_products->fields['products_erate_eligible'],
@@ -443,6 +444,8 @@ class order extends base {
         'firstname' => '',
         'lastname' => '',
         'company' => '',
+        'address_book_id' => $cart_info->fields['address_book_id'],
+        'librarycode' => $cart_info->fields['librarycode'],
         'street_address' => '',
         'suburb' => '',
         'city' => '',
@@ -462,6 +465,8 @@ class order extends base {
       $this->delivery = array('firstname' => $shipping_address->fields['entry_firstname'],
                               'lastname' => $shipping_address->fields['entry_lastname'],
                               'company' => $shipping_address->fields['entry_company'],
+                              'address_book_id' => $cart_info->fields['address_book_id'],
+                              'librarycode' => $cart_info->fields['librarycode'],
                               'street_address' => $shipping_address->fields['entry_street_address'],
                               'suburb' => $shipping_address->fields['entry_suburb'],
                               'city' => $shipping_address->fields['entry_city'],
@@ -742,7 +747,6 @@ class order extends base {
 
       $shown_price = (zen_add_tax($this->products[$index]['final_price'] * $this->products[$index]['qty'], $product_tax_rate))
           + zen_add_tax($this->products[$index]['onetime_charges'], $product_tax_rate);
-      $this->info['subtotal'] += $shown_price;
       $this->notify('NOTIFY_ORDER_CART_SUBTOTAL_CALCULATE', array('shown_price' => $shown_price));
 
       if (DISPLAY_PRICE_WITH_TAX == 'true') {
@@ -815,7 +819,7 @@ class order extends base {
                             'customers_address_format_id' => $this->customer['format_id'],
                             'delivery_name' => $this->delivery['firstname'] . ' ' . $this->delivery['lastname'],
                             'delivery_company' => $this->delivery['company'],
-                            'delivery_address_id' => $this->delivery['address_book_id'],
+                            'delivery_address_id' => (int)$this->delivery['address_book_id'],
                             'librarycode' => $this->delivery['librarycode'],
                             'delivery_street_address' => $this->delivery['street_address'],
                             'delivery_suburb' => $this->delivery['suburb'],
@@ -832,7 +836,7 @@ class order extends base {
                             'billing_postcode' => $this->billing['postcode'],
                             'billing_state' => $this->billing['state'],
                             'billing_country' => $this->billing['country']['title'],
-                            'billing_address_format_id' => $this->billing['format_id'],
+                            'billing_address_format_id' => (int)$this->billing['format_id'],
                             'payment_method' => (($this->info['payment_module_code'] == '' and $this->info['payment_method'] == '') ? PAYMENT_METHOD_GV : $this->info['payment_method']),
                             'payment_module_code' => (($this->info['payment_module_code'] == '' and $this->info['payment_method'] == '') ? PAYMENT_MODULE_GV : $this->info['payment_module_code']),
                             'shipping_method' => $this->info['shipping_method'],
@@ -1251,10 +1255,8 @@ class order extends base {
     // make an array to store the html version
     $html_msg=array();
 
-    // add the attachment -- production CHANGEME
+    // add the attachment
     $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
-    // add the attachment -- development
-    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCart/" . $this->products[0]['terms_link']) );
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
@@ -1462,7 +1464,7 @@ class order extends base {
       $emailText = str_replace("<RTIONLY>", "", $emailText);
       $emailText = str_replace("</RTIONLY>", "", $emailText);
       $html_msg['ORDER_TOTALS'] = $emailText;
-      //Don't inclulde an attachment for the RTI email
+      //Don't include an attachment for the RTI email
       //zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor', $this->attachArray);
       zen_mail($this->customer['firstname'] . ' ' . $this->customer['lastname'], (($_SESSION["customer_id"] == 57) ? "raynerj@einetwork.net" : $this->products[0]['vendor_email']), "eiNetwork PC Order " . EMAIL_ORDER_NUMBER_SUBJECT . $zf_insert_id, $email_order, STORE_NAME, EMAIL_FROM, $html_msg, 'vendor');
     }
@@ -1491,12 +1493,8 @@ class order extends base {
     // make an array to store the html version
     $html_msg=array();
 
-    // CHANGEME add the attachment - production
+    // add the attachment
     $this->attachArray = array( array('file' => "/home/einet/public_html/intranet/zenCart/" . $this->products[0]['terms_link']) );
-    // add the attachment - development 
-    //$this->attachArray = array( array('file' => "/home/devintra/public_html/zenCartt/" . $this->products[0]['terms_link']) );
-    // add the attachment 
-    $this->attachArray = array( array('file' => DIR_FS_CATALOG . $this->products[0]['terms_link']) );
 
     //intro area
     $email_order = EMAIL_TEXT_HEADER . EMAIL_TEXT_FROM . STORE_NAME . "\n\n" .
@@ -1633,6 +1631,25 @@ require(DIR_WS_CLASSES . 'order_total.php');
 
     $extra_info = email_collect_extra_info('', '', $this->customer['firstname'] . ' ' . $this->customer['lastname'], $this->customer['email_address'], $libraryName);
     $html_msg['EXTRA_INFO'] = $extra_info['HTML'];
+
+    //order confirmation email
+    // clean out the RTI-only bits
+    $originalProductsText = $html_msg['PRODUCTS_DETAIL'];
+    $originalOrdersText = $html_msg['ORDER_TOTALS'];
+    $emailText = $originalProductsText;
+    while( ($start = strpos($emailText, "<RTIONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</RTIONLY>") + 10);
+    }
+    $emailText = str_replace("<EINONLY>", "", $emailText);
+    $emailText = str_replace("</EINONLY>", "", $emailText);
+    $html_msg['PRODUCTS_DETAIL'] = $emailText;
+    $emailText = $originalOrdersText;
+    while( ($start = strpos($emailText, "<RTIONLY>")) !== false ) {
+      $emailText = substr($emailText, 0, $start) . substr($emailText, strpos($emailText, "</RTIONLY>") + 10);
+    }
+    $emailText = str_replace("<EINONLY>", "", $emailText);
+    $emailText = str_replace("</EINONLY>", "", $emailText);
+    $html_msg['ORDER_TOTALS'] = $emailText;
 
     // -----
     // Send customer confirmation email unless observer overrides it.

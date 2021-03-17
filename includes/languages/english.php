@@ -41,7 +41,7 @@
   define('HTML_PARAMS','dir="ltr" lang="en"');
 
 // charset for web pages and emails
-  define('CHARSET', 'iso-8859-1'');
+  define('CHARSET', 'iso-8859-1');
 
 // Define the name of your Gift Certificate as Gift Voucher, Gift Certificate, Zen Cart Dollars, etc. here for use through out the shop
   define('TEXT_GV_NAME','Gift Certificate');

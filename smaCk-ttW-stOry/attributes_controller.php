@@ -396,7 +396,7 @@ if (zen_not_null($action)) {
           $value_price = (float)$_POST['value_price'];
           $price_prefix = (int)$_POST['price_prefix'];
           $price_prefix = ($price_prefix == 1 ? '+' : ($price_prefix == 2 ? '-' : ''));
-          $value_cost = (float)$_POST['value_cost']);
+          $value_cost = (float)$_POST['value_cost'];
           $cost_prefix = $_POST['cost_prefix'];
 
           $products_options_sort_order = (int)$_POST['products_options_sort_order'];

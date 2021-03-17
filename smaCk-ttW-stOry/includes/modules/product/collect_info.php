@@ -103,7 +103,7 @@ $product_types_array = [
 $product_types = $db->Execute("SELECT type_id, type_name
                                FROM " . TABLE_PRODUCT_TYPES . "
                                ORDER BY type_name");
-foreach ($productTypes as $productType) {
+foreach ($product_types as $productType) {
   $product_types_array[] = [
     'id' => $productType['type_id'],
     'text' => $productType['type_name']

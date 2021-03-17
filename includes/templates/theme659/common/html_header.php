@@ -46,7 +46,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  * load all template-specific stylesheets, named like "style*.css", alphabetically
  */
   $directory_array = $template->get_template_part($template->get_template_dir('.css',DIR_WS_TEMPLATE, $current_page_base,'css'), '/^style/', '.css');
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
     echo '<link rel="stylesheet" type="text/css" href="' . $template->get_template_dir('.css',DIR_WS_TEMPLATE, $current_page_base,'css') . '/' . $value . '" />'."\n";
   }
 /**
@@ -66,7 +66,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
                         '/p_' . $tmp_products_id,
                         '/' . $_SESSION['language'] . '_p_' . $tmp_products_id
                         );
-  while(list ($key, $value) = each($sheets_array)) {
+  foreach( $sheets_array as $key => $value ) {
     //echo "<!--looking for: $value-->\n";
     $perpagefile = $template->get_template_dir('.css', DIR_WS_TEMPLATE, $current_page_base, 'css') . $value . '.css';
     if (file_exists($perpagefile)) echo '<link rel="stylesheet" type="text/css" href="' . $perpagefile .'" />'."\n";
@@ -77,7 +77,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  */
   $directory_array = $template->get_template_part($template->get_template_dir('.css',DIR_WS_TEMPLATE, $current_page_base,'css'), '/^print/', '.css');
   sort($directory_array);
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
     echo '<link rel="stylesheet" type="text/css" media="print" href="' . $template->get_template_dir('.css',DIR_WS_TEMPLATE, $current_page_base,'css') . '/' . $value . '" />'."\n";
   }
 
@@ -85,7 +85,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  * load all site-wide jscript_*.js files from includes/templates/YOURTEMPLATE/jscript, alphabetically
  */
   $directory_array = $template->get_template_part($template->get_template_dir('.js',DIR_WS_TEMPLATE, $current_page_base,'jscript'), '/^jscript_/', '.js');
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
     echo '<script type="text/javascript" src="' .  $template->get_template_dir('.js',DIR_WS_TEMPLATE, $current_page_base,'jscript') . '/' . $value . '"></script>'."\n";
   }
 
@@ -93,7 +93,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  * load all page-specific jscript_*.js files from includes/modules/pages/PAGENAME, alphabetically
  */
   $directory_array = $template->get_template_part($page_directory, '/^jscript_/', '.js');
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
     echo '<script type="text/javascript" src="' . $page_directory . '/' . $value . '"></script>' . "\n";
   }
 
@@ -101,7 +101,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  * load all site-wide jscript_*.php files from includes/templates/YOURTEMPLATE/jscript, alphabetically
  */
   $directory_array = $template->get_template_part($template->get_template_dir('.php',DIR_WS_TEMPLATE, $current_page_base,'jscript'), '/^jscript_/', '.php');
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
 /**
  * include content from all site-wide jscript_*.php files from includes/templates/YOURTEMPLATE/jscript, alphabetically.
  * These .PHP files can be manipulated by PHP when they're called, and are copied in-full to the browser page
@@ -112,7 +112,7 @@ require(DIR_WS_MODULES . zen_get_module_directory('meta_tags.php'));
  * include content from all page-specific jscript_*.php files from includes/modules/pages/PAGENAME, alphabetically.
  */
   $directory_array = $template->get_template_part($page_directory, '/^jscript_/');
-  while(list ($key, $value) = each($directory_array)) {
+  foreach( $directory_array as $key => $value ) {
 /**
  * include content from all page-specific jscript_*.php files from includes/modules/pages/PAGENAME, alphabetically.
  * These .PHP files can be manipulated by PHP when they're called, and are copied in-full to the browser page

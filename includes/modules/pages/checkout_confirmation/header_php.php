@@ -40,7 +40,7 @@ if ($_SESSION['cart']->get_content_type() != 'virtual' && !isset($_SESSION['ship
   zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL') . '&products_type=' . $_GET['products_type']);
 }
 if (isset($_SESSION['shipping']['id']) && $_SESSION['shipping']['id'] == 'free_free' && $_SESSION['cart']->get_content_type() != 'virtual' && defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') && MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING == 'true' && defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER') && $_SESSION['cart']->show_total() < MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER) {
-  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
+  zen_redirect(zen_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL') . '&products_type=' . $_GET['products_type']);
 }
 
 if (isset($_POST['payment'])) $_SESSION['payment'] = $_POST['payment'];
@@ -51,7 +51,7 @@ if (isset($_POST['comments'])) $_SESSION['comments'] = $_POST['comments'];
 //zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
 
 
-if (DISPLAY_CONDITIONS_ON_CHECKOUT == 'true') {
+if (false && DISPLAY_CONDITIONS_ON_CHECKOUT == 'true') {
   if (!isset($_POST['conditions']) || ($_POST['conditions'] != '1')) {
     $messageStack->add_session('checkout_payment', ERROR_CONDITIONS_NOT_ACCEPTED, 'error');
   }
@@ -95,7 +95,7 @@ if (is_array($payment_modules->modules)) {
 }
 
 if ($messageStack->size('checkout_payment') > 0) {
-  zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
+  zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL') . '&products_type=' . $_GET['products_type']);
 }
 
 // Stock Check

@@ -133,7 +133,7 @@ function zen_address_label($customers_id, $address_id = 1, $html = false, $boln 
                              entry_state as state, entry_zone_id as zone_id,
                              entry_country_id as country_id
                       from " . TABLE_ADDRESS_BOOK . " ab join " . TABLE_CUSTOMERS . " as c
-                      where customers_id = '" . (int)$customers_id . "'
+                      where c.customers_id = '" . (int)$customers_id . "'
                       and address_book_id = '" . (int)$address_id . "'";
 
     $address = $db->Execute($address_query);
