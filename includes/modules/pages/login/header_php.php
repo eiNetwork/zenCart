@@ -56,10 +56,7 @@ if (isset($_GET['action']) && ($_GET['action'] == 'process')) {
     $check_customer_query  =$db->bindVars($check_customer_query, ':emailAddress', $email_address, 'string');
     $check_customer = $db->Execute($check_customer_query);
 
-    if (!$check_customer->RecordCount()) {
-      $error = true;
-      $messageStack->add('login', TEXT_LOGIN_ERROR);
-    } elseif ($check_customer->fields['customers_authorization'] == '4') {
+    if ($check_customer->RecordCount() && $check_customer->fields['customers_authorization'] == '4') {
       // this account is banned
       $zco_notifier->notify('NOTIFY_LOGIN_BANNED');
       $messageStack->add('login', TEXT_LOGIN_BANNED);
