@@ -154,7 +154,7 @@ if( isset($_GET["regenerateCSV"]) ) {
   }
 
   fclose($csvFile);
-  echo "<script type='text/javascript'>window.location.href=\"/intranet/orderHistory.csv?cacheBuster=" . time() . "\"; setTimeout(window.close, 1000);</script>";
+  echo "<script type='text/javascript'>window.location.href=\"/orderHistory.csv?cacheBuster=" . time() . "\"; setTimeout(window.close, 1000);</script>";
 }
 
 // This should be last line of the script:

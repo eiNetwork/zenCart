@@ -131,6 +131,7 @@
 <!-- body //-->
 
 <form method="get" id="generateCSVForm" target="_blank" action="#">
+  <input type="hidden" name="cmd" value="<?php echo FILENAME_STATS_VENDOR_ORDER; ?>">
   <input type="hidden" name="regenerateCSV" value="true">
   <input type="hidden" name="manufacturer" value="<?php echo $_GET['manufacturer'];?>">
   <input type="hidden" name="order_status" value="<?php echo $_GET['order_status'];?>">
